@@ -1,0 +1,20 @@
+{
+  "portBindings": [
+    {
+      "portRange": "30121-30121",
+      "protocol": "TCP"
+    },
+    {
+      "portRange": "30121-30121",
+      "protocol": "UDP"
+    }
+  ],
+  "users": [
+    {
+      "name": "user_00000012",
+      "password": "000000000000000000000012"
+    }
+  ],
+  "loggingLevel": "INFO",
+  "mtu": 1400
+}

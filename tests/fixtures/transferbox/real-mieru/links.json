@@ -1,0 +1,192 @@
+[
+  {
+    "nickname": "admin",
+    "protocol": "naive",
+    "type": "",
+    "enabled": true,
+    "link": "naive://admin_naive:000000000000000000000001@tst.example.com:443#admin-naive",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "admin",
+    "protocol": "vless",
+    "type": "ws",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000002@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=ws&path=/#admin-ws",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user1",
+    "protocol": "vless",
+    "type": "xhttp",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000003@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=httpupgrade&path=/xhttp#user1-xhttp",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user1",
+    "protocol": "naive",
+    "type": "",
+    "enabled": true,
+    "link": "naive://user_00000004:000000000000000000000004@tst.example.com:443#user1-naive",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user2",
+    "protocol": "vless",
+    "type": "xhttp",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000005@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=httpupgrade&path=/xhttp#user2-xhttp",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user3",
+    "protocol": "vless",
+    "type": "xhttp",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000006@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=httpupgrade&path=/xhttp#user3-xhttp",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user3",
+    "protocol": "naive",
+    "type": "",
+    "enabled": true,
+    "link": "naive://user_00000007:000000000000000000000007@tst.example.com:443#user3-naive",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user4",
+    "protocol": "vless",
+    "type": "xhttp",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000008@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=httpupgrade&path=/xhttp#user4-xhttp",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user4",
+    "protocol": "vless",
+    "type": "grpc",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000009@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=grpc&serviceName=#user4-grpc",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user4",
+    "protocol": "naive",
+    "type": "",
+    "enabled": true,
+    "link": "naive://user_0000000a:00000000000000000000000a@tst.example.com:443#user4-naive",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user5",
+    "protocol": "naive",
+    "type": "",
+    "enabled": true,
+    "link": "naive://user_0000000b:00000000000000000000000b@tst.example.com:443#user5-naive",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user5",
+    "protocol": "vless",
+    "type": "xhttp",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000012@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=httpupgrade&path=/xhttp#user5-xhttp",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "USER6",
+    "protocol": "vless",
+    "type": "xhttp",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000013@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=httpupgrade&path=/xhttp#USER6-xhttp",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user2",
+    "protocol": "naive",
+    "type": "",
+    "enabled": true,
+    "link": "naive://user_0000000e:00000000000000000000000e@tst.example.com:443#user2-naive",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user2",
+    "protocol": "vless",
+    "type": "grpc",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000015@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=grpc&serviceName=#user2-grpc",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "USER6",
+    "protocol": "vless",
+    "type": "grpc",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000016@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=grpc&serviceName=#USER6-grpc",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user1",
+    "protocol": "vless",
+    "type": "grpc",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000017@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=grpc&serviceName=#user1-grpc",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "user2",
+    "protocol": "mieru",
+    "type": "",
+    "enabled": true,
+    "link": "mierus://user_00000012:000000000000000000000012@tst.example.com?profile=user2-mieru&port=30121&protocol=TCP&multiplexing=MULTIPLEXING_HIGH#user2-mieru",
+    "mieru_json": "{\n  \"profileName\": \"user2-mieru\",\n  \"user\": {\n    \"name\": \"user_00000012\",\n    \"password\": \"000000000000000000000012\"\n  },\n  \"servers\": [\n    {\n      \"ipAddress\": \"tst.example.com\",\n      \"portBindings\": [\n        {\n          \"port\": 30121,\n          \"protocol\": \"TCP\"\n        }\n      ]\n    }\n  ],\n  \"mtu\": 1400,\n  \"multiplexing\": {\n    \"level\": \"MULTIPLEXING_HIGH\"\n  }\n}",
+    "mieru_clash": "proxies:\n  - name: \"user2-mieru\"\n    type: mieru\n    server: tst.example.com\n    port: 30121\n    username: user_00000012\n    password: 000000000000000000000012\n    transport: tcp",
+    "mieru_singbox": "{\n  \"outbounds\": [\n    {\n      \"type\": \"mieru\",\n      \"tag\": \"user2-mieru\",\n      \"server\": \"tst.example.com\",\n      \"server_port\": 30121,\n      \"transport\": \"TCP\",\n      \"username\": \"user_00000012\",\n      \"password\": \"000000000000000000000012\"\n    }\n  ]\n}"
+  },
+  {
+    "nickname": "user5",
+    "protocol": "mieru",
+    "type": "",
+    "enabled": false,
+    "link": "mierus://user_00000013:000000000000000000000013@tst.example.com?profile=user5-mieru&port=30121&protocol=TCP&multiplexing=MULTIPLEXING_HIGH#user5-mieru",
+    "mieru_json": "{\n  \"profileName\": \"user5-mieru\",\n  \"user\": {\n    \"name\": \"user_00000013\",\n    \"password\": \"000000000000000000000013\"\n  },\n  \"servers\": [\n    {\n      \"ipAddress\": \"tst.example.com\",\n      \"portBindings\": [\n        {\n          \"port\": 30121,\n          \"protocol\": \"TCP\"\n        }\n      ]\n    }\n  ],\n  \"mtu\": 1400,\n  \"multiplexing\": {\n    \"level\": \"MULTIPLEXING_HIGH\"\n  }\n}",
+    "mieru_clash": "proxies:\n  - name: \"user5-mieru\"\n    type: mieru\n    server: tst.example.com\n    port: 30121\n    username: user_00000013\n    password: 000000000000000000000013\n    transport: tcp",
+    "mieru_singbox": "{\n  \"outbounds\": [\n    {\n      \"type\": \"mieru\",\n      \"tag\": \"user5-mieru\",\n      \"server\": \"tst.example.com\",\n      \"server_port\": 30121,\n      \"transport\": \"TCP\",\n      \"username\": \"user_00000013\",\n      \"password\": \"000000000000000000000013\"\n    }\n  ]\n}"
+  }
+]

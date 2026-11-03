@@ -23,7 +23,7 @@ from kvnbox.cores import caddy, mita, singbox
 from tests.legacy import TRANSPORTS, load_transferbox
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "transferbox"
-VARIANTS = ["default", "custom", "real"]
+VARIANTS = ["default", "custom", "real", "real-mieru"]
 PATHS = Paths()  # /opt/kvnbox, /etc
 
 
@@ -105,9 +105,21 @@ def test_links(variant: str, data: tuple[Settings, UsersDB]) -> None:
         assert conn is not None
         assert links.build_link(user, conn, settings) == rec["link"]
         if protocol is Protocol.MIERU:
-            assert links.mieru_client_json(user, conn, settings) == rec["mieru_json"]
-            assert links.mieru_clash_yaml(user, conn, settings) == rec["mieru_clash"]
+            assert json.loads(links.mieru_client_json(user, conn, settings)) == _fixed_mieru_json(
+                rec["mieru_json"]
+            )
+            assert links.mieru_clash_yaml(user, conn, settings) == rec["mieru_clash"].replace(
+                "transport: tcp", "transport: TCP"
+            )
             assert links.mieru_singbox_json(user, conn, settings) == rec["mieru_singbox"]
+
+
+def _fixed_mieru_json(text: str) -> dict[str, Any]:
+    """Эталон TransferBox с намеренным исправлением D-023: домен — в domainName."""
+    config: dict[str, Any] = json.loads(text)
+    for server in config["servers"]:
+        server["domainName"] = server.pop("ipAddress")
+    return config
 
 
 def test_fixtures_cover_all_slots() -> None:

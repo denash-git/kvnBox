@@ -6,6 +6,7 @@ Keenetic) ссылки и подписки не должны меняться.
 
 from __future__ import annotations
 
+import ipaddress
 import json
 from urllib.parse import quote
 
@@ -71,6 +72,18 @@ def build_link(user: User, conn: Connection, settings: Settings) -> str:
 
 
 # ─── Mieru: готовые клиентские конфиги ───────────────────────────────────────
+# Два формата исправлены относительно TransferBox (D-023, проверено живым трафиком):
+#  * JSON-профиль: домен — в `domainName`; в `ipAddress` официальный клиент
+#    mieru 3.39 принимает только IP («failed to parse IP address»);
+#  * Clash YAML: `transport: TCP` — mihomo 1.19 не принимает `tcp`.
+
+
+def _mieru_server_address(host: str) -> dict[str, str]:
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:
+        return {"domainName": host}
+    return {"ipAddress": host}
 
 
 def mieru_client_json(user: User, conn: Connection, settings: Settings) -> str:
@@ -80,7 +93,7 @@ def mieru_client_json(user: User, conn: Connection, settings: Settings) -> str:
         "user": {"name": creds.username, "password": creds.password},
         "servers": [
             {
-                "ipAddress": settings.domain,
+                **_mieru_server_address(settings.domain),
                 "portBindings": [{"port": settings.mieru.port, "protocol": "TCP"}],
             }
         ],
@@ -100,11 +113,16 @@ def mieru_clash_yaml(user: User, conn: Connection, settings: Settings) -> str:
         f"    port: {settings.mieru.port}\n"
         f"    username: {creds.username}\n"
         f"    password: {creds.password}\n"
-        "    transport: tcp"
+        "    transport: TCP"
     )
 
 
 def mieru_singbox_json(user: User, conn: Connection, settings: Settings) -> str:
+    """Outbound `mieru` для клиентов на sing-box с поддержкой Mieru.
+
+    Официальный sing-box (1.14) такого типа не знает — работает только в сборках
+    клиентов, где Mieru добавлен.
+    """
     creds = _password_creds(conn)
     config = {
         "outbounds": [

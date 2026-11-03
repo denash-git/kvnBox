@@ -184,3 +184,20 @@ def test_fakesite_assets_present() -> None:
     root = resources.files("kvnbox.assets").joinpath("fakesite")
     for template in ("aether", "chronos", "nexus", "stratum", "synapse"):
         assert root.joinpath(template, "index.html").is_file()
+
+
+def test_mieru_client_json_ip_vs_domain(settings: Settings) -> None:
+    from kvnbox.clients.links import mieru_client_json
+
+    u = User(
+        name="m",
+        connections=[
+            Connection(
+                protocol=Protocol.MIERU,
+                core=CoreKind.MITA,
+                credentials=PasswordCredentials(username="u", password="p"),
+            )
+        ],
+    )
+    server = json.loads(mieru_client_json(u, u.connections[0], settings))["servers"][0]
+    assert server["domainName"] == settings.domain and "ipAddress" not in server
