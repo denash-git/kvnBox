@@ -1,0 +1,102 @@
+[
+  {
+    "nickname": "admin",
+    "protocol": "naive",
+    "type": "",
+    "enabled": true,
+    "link": "naive://admin_naive:000000000000000000000001@tst.example.com:443#admin-naive",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "admin",
+    "protocol": "vless",
+    "type": "ws",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000002@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=ws&path=/#admin-ws",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "mama",
+    "protocol": "vless",
+    "type": "ws",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000003@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=ws&path=/#mama-ws",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "mama",
+    "protocol": "vless",
+    "type": "grpc",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000004@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=grpc&serviceName=#mama-grpc",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "mama",
+    "protocol": "vless",
+    "type": "xhttp",
+    "enabled": true,
+    "link": "vless://00000000-0000-4000-8000-000000000005@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=httpupgrade&path=/xhttp#mama-xhttp",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "mama",
+    "protocol": "naive",
+    "type": "",
+    "enabled": true,
+    "link": "naive://user_00000006:000000000000000000000006@tst.example.com:443#mama-naive",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "mama",
+    "protocol": "mieru",
+    "type": "",
+    "enabled": true,
+    "link": "mierus://user_00000007:000000000000000000000007@tst.example.com?profile=mama-mieru&port=21000&protocol=TCP&multiplexing=MULTIPLEXING_HIGH#mama-mieru",
+    "mieru_json": "{\n  \"profileName\": \"mama-mieru\",\n  \"user\": {\n    \"name\": \"user_00000007\",\n    \"password\": \"000000000000000000000007\"\n  },\n  \"servers\": [\n    {\n      \"ipAddress\": \"tst.example.com\",\n      \"portBindings\": [\n        {\n          \"port\": 21000,\n          \"protocol\": \"TCP\"\n        }\n      ]\n    }\n  ],\n  \"mtu\": 1400,\n  \"multiplexing\": {\n    \"level\": \"MULTIPLEXING_HIGH\"\n  }\n}",
+    "mieru_clash": "proxies:\n  - name: \"mama-mieru\"\n    type: mieru\n    server: tst.example.com\n    port: 21000\n    username: user_00000007\n    password: 000000000000000000000007\n    transport: tcp",
+    "mieru_singbox": "{\n  \"outbounds\": [\n    {\n      \"type\": \"mieru\",\n      \"tag\": \"mama-mieru\",\n      \"server\": \"tst.example.com\",\n      \"server_port\": 21000,\n      \"transport\": \"TCP\",\n      \"username\": \"user_00000007\",\n      \"password\": \"000000000000000000000007\"\n    }\n  ]\n}"
+  },
+  {
+    "nickname": "papa",
+    "protocol": "vless",
+    "type": "ws",
+    "enabled": false,
+    "link": "vless://00000000-0000-4000-8000-000000000008@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=ws&path=/#papa-ws",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "papa",
+    "protocol": "naive",
+    "type": "",
+    "enabled": true,
+    "link": "naive://user_00000009:000000000000000000000009@tst.example.com:443#papa-naive",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  },
+  {
+    "nickname": "guest",
+    "protocol": "vless",
+    "type": "grpc",
+    "enabled": false,
+    "link": "vless://00000000-0000-4000-8000-000000000010@tst.example.com:443?encryption=none&security=tls&sni=tst.example.com&type=grpc&serviceName=#guest-grpc",
+    "mieru_json": null,
+    "mieru_clash": null,
+    "mieru_singbox": null
+  }
+]
