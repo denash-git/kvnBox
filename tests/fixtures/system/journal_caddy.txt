@@ -1,0 +1,5 @@
+2026-11-03T23:07:17+00:00 vps caddy[18128]: {"level":"info","ts":1793747237.1346724,"logger":"http","msg":"servers shutting down; grace period initiated","duration":2}
+2026-11-03T23:07:17+00:00 vps caddy[18128]: {"level":"info","ts":1793747237.1352189,"msg":"autosaved config (load with --resume flag)","file":"caddy/autosave.json"}
+2026-11-03T23:07:17+00:00 vps caddy[18128]: {"level":"info","ts":1793747237.1359615,"logger":"admin.api","msg":"load complete"}
+2026-11-03T23:07:17+00:00 vps systemd[1]: Reloaded caddy.service - Caddy Frontend Service.
+2026-11-03T23:07:17+00:00 vps caddy[18128]: {"level":"info","ts":1793747237.1441913,"logger":"admin","msg":"stopped previous server","address":"localhost:2019"}

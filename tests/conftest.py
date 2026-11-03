@@ -10,7 +10,10 @@ from kvnbox.core.paths import Paths
 
 @pytest.fixture
 def paths(tmp_path: Path) -> Paths:
-    return Paths(root=tmp_path / "opt", etc=tmp_path / "etc")
+    # все корни — во временном каталоге: тест не должен трогать настоящую систему
+    return Paths(
+        root=tmp_path / "opt", etc=tmp_path / "etc", proc=tmp_path / "proc", home=tmp_path / "home"
+    )
 
 
 @pytest.fixture

@@ -1,0 +1,15 @@
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22/tcp                     ALLOW IN    Anywhere                  
+[ 2] 443/tcp                    ALLOW IN    Anywhere                  
+[ 3] 443/udp                    ALLOW IN    Anywhere                  
+[ 4] 21000/tcp                  ALLOW IN    Anywhere                   # Mieru TCP
+[ 5] 21000/udp                  ALLOW IN    Anywhere                   # Mieru UDP
+[ 6] 22/tcp (v6)                ALLOW IN    Anywhere (v6)             
+[ 7] 443/tcp (v6)               ALLOW IN    Anywhere (v6)             
+[ 8] 443/udp (v6)               ALLOW IN    Anywhere (v6)             
+[ 9] 21000/tcp (v6)             ALLOW IN    Anywhere (v6)              # Mieru TCP
+[10] 21000/udp (v6)             ALLOW IN    Anywhere (v6)              # Mieru UDP
+

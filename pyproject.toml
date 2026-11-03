@@ -32,6 +32,7 @@ testpaths = ["tests"]
 addopts = "-q --strict-markers"
 markers = [
     "posix: тест требует Linux (fcntl, права файлов)",
+    "system: read-only проверки на настоящей системе (стенд)",
 ]
 
 [tool.coverage.run]
