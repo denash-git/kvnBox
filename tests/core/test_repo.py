@@ -55,7 +55,7 @@ def test_duplicate_slot_message(users: UsersRepo) -> None:
 
 
 def test_invalid_name_rejected(users: UsersRepo) -> None:
-    for bad in ("Мама", "a b", "a:b", "x" * 33):
+    for bad in ("Мама", "a b", "a:b", "x" * 33, "abc\n", "a.b"):
         with pytest.raises(RepoError, match="Имя"):
             users.add_connection(bad, Protocol.NAIVE)
 

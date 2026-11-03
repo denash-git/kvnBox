@@ -78,10 +78,22 @@ class UuidCredentials(_Model):
         return str(uuid.UUID(v))
 
 
+# Логин/пароль попадают в Caddyfile (`basic_auth user pass`) и в URL ссылок —
+# допускаем только «безопасные» символы.
+_TOKEN_RE = re.compile(r"[A-Za-z0-9._~!$&*+=@^-]+")
+
+
 class PasswordCredentials(_Model):
     kind: Literal["password"] = "password"
-    username: str = Field(min_length=1)
-    password: str = Field(min_length=1)
+    username: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("username", "password")
+    @classmethod
+    def _safe(cls, v: str) -> str:
+        if not _TOKEN_RE.fullmatch(v):
+            raise ValueError("недопустимые символы (пробелы, кавычки, скобки, «:», «/», «#»)")
+        return v
 
 
 Credentials = Annotated[
@@ -144,10 +156,10 @@ class Connection(_Model):
         return (self.protocol, self.transport)
 
 
-# Имя при создании пользователя. Заглавные разрешены: в реальных данных есть «A1»
-# (TUI TransferBox их пропускал, бот — нет). При загрузке допускается любое имя
-# без пробелов и «:».
-USER_NAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
+# Имя при создании пользователя (проверяется через fullmatch): латиница в любом
+# регистре, цифры (в т.ч. первым символом), «_» и «-». В реальных данных есть «A1».
+# При загрузке допускается любое имя без пробелов и «:».
+USER_NAME_RE = re.compile(r"[A-Za-z0-9_-]{1,32}")
 
 
 class User(_Model):
@@ -229,11 +241,13 @@ def _ensure_unique(what: str, values: list[str]) -> None:
 FAKE_SITE_TEMPLATES = ("aether", "chronos", "nexus", "stratum", "synapse")
 
 
+_URL_PATH_RE = re.compile(r"/[A-Za-z0-9/._~-]*")
+
+
 def _url_path(v: str) -> str:
-    if not v.startswith("/"):
-        raise ValueError("путь должен начинаться с /")
-    if any(ch.isspace() for ch in v):
-        raise ValueError("путь не должен содержать пробелов")
+    # путь вставляется в Caddyfile и sing-box: только безопасные символы
+    if not _URL_PATH_RE.fullmatch(v):
+        raise ValueError("путь: начинается с /, допустимы латиница, цифры и / . _ ~ -")
     return v
 
 
@@ -261,9 +275,10 @@ class VlessSettings(_Model):
     @field_validator("grpc_service")
     @classmethod
     def _service(cls, v: str) -> str:
-        if any(ch.isspace() for ch in v):
-            raise ValueError("имя gRPC-сервиса не должно содержать пробелов")
-        return v.lstrip("/")
+        v = v.lstrip("/")
+        if not re.fullmatch(r"[A-Za-z0-9._~-]*", v):
+            raise ValueError("имя gRPC-сервиса: латиница, цифры и . _ ~ -")
+        return v
 
 
 class MieruSettings(_Model):
@@ -312,6 +327,14 @@ class Settings(_Model):
     security: SecuritySettings = Field(default_factory=SecuritySettings)
     ssh: SshSettings = Field(default_factory=SshSettings)
     netbird: NetbirdSettings = Field(default_factory=NetbirdSettings)
+
+    @field_validator("admin_email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        v = v.strip()
+        if v and not re.fullmatch(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", v):
+            raise ValueError(f"некорректный email: {v}")
+        return v
 
     @field_validator("domain")
     @classmethod

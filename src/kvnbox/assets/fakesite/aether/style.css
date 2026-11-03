@@ -1,0 +1,75 @@
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background-color: #050805;
+  color: #33ff33;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  padding: 20px;
+}
+.console-box {
+  border: 2px solid #33ff33;
+  box-shadow: 0 0 15px rgba(51,255,51,0.2);
+  max-width: 1000px;
+  margin: 0 auto;
+  background-color: #020402;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.console-header {
+  background-color: #33ff33;
+  color: #020402;
+  padding: 8px 15px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+}
+.nav-bar {
+  display: flex;
+  background-color: #112211;
+  border-bottom: 2px solid #33ff33;
+}
+.nav-link {
+  color: #33ff33;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-right: 1px solid #33ff33;
+  font-weight: bold;
+}
+.nav-link:hover, .nav-link.active {
+  background-color: #33ff33;
+  color: #020402;
+}
+.content-area { padding: 30px; }
+.hero-title { font-size: 2.2rem; margin-bottom: 15px; border-bottom: 1px dashed #33ff33; padding-bottom: 10px; }
+.blink { animation: blink-animation 1s steps(2, start) infinite; }
+@keyframes blink-animation { to { visibility: hidden; } }
+.section-title { font-size: 1.5rem; margin: 25px 0 15px 0; text-transform: uppercase; color: #88ff88; }
+.grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+.grid-card { border: 1px solid #33ff33; padding: 20px; background-color: #050a05; }
+.grid-card h3 { font-size: 1.2rem; margin-bottom: 10px; color: #88ff88; }
+.terminal-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+.terminal-table th, .terminal-table td { border: 1px solid #33ff33; padding: 10px; text-align: left; }
+.terminal-table th { background-color: #112211; }
+.form-input {
+  width: 100%;
+  background: #020402;
+  border: 1px solid #33ff33;
+  color: #33ff33;
+  padding: 10px;
+  font-family: monospace;
+  margin-top: 5px;
+}
+.btn-submit {
+  background-color: #33ff33;
+  color: #020402;
+  border: none;
+  padding: 10px 20px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 15px;
+  font-family: monospace;
+}
+.btn-submit:hover { background-color: #88ff88; }
+.footer { border-top: 2px solid #33ff33; padding: 15px; text-align: center; font-size: 0.8rem; background-color: #090e09; }

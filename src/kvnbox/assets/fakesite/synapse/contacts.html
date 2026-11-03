@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synaptic Dynamics — Векторы</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="brutal-container">
+  <div class="header">
+    <a href="index.html" class="logo">SYNAPSE_DYN</a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-btn ">Главная</a>
+      <a href="services.html" class="nav-btn ">Синергия</a>
+      <a href="about.html" class="nav-btn ">Профиль</a>
+      <a href="contacts.html" class="nav-btn active">Связь</a>
+    </div>
+  </div>
+  
+    <div class="section">
+      <h2 class="section-title">Адаптивный запрос</h2>
+      <div style="max-width: 600px; border: 4px solid #1a1a1a; padding: 40px; box-shadow: 6px 6px 0px #1a1a1a; background-color: #ffde4d;">
+        <form onsubmit="event.preventDefault(); alert('Данные приняты.');">
+          <div>
+            <label style="font-weight:900;">Идентификатор узла</label>
+            <input type="text" class="form-field" placeholder="NODE-ID" required>
+          </div>
+          <div style="margin-top: 15px;">
+            <label style="font-weight:900;">Электронный вектор (Email)</label>
+            <input type="email" class="form-field" placeholder="vector@domain.io" required>
+          </div>
+          <div style="margin-top: 15px;">
+            <label style="font-weight:900;">Спецификация сдвига</label>
+            <textarea class="form-field" rows="4" placeholder="Опишите параметры..." required></textarea>
+          </div>
+          <button type="submit" class="btn-brutal">Отправить синаптический импульс</button>
+        </form>
+      </div>
+    </div>
+    
+  <div class="footer">
+    SYNAPTIC_DYNAMICS_LABS // 2026 // АВТОГЕНЕРАЦИЯ ВЕКТОРОВ
+  </div>
+</div>
+
+</body>
+</html>

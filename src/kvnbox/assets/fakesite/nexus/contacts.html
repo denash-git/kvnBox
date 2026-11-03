@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Nexus — Каналы</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="nav-container">
+    <a href="index.html" class="logo">QUANTUM_NEXUS</a>
+    <ul class="nav-menu">
+      <li><a href="index.html" class="">Главная</a></li>
+      <li><a href="services.html" class="">Спектры</a></li>
+      <li><a href="about.html" class="">Концепт</a></li>
+      <li><a href="contacts.html" class="active">Связь</a></li>
+    </ul>
+  </div>
+</header>
+
+    <section class="section">
+      <h2>Инициализировать соединение с Нексусом</h2>
+      <div class="contact-container">
+        <form onsubmit="event.preventDefault(); alert('Соединение установлено.');">
+          <div>
+            <label style="color:#f3f4f6; font-weight:600;">Идентификатор узла (ФИО)</label>
+            <input type="text" class="form-input" placeholder="Узел №918" required>
+          </div>
+          <div style="margin-top: 20px;">
+            <label style="color:#f3f4f6; font-weight:600;">Вектор связи (Email)</label>
+            <input type="email" class="form-input" placeholder="email@nexus.io" required>
+          </div>
+          <div style="margin-top: 20px;">
+            <label style="color:#f3f4f6; font-weight:600;">Параметры сдвига</label>
+            <textarea class="form-input" rows="4" placeholder="Введите конфигурацию сдвига..." required></textarea>
+          </div>
+          <button type="submit" class="btn-premium" style="margin-top: 20px; width: 100%; border: none;">Установить канал связи</button>
+        </form>
+      </div>
+    </section>
+    
+<footer class="footer">
+  <p>© 2026 Quantum Nexus Operations. Все данные зашифрованы алгоритмом фазовой модуляции.</p>
+</footer>
+
+</body>
+</html>

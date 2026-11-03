@@ -1,0 +1,95 @@
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background-color: #030712;
+  color: #9ca3af;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.6;
+}
+header {
+  background-color: rgba(3, 7, 18, 0.85);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid #1f2937;
+}
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f3f4f6;
+  text-decoration: none;
+  background: linear-gradient(to right, #00ffcc, #00b0ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.nav-menu { display: flex; list-style: none; gap: 30px; }
+.nav-menu a { color: #9ca3af; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+.nav-menu a:hover, .nav-menu a.active { color: #00ffcc; }
+.hero {
+  padding: 100px 20px;
+  text-align: center;
+  background: radial-gradient(circle at center, rgba(0,255,204,0.08) 0%, transparent 70%);
+}
+.hero h1 {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #f9fafb;
+  line-height: 1.1;
+  margin-bottom: 25px;
+}
+.hero p { font-size: 1.25rem; max-width: 700px; margin: 0 auto 35px auto; color: #9ca3af; }
+.btn-premium {
+  display: inline-block;
+  background: linear-gradient(to right, #00ffcc, #00b0ff);
+  color: #030712;
+  padding: 14px 35px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.btn-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,255,204,0.25);
+}
+.section { padding: 80px 20px; max-width: 1200px; margin: 0 auto; }
+.section h2 { font-size: 2.2rem; color: #f9fafb; margin-bottom: 40px; text-align: center; }
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+.nexus-card {
+  background-color: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 16px;
+  padding: 35px;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.nexus-card:hover { border-color: #00ffcc; transform: translateY(-5px); }
+.nexus-card h3 { font-size: 1.4rem; color: #f3f4f6; margin-bottom: 15px; }
+.contact-container {
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 20px;
+  padding: 40px;
+}
+.form-input {
+  width: 100%;
+  padding: 12px 18px;
+  background-color: #030712;
+  border: 1px solid #1e293b;
+  color: #f3f4f6;
+  border-radius: 8px;
+  margin-top: 8px;
+  outline: none;
+}
+.form-input:focus { border-color: #00ffcc; }
+.footer { background-color: #020617; border-top: 1px solid #1f2937; padding: 40px 20px; text-align: center; }

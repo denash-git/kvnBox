@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stratum Operational — Калибровка</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="dashboard-wrapper">
+  <div class="sidebar-nav">
+    <div class="sidebar-brand">STRATUM OPERATIONAL</div>
+    <ul class="sidebar-menu">
+      <li><a href="index.html" class="">Инфо-панель</a></li>
+      <li><a href="services.html" class="">Декомпозиция</a></li>
+      <li><a href="about.html" class="">Базовый стек</a></li>
+      <li><a href="contacts.html" class="active">Связь с узлом</a></li>
+    </ul>
+  </div>
+  <div class="main-body">
+    <div class="top-header">
+      <div class="dashboard-title">Админ-панель Stratum Synergy v4.2</div>
+      <div style="font-size: 0.85rem; font-weight: 600; color: #10b981;">● Соединение защищено</div>
+    </div>
+    <div class="dashboard-content">
+      
+    <div class="data-panel" style="max-width:600px; margin:0 auto;">
+      <div class="data-title">Запрос калибровочных данных у стратум-менеджера</div>
+      <form onsubmit="event.preventDefault(); alert('Параметры стратификации обновлены.');">
+        <div>
+          <label style="font-size:0.85rem; font-weight:600; color:#475569;">Имя узла</label>
+          <input type="text" class="form-input" placeholder="Узел №718" required>
+        </div>
+        <div style="margin-top: 15px;">
+          <label style="font-size:0.85rem; font-weight:600; color:#475569;">Email узла</label>
+          <input type="email" class="form-input" placeholder="node@stratum-synergy.com" required>
+        </div>
+        <div style="margin-top: 15px;">
+          <label style="font-size:0.85rem; font-weight:600; color:#475569;">Спецификация плотности</label>
+          <textarea class="form-input" rows="4" placeholder="Опишите семантические параметры..." required></textarea>
+        </div>
+        <button type="submit" class="btn-dashboard">Отправить параметры</button>
+      </form>
+    </div>
+    
+    </div>
+    <footer class="footer">
+      © 2026 Stratum Synergy Operations. Все процессы завершены штатно.
+    </footer>
+  </div>
+</div>
+
+</body>
+</html>

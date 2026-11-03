@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Эфирный Резонанс — Калибровка</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="console-box">
+  <div class="console-header">
+    <span>SYSTEM MONITOR v8.241</span>
+    <span>STATUS: OPERATIONAL</span>
+  </div>
+  <div class="nav-bar">
+    <a href="index.html" class="nav-link ">[ HOME ]</a>
+    <a href="services.html" class="nav-link ">[ DIAGNOSTICS ]</a>
+    <a href="about.html" class="nav-link ">[ ABOUT LOG ]</a>
+    <a href="contacts.html" class="nav-link active">[ CALIBRATE ]</a>
+  </div>
+  <div class="content-area">
+    
+    <h1 class="hero-title">КАЛИБРОВКА ЧАСТОТНЫХ ПАРАМЕТРОВ</h1>
+    <p>Отправьте калибровочный тензор для синхронизации вашего терминала с центральным узлом.</p>
+    
+    <form style="margin-top: 20px;" onsubmit="event.preventDefault(); alert('Тензор отправлен.');">
+      <div>
+        <label>ID Терминала</label>
+        <input type="text" class="form-input" placeholder="TERM-824" required>
+      </div>
+      <div style="margin-top: 15px;">
+        <label>Канал связи (Email)</label>
+        <input type="email" class="form-input" placeholder="address@domain.io" required>
+      </div>
+      <div style="margin-top: 15px;">
+        <label>Параметры сдвига</label>
+        <textarea class="form-input" rows="4" placeholder="Опишите частотные отклонения..." required></textarea>
+      </div>
+      <button type="submit" class="btn-submit">Отправить калибровочный вектор</button>
+    </form>
+    
+  </div>
+  <div class="footer">
+    AETHER_RESONANCE_NET_OPERATIONS © 2026 // NO_PERSONAL_DATA_FOUND // SECURITY: ENABLED
+  </div>
+</div>
+
+</body>
+</html>

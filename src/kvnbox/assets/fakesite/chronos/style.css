@@ -1,0 +1,71 @@
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background-color: #fdfaf2;
+  color: #3b3a36;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  line-height: 1.7;
+}
+.wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-left: 1px solid #e7e2d7;
+  border-right: 1px solid #e7e2d7;
+  min-height: 100vh;
+}
+header {
+  border-bottom: 3px double #b38644;
+  padding: 40px;
+  text-align: center;
+}
+.portal-title {
+  font-size: 2.5rem;
+  color: #800020;
+  font-weight: normal;
+  letter-spacing: 1px;
+}
+.portal-sub { font-size: 0.9rem; font-style: italic; color: #b38644; margin-top: 5px; }
+nav {
+  border-bottom: 1px solid #e7e2d7;
+  display: flex;
+  justify-content: center;
+  background-color: #faf8f5;
+}
+nav a {
+  padding: 15px 30px;
+  text-decoration: none;
+  color: #555450;
+  font-size: 0.95rem;
+  border-right: 1px solid #e7e2d7;
+  transition: background-color 0.3s;
+}
+nav a:hover, nav a.active { background-color: #f5f0e6; color: #800020; }
+.main-layout { display: flex; }
+.main-content { flex: 3; padding: 40px; }
+.sidebar { flex: 1; padding: 40px 30px; border-left: 1px solid #e7e2d7; background-color: #fbfbf9; }
+.article-title { font-size: 1.8rem; color: #800020; font-weight: normal; margin-bottom: 15px; }
+.meta-info { font-size: 0.85rem; color: #b38644; font-style: italic; margin-bottom: 20px; }
+.sidebar-section h4 { font-size: 1.1rem; color: #800020; font-weight: normal; margin-bottom: 15px; border-bottom: 1px solid #b38644; padding-bottom: 5px; }
+.sidebar-list { list-style: none; }
+.sidebar-list li { margin-bottom: 12px; font-size: 0.9rem; }
+.sidebar-list a { color: #555450; text-decoration: none; }
+.sidebar-list a:hover { color: #800020; }
+.form-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #b38644;
+  font-family: inherit;
+  margin-top: 5px;
+}
+.btn-classic {
+  background-color: #800020;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-top: 15px;
+  font-family: inherit;
+}
+.btn-classic:hover { background-color: #b38644; }
+.footer { border-top: 3px double #b38644; padding: 30px; text-align: center; font-size: 0.85rem; color: #777672; }
