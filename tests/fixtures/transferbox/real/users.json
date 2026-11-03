@@ -1,0 +1,172 @@
+[
+  {
+    "nickname": "admin",
+    "protocol": "naive",
+    "credentials": {
+      "username": "admin_naive",
+      "password": "000000000000000000000001"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000001"
+  },
+  {
+    "nickname": "admin",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000002",
+      "type": "ws"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000002"
+  },
+  {
+    "nickname": "user1",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000003",
+      "type": "xhttp"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000003"
+  },
+  {
+    "nickname": "user1",
+    "protocol": "naive",
+    "credentials": {
+      "username": "user_00000004",
+      "password": "000000000000000000000004"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000003"
+  },
+  {
+    "nickname": "user2",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000005",
+      "type": "xhttp"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000004"
+  },
+  {
+    "nickname": "user3",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000006",
+      "type": "xhttp"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000005"
+  },
+  {
+    "nickname": "user3",
+    "protocol": "naive",
+    "credentials": {
+      "username": "user_00000007",
+      "password": "000000000000000000000007"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000005"
+  },
+  {
+    "nickname": "user4",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000008",
+      "type": "xhttp"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000006"
+  },
+  {
+    "nickname": "user4",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000009",
+      "type": "grpc"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000006"
+  },
+  {
+    "nickname": "user4",
+    "protocol": "naive",
+    "credentials": {
+      "username": "user_0000000a",
+      "password": "00000000000000000000000a"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000006"
+  },
+  {
+    "nickname": "user5",
+    "protocol": "naive",
+    "credentials": {
+      "username": "user_0000000b",
+      "password": "00000000000000000000000b"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000007"
+  },
+  {
+    "nickname": "user5",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000012",
+      "type": "xhttp"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000007"
+  },
+  {
+    "nickname": "USER6",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000013",
+      "type": "xhttp"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000008"
+  },
+  {
+    "nickname": "user2",
+    "protocol": "naive",
+    "credentials": {
+      "username": "user_0000000e",
+      "password": "00000000000000000000000e"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000004"
+  },
+  {
+    "nickname": "user2",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000015",
+      "type": "grpc"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000004"
+  },
+  {
+    "nickname": "USER6",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000016",
+      "type": "grpc"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000008"
+  },
+  {
+    "nickname": "user1",
+    "protocol": "vless",
+    "credentials": {
+      "uuid": "00000000-0000-4000-8000-000000000017",
+      "type": "grpc"
+    },
+    "enabled": true,
+    "sub_token": "0000000000000003"
+  }
+]

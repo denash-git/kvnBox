@@ -144,9 +144,10 @@ class Connection(_Model):
         return (self.protocol, self.transport)
 
 
-# Имя: как в Telegram-боте TransferBox. Используется при создании пользователя;
-# при загрузке старых данных допускается любое имя без пробелов и «:».
-USER_NAME_RE = re.compile(r"^[a-z0-9_-]{1,32}$")
+# Имя при создании пользователя. Заглавные разрешены: в реальных данных есть «A1»
+# (TUI TransferBox их пропускал, бот — нет). При загрузке допускается любое имя
+# без пробелов и «:».
+USER_NAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,32}$")
 
 
 class User(_Model):

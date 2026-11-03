@@ -55,9 +55,15 @@ def test_duplicate_slot_message(users: UsersRepo) -> None:
 
 
 def test_invalid_name_rejected(users: UsersRepo) -> None:
-    for bad in ("Мама", "a b", "UPPER", "x" * 33):
+    for bad in ("Мама", "a b", "a:b", "x" * 33):
         with pytest.raises(RepoError, match="Имя"):
             users.add_connection(bad, Protocol.NAIVE)
+
+
+def test_uppercase_name_allowed(users: UsersRepo) -> None:
+    # в реальных данных TransferBox есть пользователь «A1»
+    users.add_connection("A1", Protocol.VLESS, Transport.HTTPUPGRADE)
+    assert users.get("A1") is not None
 
 
 def test_unsupported_core_rejected(users: UsersRepo) -> None:

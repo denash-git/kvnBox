@@ -83,7 +83,7 @@ class UsersRepo:
             user = db.get(name)
             if user is None:
                 if not USER_NAME_RE.match(name):
-                    raise RepoError("Имя: только a-z, 0-9, «_» и «-», до 32 символов.")
+                    raise RepoError("Имя: только латиница, цифры, «_» и «-», до 32 символов.")
                 user = User(name=name)
                 db.users.append(user)
             if user.find(protocol, transport):
