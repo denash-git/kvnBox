@@ -199,11 +199,14 @@ async def run_update(cb: CallbackQuery, app: App) -> None:
     svc = UpdateService(app)
     try:
         check = await run(svc.check)
-        await run(svc.update, check.latest)
+        msg = await run(svc.update, check.latest)
     except ServiceError as e:
         await edit(
             cb, f"❌ <b>Ошибка обновления:</b>\n\n<code>{e}</code>", settings_update_keyboard(False)
         )
+        return
+    await edit(cb, f"✅ <b>{msg}</b>\n\nСлужба бота перезапускается...")
+    await run(svc.restart_bot)
 
 
 # ─── резервные копии ─────────────────────────────────────────────────────────

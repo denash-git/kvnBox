@@ -124,12 +124,13 @@ def test_alerts_disabled_still_tracks_state(jobs_env: Env) -> None:
 
 def test_check_updates_once_per_version(env: Env) -> None:
     sent = Sent()
-    releases = Releases(lambda url, t: json.dumps({"tag_name": "v9.9.9"}).encode())
+    tags = [{"name": "v9.9.9"}, {"name": "v10.0.0-rc1"}, {"name": "v9.10.0"}, {"name": "v1.0.0"}]
+    releases = Releases(lambda url, t: json.dumps(tags).encode())
     jobs = Jobs(env.app, telegram(sent), releases)
-    assert jobs.check_updates() == "9.9.9"
+    assert jobs.check_updates() == "9.10.0"  # semver, не по алфавиту; rc не считается
     assert jobs.check_updates() is None
     assert len(sent.texts) == 1 and __version__ in sent.texts[0]
-    assert (env.paths.root / ".update_cache").read_text().strip() == "9.9.9"
+    assert (env.paths.root / ".update_cache").read_text().strip() == "9.10.0"
 
 
 def test_check_updates_network_error(env: Env) -> None:

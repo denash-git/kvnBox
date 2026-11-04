@@ -91,3 +91,13 @@ class Ufw:
 
     def reload(self) -> Result:
         return self._ufw("reload")
+
+    def reset(self) -> Result:
+        """Все правила UFW — в исходное состояние, фаервол выключен."""
+        return self._ufw("--force", "reset")
+
+    def default(self, policy: str, direction: str) -> Result:
+        return self._ufw("default", policy, direction)
+
+    def enable(self) -> Result:
+        return self._ufw("--force", "enable")

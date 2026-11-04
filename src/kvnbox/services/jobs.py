@@ -144,7 +144,7 @@ class Jobs:
     def refresh_update_cache(self) -> str | None:
         """Последняя версия панели → `.update_cache` (бейдж в шапке меню)."""
         try:
-            latest = version_of(self.releases.latest_tag(PANEL_REPO))
+            latest = version_of(self.releases.latest_version_tag(PANEL_REPO))
         except ReleaseError:
             return None
         atomic_write_text(self.app.paths.root / ".update_cache", latest + "\n", 0o644)

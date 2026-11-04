@@ -31,6 +31,7 @@ from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.apply import Applier, ApplyResult
 from kvnbox.services.backup import BackupService, PasswordRequired
+from kvnbox.services.firewall import FirewallService
 from kvnbox.services.jobs import Jobs
 from kvnbox.services.modules import BbrModule, MieruModule, SingboxModule
 from kvnbox.services.schedule import write_cron
@@ -326,6 +327,13 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("path", nargs="?")
     sp.add_argument("--password")
 
+    fw = group("firewall", "фаервол UFW")
+    cmd(
+        fw,
+        "setup",
+        _say(lambda app, a: FirewallService(app).setup()),
+        "исходные правила: SSH и 443 (используется установщиком)",
+    )
     sec = group("security", "защита от сканеров")
     cmd(sec, "status", cmd_security_status, "состояние и заблокированные IP")
     cmd(sec, "enable", _say(lambda app, a: SecurityService(app).enable()), "включить")

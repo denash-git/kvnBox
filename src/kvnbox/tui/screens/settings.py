@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 
 from kvnbox.services import ServiceError
@@ -15,6 +16,8 @@ from kvnbox.services.update import UpdateService
 from kvnbox.tui.menu import Menu
 from kvnbox.tui.term import BLUE, BOLD, CYAN, DIM, GREEN, RED, RESET, YELLOW
 from kvnbox.tui.widgets import BACK
+
+MENU_BIN = "/usr/local/bin/menu"
 
 TEMPLATES = [
     ("Aether Resonance (Эфирный Резонанс)", "aether"),
@@ -552,9 +555,17 @@ def update_panel_menu(m: Menu) -> None:
     answer = m.ui.read_prompt("Обновить панель? [y/N]: ")
     if answer in ("y", "Y", "д", "Д"):
         m.screen("Настройки → Обновление панели")
+        m.ui.center_print(f"{DIM}[*] Установка обновлений...{RESET}")
         try:
-            m.ok(svc.update(check.latest))
+            msg = svc.update(check.latest)
         except ServiceError as e:
             m.ui.out()
             m.fail(str(e))
+            m.ui.pause()
+            return
+        svc.restart_bot()
+        m.ui.out()
+        m.ok(msg)
+        m.ui.center_print("Панель управления будет перезапущена...")
         m.ui.pause()
+        os.execv(MENU_BIN, [MENU_BIN])  # новая версия кода

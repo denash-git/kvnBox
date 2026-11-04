@@ -201,12 +201,10 @@ def test_users_service_survives_bad_name_without_apply(env: Env) -> None:
 
 
 def test_update_check_no_releases_vs_network(env: Env) -> None:
-    import urllib.error
-
     from kvnbox.services.update import UpdateService
 
     def not_found(url: str, timeout: float) -> bytes:
-        raise urllib.error.HTTPError(url, 404, "Not Found", None, None)  # type: ignore[arg-type]
+        return b"[]"  # репозиторий есть, тегов версий нет
 
     def offline(url: str, timeout: float) -> bytes:
         raise OSError("network is unreachable")

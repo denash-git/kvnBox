@@ -57,6 +57,21 @@ class Paths:
     def fakesite_dir(self) -> Path:
         return self.root / "fakesite"
 
+    # ── код панели (D-039) ───────────────────────────────────────────────────
+    @property
+    def releases_dir(self) -> Path:
+        """Распакованные версии панели: `releases/<версия>/src/kvnbox`."""
+        return self.root / "releases"
+
+    @property
+    def app_link(self) -> Path:
+        """Ссылка на текущую версию в `releases/` (её `src` подключён к venv через .pth)."""
+        return self.root / "app"
+
+    @property
+    def venv(self) -> Path:
+        return self.root / ".venv"
+
     # ── конфиги ядер ─────────────────────────────────────────────────────────
     @property
     def caddy_config(self) -> Path:
