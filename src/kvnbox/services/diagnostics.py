@@ -94,7 +94,10 @@ class DiagnosticsService:
             if not server_id.isdigit():
                 raise ServiceError("Неверный ID сервера.")
             argv += ["-s", server_id]
-        return self.app.runner.run(argv, timeout=180).output
+        res = self.app.runner.run(argv, timeout=180)
+        # при первом запуске Ookla пишет лицензию в stderr — результат в stdout
+        # (`.output` отдал бы лицензию вместо замера; приёмка, этап 9)
+        return res.stdout if res.ok and res.stdout.strip() else res.output
 
     def speedtest_json(self) -> str:
         """Для бота: JSON Ookla, при неудаче — обычный текстовый вывод."""

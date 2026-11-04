@@ -98,13 +98,15 @@ class _cbreak:
         import tty
 
         self.saved = termios.tcgetattr(self.fd)
-        tty.setcbreak(self.fd)
+        # TCSANOW: по умолчанию setcbreak использует TCSAFLUSH и выбрасывает
+        # уже пришедшие клавиши — быстрые/зажатые стрелки терялись (приёмка, этап 9)
+        tty.setcbreak(self.fd, termios.TCSANOW)
 
     def __exit__(self, *exc: object) -> None:
         import termios
 
         if self.saved is not None:
-            termios.tcsetattr(self.fd, termios.TCSADRAIN, self.saved)
+            termios.tcsetattr(self.fd, termios.TCSANOW, self.saved)
 
 
 class FakeTerminal:

@@ -78,6 +78,20 @@ class Paths:
         return self.etc / "caddy" / "Caddyfile"
 
     @property
+    def caddy_unit(self) -> Path:
+        return self.etc / "systemd" / "system" / "caddy.service"
+
+    @property
+    def caddy_data(self) -> Path:
+        """Сертификаты и состояние Caddy (XDG_DATA_HOME=/var/lib в службе)."""
+        return self.etc.parent / "var" / "lib" / "caddy"
+
+    @property
+    def caddy_legacy_data(self) -> Path:
+        """Где Caddy хранил сертификаты без HOME (TransferBox, kvnBox 0.1.0): «./caddy» от /."""
+        return self.etc.parent / "caddy"
+
+    @property
     def singbox_config(self) -> Path:
         return self.etc / "sing-box" / "config.json"
 

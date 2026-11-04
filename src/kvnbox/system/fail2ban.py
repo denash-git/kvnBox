@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -176,6 +177,18 @@ class Fail2ban:
         res = self.systemd.restart("fail2ban")
         if not res.ok:
             raise SecurityError(f"Не удалось запустить fail2ban: {res.output}")
+        # служба уже «active», но сокет клиента появляется позже: без ожидания
+        # статус сразу после включения пустой (приёмка, этап 9)
+        if not self.wait_ready():
+            raise SecurityError("fail2ban запущен, но не отвечает (fail2ban-client ping).")
+
+    def wait_ready(self, timeout: float = 20) -> bool:
+        deadline = time.monotonic() + timeout
+        while not self.runner.run(["fail2ban-client", "ping"], timeout=5).ok:
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(0.5)
+        return True
 
     def disable(self) -> None:
         self.unban_all()

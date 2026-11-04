@@ -17,6 +17,7 @@ from kvnbox.core.storage import atomic_write_text
 from kvnbox.cores.base import RenderedFile
 from kvnbox.render import RenderPlan, render_all
 from kvnbox.services.app import App
+from kvnbox.system.caddy_unit import ensure_caddy_unit
 from kvnbox.system.files import read_text, replace_directory, write_file
 
 CADDY = "caddy"
@@ -50,12 +51,16 @@ class Applier:
         log.append("конфигурации проверены")
 
         self.sync_fakesite()
+        # служба caddy — тоже часть конфигурации: исправления приходят с обновлением
+        unit_changed = ensure_caddy_unit(self.paths, self.app.systemd)
+        if unit_changed:
+            log.append("служба caddy обновлена")
         previous = {f.path: read_text(f.path) for f in plan.files}
         for f in plan.files:
             write_file(f)
         log.append(f"записано файлов: {len(plan.files)}")
 
-        problem = self._restart_core()
+        problem = self._restart_core(full=unit_changed)
         if problem:
             self._rollback(plan, previous)
             return ApplyResult(False, f"{problem}. Прежняя конфигурация восстановлена.", log)
@@ -111,8 +116,13 @@ class Applier:
     def _mita_paths(self) -> set[Path]:
         return {self.paths.mita_config, self.paths.mita_service_override}
 
-    def _restart_core(self) -> str | None:
-        res = self.app.systemd.reload_or_restart(CADDY)
+    def _restart_core(self, full: bool = False) -> str | None:
+        # новое окружение службы применяется только полным перезапуском
+        res = (
+            self.app.systemd.restart_clean(CADDY)
+            if full
+            else self.app.systemd.reload_or_restart(CADDY)
+        )
         if not res.ok:
             return f"Не удалось перезапустить caddy: {res.output}"
         res = self.app.systemd.restart_clean(SINGBOX)

@@ -2,7 +2,7 @@
 # =============================================================================
 # kvnBox — установщик панели управления прокси-сервером (Debian 13)
 #
-#   bash <(curl -fsSL https://raw.githubusercontent.com/denash-git/kvnBox/main/install.sh)
+#   bash <(wget -qO- https://raw.githubusercontent.com/denash-git/kvnBox/main/install.sh)
 #
 # Подробный вывод всех команд — в /var/log/kvnbox-install.log, на экране —
 # только этапы: «-» ждёт, спиннер — выполняется, «✓» — готово (D-037).
@@ -321,13 +321,19 @@ step_go() {
 
 step_caddy() {
     if caddy_ready; then NOTE="уже установлен, с NaiveProxy"; return 0; fi
-    export GOROOT="$WORK/go" GOPATH="$WORK/gopath" GOBIN="$WORK/bin"
-    export GOCACHE="$WORK/gocache" GOTMPDIR="$WORK/gotmp" GOFLAGS=-modcacherw CGO_ENABLED=0
-    export PATH="$GOBIN:$GOROOT/bin:$PATH"
-    mkdir -p "$GOPATH" "$GOBIN" "$GOCACHE" "$GOTMPDIR"
-    go install "github.com/caddyserver/xcaddy/cmd/xcaddy@${XCADDY_VERSION}" || return 1
-    xcaddy build "$CADDY_VERSION" --output "$WORK/caddy" \
-        --with "github.com/caddyserver/forwardproxy=${FORWARDPROXY_MODULE}" || return 1
+    # Подоболочка: окружение сборки не уходит в следующие этапы. HOME — временный:
+    # Go пишет настройки и телеметрию в ~/.config/go, после установки следов нет.
+    (
+        export HOME="$WORK/home" GOTELEMETRY=off
+        export GOROOT="$WORK/go" GOPATH="$WORK/gopath" GOBIN="$WORK/bin"
+        export GOCACHE="$WORK/gocache" GOTMPDIR="$WORK/gotmp" GOFLAGS=-modcacherw CGO_ENABLED=0
+        export PATH="$GOBIN:$GOROOT/bin:$PATH"
+        mkdir -p "$HOME" "$GOPATH" "$GOBIN" "$GOCACHE" "$GOTMPDIR"
+        go telemetry off 2>/dev/null
+        go install "github.com/caddyserver/xcaddy/cmd/xcaddy@${XCADDY_VERSION}" || exit 1
+        xcaddy build "$CADDY_VERSION" --output "$WORK/caddy" \
+            --with "github.com/caddyserver/forwardproxy=${FORWARDPROXY_MODULE}" || exit 1
+    ) || return 1
     has_naive "$WORK/caddy" || return 1
     install -m 755 "$WORK/caddy" "${CADDY_BIN}.new" && mv -f "${CADDY_BIN}.new" "$CADDY_BIN" || return 1
     setcap cap_net_bind_service=+ep "$CADDY_BIN" || return 1
@@ -336,7 +342,7 @@ step_caddy() {
 
 step_cleanup() {
     local w="${WORK:?}"
-    rm -rf "${w:?}/go" "${w:?}/gopath" "${w:?}/bin" "${w:?}/gocache" "${w:?}/gotmp" "${w:?}/caddy"
+    rm -rf "${w:?}/go" "${w:?}/gopath" "${w:?}/bin" "${w:?}/gocache" "${w:?}/gotmp" "${w:?}/caddy" "${w:?}/home"
     if [[ -n "$SWAPFILE" ]]; then
         swapoff "$SWAPFILE" && rm -f "$SWAPFILE" && SWAPFILE=""
     fi
@@ -365,7 +371,7 @@ step_venv() {
         rm -rf "$VENV"
         python3 -m venv "$VENV" || return 1
     fi
-    "$VENV/bin/pip" install -q --disable-pip-version-check --require-hashes \
+    "$VENV/bin/pip" install -q --disable-pip-version-check --no-cache-dir --require-hashes \
         -r "${ROOT}/app/requirements.lock" || return 1
     local site
     site=$("$VENV/bin/python" -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])') || return 1
@@ -392,26 +398,13 @@ EOF
 }
 
 step_services() {
-    cat >/etc/systemd/system/caddy.service <<EOF
-[Unit]
-Description=Caddy Frontend Service
-After=network.target network-online.target
-Requires=network-online.target
-
-[Service]
-Type=notify
-ExecStart=${CADDY_BIN} run --config /etc/caddy/Caddyfile --environ
-ExecReload=${CADDY_BIN} reload --config /etc/caddy/Caddyfile --force
-ExecStop=${CADDY_BIN} stop
-TimeoutStopSec=5s
-LimitNOFILE=1048576
-LimitNPROC=512
-Restart=on-failure
-RestartSec=5s
-
-[Install]
-WantedBy=multi-user.target
-EOF
+    # файл службы caddy пишет сама панель (он же обновляется при `kvnbox apply`)
+    "$VENV/bin/python" -c '
+from kvnbox.services.app import App
+from kvnbox.system.caddy_unit import ensure_caddy_unit
+app = App.create()
+ensure_caddy_unit(app.paths, app.systemd)
+' || return 1
     systemctl daemon-reload && systemctl enable caddy sing-box
 }
 

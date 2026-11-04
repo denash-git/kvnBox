@@ -356,7 +356,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     def confirm(app: App, a: argparse.Namespace) -> str:
         SshService(app).confirm_port_change(a.old_port)
-        return f"Правило для старого порта {a.old_port} убрано (кроме 22)."
+        if a.old_port == 22:  # как TransferBox: 22 в фаерволе не закрывается
+            return "Правило для порта 22 оставлено в фаерволе (запасной вход)."
+        return f"Правило для старого порта {a.old_port} убрано."
 
     sp = cmd(ssh, "confirm-port", _say(confirm), "убрать правило старого порта")
     sp.add_argument("old_port", type=int)

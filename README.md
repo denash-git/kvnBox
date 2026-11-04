@@ -7,6 +7,12 @@
 Debian 13 (amd64 / arm64), от root:
 
 ```bash
+bash <(wget -qO- https://raw.githubusercontent.com/denash-git/kvnBox/main/install.sh)
+```
+
+На чистом Debian `curl` обычно нет, а `wget` есть. Если есть `curl`:
+
+```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/denash-git/kvnBox/main/install.sh)
 ```
 

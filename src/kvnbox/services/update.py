@@ -152,6 +152,7 @@ class UpdateService:
                 "install",
                 "--quiet",
                 "--disable-pip-version-check",
+                "--no-cache-dir",
                 "--require-hashes",
                 "-r",
                 lock.as_posix(),
