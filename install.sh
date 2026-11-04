@@ -423,6 +423,15 @@ step_apply() {
 }
 
 step_security() {
+    # восстановление/переезд: не включать защиту, которую владелец выключил
+    if $REPAIR && ! "$VENV/bin/python" -c '
+import sys
+from kvnbox.services.app import App
+sys.exit(0 if App.create().settings.load().security.scanner_protection else 1)
+'; then
+        NOTE="выключена в настройках"
+        return 0
+    fi
     kvn security enable && return 0
     NOTE="не включилась (можно включить в меню: Настройки → Защита)"
     return 2
