@@ -96,6 +96,18 @@ class Paths:
         return self.etc / "sing-box" / "config.json"
 
     @property
+    def xray_config(self) -> Path:
+        return self.etc / "xray" / "config.json"
+
+    @property
+    def xray_unit(self) -> Path:
+        return self.etc / "systemd" / "system" / "xray.service"
+
+    @property
+    def xray_bin(self) -> Path:
+        return self.etc.parent / "usr" / "local" / "bin" / "xray"
+
+    @property
     def mita_config(self) -> Path:
         return self.etc / "mita" / "server.conf.json"
 

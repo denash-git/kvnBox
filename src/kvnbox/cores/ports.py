@@ -18,3 +18,11 @@ VLESS = {
     Transport.GRPC: 10003,
     Transport.HTTPUPGRADE: 10004,
 }
+
+# Ядро Xray (этап 11): свои локальные порты; Caddy разводит трафик по пути
+XRAY = {
+    Transport.WS: 10012,
+    Transport.GRPC: 10013,
+    Transport.HTTPUPGRADE: 10014,
+    Transport.XHTTP: 10015,
+}

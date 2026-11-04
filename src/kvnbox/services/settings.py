@@ -73,6 +73,24 @@ class SettingsService:
 
         return self.update(change)
 
+    def set_path(self, core: str, field: str, value: str) -> ApplyResult:
+        """Путь одного ядра («vless» — sing-box, «xray»): ws_path, grpc_service,
+        httpupgrade_path, xhttp_path. Совпадения путей ловит модель Settings."""
+        if core not in ("vless", "xray") or field not in (
+            "ws_path",
+            "grpc_service",
+            "httpupgrade_path",
+            "xhttp_path",
+        ):
+            raise ServiceError(f"Неизвестная настройка пути: {core}.{field}")
+        if core == "xray" and not value.strip("/"):
+            raise ServiceError("У Xray путь и имя сервиса не могут быть пустыми.")
+
+        def change(s: Settings) -> None:
+            setattr(getattr(s, core), field, value)
+
+        return self.update(change)
+
     def set_fqdn(self, fqdn: str) -> None:
         """Имя хоста VPS: hostnamectl + замена старого имени в /etc/hosts (как в TransferBox)."""
         fqdn = fqdn.replace(" ", "")

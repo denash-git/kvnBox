@@ -448,6 +448,15 @@ step_init() {
 
 step_firewall() { kvn firewall setup; }
 
+step_xray() {
+    # новая установка: Xray ставится сразу (версия — XRAY_VERSION из versions.env),
+    # служба включится сама с первым подключением на Xray (Q-011)
+    if [[ -x /usr/local/bin/xray ]]; then NOTE="уже установлен"; return 0; fi
+    kvn xray install && { NOTE="${XRAY_VERSION}, включится с первым подключением"; return 0; }
+    NOTE="не установлен (можно установить из меню: Модули → Xray)"
+    return 2
+}
+
 step_apply() {
     kvn apply || { NOTE="Конфигурация не применилась — подробности ниже."; return 1; }
 }
@@ -585,6 +594,7 @@ add_step step_venv        "Python-окружение"
 add_step step_commands    "Команды menu и kvnbox"
 add_step step_services    "Службы systemd"
 add_step step_init        "Первичная настройка"
+$REPAIR || add_step step_xray "Ядро Xray"
 add_step step_firewall    "Фаервол UFW"
 add_step step_apply       "Запуск прокси-серверов"
 add_step step_security    "Защита от сканеров"

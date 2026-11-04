@@ -5,9 +5,9 @@ from __future__ import annotations
 
 import time
 
-from kvnbox.core.models import Connection, Protocol, Transport, User
+from kvnbox.core.models import Connection, CoreKind, Protocol, Transport, User, supported_cores
 from kvnbox.services import ServiceError
-from kvnbox.services.users import MANAGE_LABELS, SHORT_LABELS, UserService
+from kvnbox.services.users import MANAGE_LABELS, SHORT_LABELS, UserService, core_suffix
 from kvnbox.tui.menu import Menu
 from kvnbox.tui.term import CYAN, DIM, GREEN, RED, RESET, YELLOW
 from kvnbox.tui.widgets import BACK
@@ -16,6 +16,7 @@ ADD_OPTIONS: list[tuple[str, Protocol, Transport | None]] = [
     ("VLESS over WebSocket", Protocol.VLESS, Transport.WS),
     ("VLESS over gRPC", Protocol.VLESS, Transport.GRPC),
     ("VLESS over HTTPUpgrade", Protocol.VLESS, Transport.HTTPUPGRADE),
+    ("VLESS over XHTTP (только Xray)", Protocol.VLESS, Transport.XHTTP),
     ("NaiveProxy", Protocol.NAIVE, None),
     ("Mieru", Protocol.MIERU, None),
 ]
@@ -68,7 +69,7 @@ def user_management_menu(m: Menu, nick: str) -> None:
         options = []
         for c in user.connections:
             status = f"{GREEN}активен{RESET}" if c.enabled else f"{RED}отключен{RESET}"
-            options.append(f"• {MANAGE_LABELS[c.slot]} [{status}]")
+            options.append(f"• {MANAGE_LABELS[c.slot]}{core_suffix(c)} [{status}]")
         n = len(options)
         options += [
             "[+] Добавить протокол",
@@ -104,7 +105,7 @@ def user_management_menu(m: Menu, nick: str) -> None:
 
 
 def protocol_management_menu(m: Menu, nick: str, conn: Connection) -> None:
-    label = MANAGE_LABELS[conn.slot]
+    label = MANAGE_LABELS[conn.slot] + core_suffix(conn)
     protocol, transport = conn.slot
     while True:
         user = m.app.users.get(nick)
@@ -205,14 +206,36 @@ def _offer_telegram(m: Menu, nick: str) -> None:
 
 def _available(m: Menu, user: User | None) -> list[tuple[str, Protocol, Transport | None]]:
     mieru_on = m.app.settings.load().mieru.enabled
+    xray_ready = _svc(m).xray_ready()
     out = []
     for label, protocol, transport in ADD_OPTIONS:
         if protocol is Protocol.MIERU and not mieru_on:
+            continue
+        if transport is Transport.XHTTP and not xray_ready:
             continue
         if user is not None and user.find(protocol, transport) is not None:
             continue
         out.append((label, protocol, transport))
     return out
+
+
+CORE_CANCEL = "cancel"
+
+
+def _choose_core(
+    m: Menu, nick: str, label: str, protocol: Protocol, transport: Transport | None
+) -> CoreKind | str:
+    """Шаг 2 добавления — ядро (этап 11). Спрашиваем, только если выбор есть:
+    VLESS WS/gRPC/HTTPUpgrade и Xray установлен. Ядро потом не меняется (Q-010)."""
+    cores = supported_cores(protocol, transport)
+    if len(cores) == 1:
+        return cores[0]
+    if not _svc(m).xray_ready():
+        return CoreKind.SINGBOX
+    choice = m.select(f"Ядро для {nick}: {label}", ["sing-box (по умолчанию)", "Xray", "Отмена"])
+    if choice in (BACK, 2):
+        return CORE_CANCEL
+    return CoreKind.SINGBOX if choice == 0 else CoreKind.XRAY
 
 
 def add_protocol_to_user(m: Menu, nick: str) -> None:
@@ -225,18 +248,21 @@ def add_protocol_to_user(m: Menu, nick: str) -> None:
     choice = m.select(f"Добавить протокол для {nick}", [o[0] for o in options] + ["Отмена"])
     if choice in (BACK, len(options)):
         return
-    _, protocol, transport = options[choice]
+    label, protocol, transport = options[choice]
+    core = _choose_core(m, nick, label, protocol, transport)
+    if not isinstance(core, CoreKind):
+        return
     m.screen(f"Добавление протокола для {nick}")
     m.progress("Добавление протокола...")
     try:
-        conn, res = _svc(m).add_connection(nick, protocol, transport)
+        conn, res = _svc(m).add_connection(nick, protocol, transport, core)
     except ServiceError as e:
         _error(m, f"Ошибка добавления протокола: {e}")
         return
     if not res.ok:
         _error(m, f"Ошибка добавления протокола: {res.message}")
         return
-    label = MANAGE_LABELS[conn.slot]
+    label = MANAGE_LABELS[conn.slot] + core_suffix(conn)
     m.ui.clear_screen()
     m.header(f"Протокол добавлен: {nick} ({label})")
     _print_connection(m, _svc(m).get(nick), conn)
@@ -280,16 +306,18 @@ def create_user_menu(m: Menu) -> None:
         answer = m.ui.read_prompt("Хотите добавить ему дополнительный протокол? [y/N]: ")
         if answer not in ("y", "Y"):
             return
-    mieru_on = m.app.settings.load().mieru.enabled
-    options = [o for o in ADD_OPTIONS if o[1] is not Protocol.MIERU or mieru_on]
+    options = _available(m, existing)
     choice = m.select(f"Протокол для {nick}", [o[0] for o in options] + ["Отмена"])
     if choice in (BACK, len(options)):
         return
-    _, protocol, transport = options[choice]
+    label, protocol, transport = options[choice]
+    core = _choose_core(m, nick, label, protocol, transport)
+    if not isinstance(core, CoreKind):
+        return
     m.screen(f"Создание пользователя: {nick}")
     m.progress("Добавление пользователя...")
     try:
-        conn, res = _svc(m).add_connection(nick, protocol, transport)
+        conn, res = _svc(m).add_connection(nick, protocol, transport, core)
     except ServiceError as e:
         _error(m, f"Ошибка создания пользователя: {e}")
         return
@@ -297,7 +325,7 @@ def create_user_menu(m: Menu) -> None:
         _error(m, f"Ошибка создания пользователя: {res.message}")
         return
     # как при добавлении протокола: сразу ссылка и QR, затем Telegram
-    label = MANAGE_LABELS[conn.slot]
+    label = MANAGE_LABELS[conn.slot] + core_suffix(conn)
     m.ui.clear_screen()
     m.header(f"Пользователь создан: {nick} ({label})")
     _print_connection(m, _svc(m).get(nick), conn)

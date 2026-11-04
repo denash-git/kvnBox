@@ -24,7 +24,10 @@ from kvnbox.core.models import (
     User,
     UsersDB,
     UuidCredentials,
+    VlessSettings,
     new_password,
+    random_name,
+    random_path,
 )
 from kvnbox.core.storage import StorageError
 from kvnbox.services import ServiceError
@@ -33,7 +36,13 @@ from kvnbox.services.apply import Applier, ApplyResult
 from kvnbox.services.backup import BackupService, PasswordRequired
 from kvnbox.services.firewall import FirewallService
 from kvnbox.services.jobs import Jobs
-from kvnbox.services.modules import BbrModule, MieruModule, SingboxModule, UpdateOutcome
+from kvnbox.services.modules import (
+    BbrModule,
+    MieruModule,
+    SingboxModule,
+    UpdateOutcome,
+    XrayModule,
+)
 from kvnbox.services.schedule import write_cron
 from kvnbox.services.security import SecurityService
 from kvnbox.services.ssh import SshService
@@ -46,7 +55,7 @@ SLOTS: dict[str, tuple[Protocol, Transport | None]] = {
     "vless-ws": (Protocol.VLESS, Transport.WS),
     "vless-grpc": (Protocol.VLESS, Transport.GRPC),
     "vless-httpupgrade": (Protocol.VLESS, Transport.HTTPUPGRADE),
-    "vless-xhttp": (Protocol.VLESS, Transport.HTTPUPGRADE),  # старое имя
+    "vless-xhttp": (Protocol.VLESS, Transport.XHTTP),  # настоящий XHTTP, только Xray
     "naive": (Protocol.NAIVE, None),
     "mieru": (Protocol.MIERU, None),
 }
@@ -83,8 +92,16 @@ def cmd_init(app: App, a: argparse.Namespace, out: TextIO) -> int:
         print("✗ Панель уже инициализирована (используйте --force для перезаписи).", file=out)
         return EXIT_FAIL
     fqdn = app.runner.run(["hostname", "-f"], timeout=10).stdout.strip()
+    # новые установки — случайные пути и имя gRPC-сервиса (Q-012): по сети их не угадать
+    vless = VlessSettings(
+        ws_path=random_path(), grpc_service=random_name(8), httpupgrade_path=random_path()
+    )
     settings = Settings(
-        domain=a.domain, admin_email=a.email or "", bbr_enabled=not a.no_bbr, fqdn=fqdn
+        domain=a.domain,
+        admin_email=a.email or "",
+        bbr_enabled=not a.no_bbr,
+        fqdn=fqdn,
+        vless=vless,
     )
     admin = User(
         name="admin",
@@ -149,7 +166,8 @@ def cmd_user_list(app: App, a: argparse.Namespace, out: TextIO) -> int:
 def cmd_user_add(app: App, a: argparse.Namespace, out: TextIO) -> int:
     protocol, transport = SLOTS[a.protocol]
     svc = UserService(app)
-    conn, res = svc.add_connection(a.name, protocol, transport)
+    core = CoreKind(a.core) if getattr(a, "core", None) else None
+    conn, res = svc.add_connection(a.name, protocol, transport, core)
     code = _result(res, out)
     if res.ok:
         print(f"{slot_label(conn)}: {svc.link(svc.get(a.name), conn)}", file=out)
@@ -321,6 +339,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp = cmd(users, "add", cmd_user_add, "добавить подключение (пользователь создаётся)")
     sp.add_argument("name")
     sp.add_argument("protocol", choices=list(SLOTS))
+    sp.add_argument(
+        "--core", choices=["singbox", "xray"], help="ядро для VLESS (по умолчанию sing-box)"
+    )
     sp = cmd(users, "remove", cmd_user_remove, "удалить пользователя или одно подключение")
     sp.add_argument("name")
     sp.add_argument("protocol", nargs="?", choices=list(SLOTS))
@@ -411,6 +432,33 @@ def build_parser() -> argparse.ArgumentParser:
         "сменить порт",
     )
     sp.add_argument("port", type=int)
+
+    xray = group("xray", "ядро Xray")
+    cmd(xray, "install", lambda app, a, out: _result(XrayModule(app).install(), out), "установить")
+    cmd(
+        xray,
+        "update",
+        lambda app, a, out: _outcome(XrayModule(app).safe_update(), out),
+        "обновить до последней версии (с возвратом прежней при сбое)",
+    )
+    cmd(
+        xray,
+        "enable",
+        lambda app, a, out: _result(XrayModule(app).set_enabled(True), out),
+        "включить",
+    )
+    cmd(
+        xray,
+        "disable",
+        lambda app, a, out: _result(XrayModule(app).set_enabled(False), out),
+        "отключить (ничего не удаляет)",
+    )
+    cmd(
+        xray,
+        "uninstall",
+        lambda app, a, out: _result(XrayModule(app).uninstall(), out),
+        "удалить (если на Xray нет подключений)",
+    )
 
     singbox = group("singbox", "модуль sing-box")
     cmd(

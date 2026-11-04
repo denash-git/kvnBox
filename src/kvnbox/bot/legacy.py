@@ -6,7 +6,12 @@ from __future__ import annotations
 
 from kvnbox.core.models import Connection, Protocol, Transport
 
-TYPE_BY_TRANSPORT = {Transport.WS: "ws", Transport.GRPC: "grpc", Transport.HTTPUPGRADE: "xhttp"}
+TYPE_BY_TRANSPORT = {
+    Transport.WS: "ws",
+    Transport.GRPC: "grpc",
+    Transport.HTTPUPGRADE: "xhttp",  # исторически (TransferBox); это HTTPUpgrade
+    Transport.XHTTP: "xh",  # настоящий XHTTP, только Xray (этап 11)
+}
 TRANSPORT_BY_TYPE = {v: k for k, v in TYPE_BY_TRANSPORT.items()}
 
 
@@ -17,7 +22,7 @@ def proto_type(conn: Connection) -> tuple[str, str]:
 
 # В подписях «xhttp» показывается как HTTPUpgrade (так он называется в sing-box);
 # в callback_data остаётся «xhttp» — старые кнопки в чате продолжают работать.
-_TYPE_LABEL = {"xhttp": "HTTPUpgrade"}
+_TYPE_LABEL = {"xhttp": "HTTPUpgrade", "xh": "XHTTP"}
 
 
 def proto_label(proto: str, utype: str) -> str:

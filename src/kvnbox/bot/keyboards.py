@@ -9,6 +9,7 @@ from aiogram.types import InlineKeyboardMarkup as Kb
 
 from kvnbox.bot.legacy import proto_label, proto_type
 from kvnbox.core.models import User
+from kvnbox.services.users import core_suffix
 
 MAIN = Btn(text="« Главное меню", callback_data="menu:main")
 TO_SETTINGS = Btn(text="« Назад в Настройки", callback_data="settings:menu")
@@ -223,7 +224,7 @@ def user_info_keyboard(user: User) -> Kb:
     for conn in user.connections:
         proto, utype = proto_type(conn)
         status = "🟢" if conn.enabled else "🔴"
-        label = proto_label(proto, utype)
+        label = proto_label(proto, utype) + core_suffix(conn)
         rows.append(
             [
                 Btn(
@@ -233,7 +234,7 @@ def user_info_keyboard(user: User) -> Kb:
             ]
         )
     buttons = []
-    if len({c.slot for c in user.connections}) < 5:
+    if len({c.slot for c in user.connections}) < 6:  # 6 слотов с XHTTP (этап 11)
         buttons.append(Btn(text="➕ Протокол", callback_data=f"user:proto:add:{user.name}"))
     buttons.append(Btn(text="🌀 Подписка", callback_data=f"user:links:{user.name}"))
     rows.append(buttons)

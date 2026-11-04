@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 
 from kvnbox import __version__
+from kvnbox.core.models import CoreKind
 from kvnbox.services.app import App
 from kvnbox.services.status import StatusService
 from kvnbox.tui.term import BLUE, BOLD, GREEN, RED, RESET, YELLOW
@@ -39,6 +40,19 @@ def netbird_status(state: str, dot: bool = True) -> str:
         "needs_login": f"{YELLOW}{d}требует авторизации{RESET}",
         "connected": f"{GREEN}{d}подключен{RESET}",
     }.get(state, f"{RED}{d}отключен{RESET}")
+
+
+def xray_status(app: App, dot: bool = True) -> str:
+    """Xray (этап 11): работает / отключён в меню / ждёт первого подключения."""
+    d = "● " if dot else ""
+    if not app.settings.load().xray.enabled:
+        return f"{RED}{d}отключен{RESET}"
+    if app.systemd.is_active("xray"):
+        return f"{GREEN}{d}работает{RESET}"
+    has = any(c.core is CoreKind.XRAY for u in app.users.all() for c in u.connections)
+    if not has:
+        return f"{YELLOW}{d}ждёт подключений{RESET}"
+    return f"{RED}{d}не запущен{RESET}"
 
 
 def _version_key(v: str) -> tuple[int, ...]:
@@ -75,6 +89,9 @@ def collect(app: App) -> HeaderStatus:
             *_on_off(app.installed("mita") and sd.is_active("mita"), "работает", "не запущен"),
         ),
     ]
+    if app.installed("xray"):
+        text = xray_status(app)
+        rows.insert(3, ("Xray:", text, re.sub(r"\x1b\[[0-9;]*m", "", text)))
     if app.installed("netbird"):
         text = netbird_status(NetbirdModule(app).connection_state())
         rows.append(("NetBird:", text, re.sub(r"\x1b\[[0-9;]*m", "", text)))

@@ -24,10 +24,10 @@ from kvnbox.bot.keyboards import (
     users_list_keyboard,
 )
 from kvnbox.bot.legacy import TYPE_BY_TRANSPORT, parse_slot, proto_label, proto_type
-from kvnbox.core.models import Connection, Protocol, User
+from kvnbox.core.models import Connection, CoreKind, Protocol, User, supported_cores
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
-from kvnbox.services.users import UserService
+from kvnbox.services.users import UserService, core_suffix
 
 router = Router()
 
@@ -36,6 +36,7 @@ class AddUserStates(StatesGroup):
     waiting_nickname = State()
     waiting_protocol = State()
     waiting_type = State()
+    waiting_core = State()
 
 
 def _find(app: App, nick: str, proto: str, utype: str) -> tuple[User, Connection] | None:
@@ -46,12 +47,12 @@ def _find(app: App, nick: str, proto: str, utype: str) -> tuple[User, Connection
     return (user, conn) if conn else None
 
 
-def _proto_text(nick: str, proto: str, utype: str, enabled: bool) -> str:
+def _proto_text(nick: str, proto: str, utype: str, conn: Connection) -> str:
     return (
         f"⚙️ <b>Управление протоколом</b>\n\n"
         f"Пользователь: <code>{nick}</code>\n"
-        f"Конфигурация: <code>{proto_label(proto, utype)}</code>\n"
-        f"Статус: {'🟢 Включен' if enabled else '🔴 Выключен'}"
+        f"Конфигурация: <code>{proto_label(proto, utype)}{core_suffix(conn)}</code>\n"
+        f"Статус: {'🟢 Включен' if conn.enabled else '🔴 Выключен'}"
     )
 
 
@@ -107,7 +108,7 @@ async def proto_manage(cb: CallbackQuery, app: App) -> None:
     t = "" if utype == "none" else utype
     await edit(
         cb,
-        _proto_text(nick, proto, t, conn.enabled),
+        _proto_text(nick, proto, t, conn),
         proto_manage_keyboard(nick, proto, utype, conn.enabled),
     )
     await cb.answer()
@@ -128,7 +129,7 @@ async def proto_toggle(cb: CallbackQuery, app: App) -> None:
     if found:
         await edit(
             cb,
-            _proto_text(nick, proto, t, found[1].enabled),
+            _proto_text(nick, proto, t, found[1]),
             proto_manage_keyboard(nick, proto, utype, found[1].enabled),
         )
 
@@ -247,6 +248,13 @@ PROTO_BUTTONS = {
     "mieru": Btn(text="Mieru", callback_data="user:new:proto:mieru"),
 }
 VLESS_TYPES = [("ws", "WebSocket (ws)"), ("grpc", "gRPC"), ("xhttp", "HTTPUpgrade")]
+# этап 11: настоящий XHTTP — callback «xh» («xhttp» исторически означает HTTPUpgrade)
+XHTTP_TYPE = ("xh", "XHTTP (только Xray)")
+CORE_SUFFIX = {"singbox": " · sing-box", "xray": " · Xray"}
+
+
+def _vless_types(app: App) -> list[tuple[str, str]]:
+    return VLESS_TYPES + ([XHTTP_TYPE] if UserService(app).xray_ready() else [])
 
 
 def _existing_types(user: User | None) -> set[str]:
@@ -271,7 +279,7 @@ async def proto_add(cb: CallbackQuery, app: App, state: FSMContext) -> None:
     user = app.users.get(nick)
     have = {c.protocol.value for c in user.connections} if user else set()
     rows = []
-    if len(_existing_types(user)) < 3:
+    if len(_existing_types(user)) < len(_vless_types(app)):
         rows.append([PROTO_BUTTONS["vless"]])
     rows += [[PROTO_BUTTONS[p]] for p in ("naive", "mieru") if p not in have]
     rows.append([Btn(text="❌ Отмена", callback_data=f"user:info:{nick}")])
@@ -332,7 +340,7 @@ async def new_proto(cb: CallbackQuery, app: App, state: FSMContext) -> None:
         have = _existing_types(app.users.get(nick))
         rows = [
             [Btn(text=label, callback_data=f"user:new:type:{t}")]
-            for t, label in VLESS_TYPES
+            for t, label in _vless_types(app)
             if t not in have
         ]
         rows.append([Btn(text="❌ Отмена", callback_data=_cancel(app, nick))])
@@ -352,18 +360,51 @@ async def new_proto(cb: CallbackQuery, app: App, state: FSMContext) -> None:
 async def new_type(cb: CallbackQuery, app: App, state: FSMContext) -> None:
     utype = (cb.data or "").split(":")[3]
     await state.update_data(type=utype)
-    data = await state.get_data()
-    await _confirm(cb, app, data.get("nickname", ""), data.get("protocol", "vless"), utype)
+    nick = (await state.get_data()).get("nickname", "")
+    cores = supported_cores(*parse_slot("vless", utype))
+    if len(cores) > 1 and UserService(app).xray_ready():
+        # шаг «ядро» (этап 11) — только когда выбор есть; ядро потом не меняется
+        await state.set_state(AddUserStates.waiting_core)
+        await edit(
+            cb,
+            f"Никнейм: <code>{nick}</code>\nПротокол: <code>{proto_label('vless', utype)}</code>"
+            "\n\nВыберите ядро:",
+            Kb(
+                inline_keyboard=[
+                    [Btn(text="sing-box (по умолчанию)", callback_data="user:new:core:singbox")],
+                    [Btn(text="Xray", callback_data="user:new:core:xray")],
+                    [Btn(text="❌ Отмена", callback_data=_cancel(app, nick))],
+                ]
+            ),
+        )
+    else:
+        core = cores[0].value if cores else ""
+        await state.update_data(core=core)
+        await _confirm(cb, app, nick, "vless", utype, core)
     await cb.answer()
 
 
-async def _confirm(cb: CallbackQuery, app: App, nick: str, proto: str, utype: str) -> None:
+@router.callback_query(F.data.startswith("user:new:core:"))
+async def new_core(cb: CallbackQuery, app: App, state: FSMContext) -> None:
+    core = (cb.data or "").split(":")[3]
+    if core not in CORE_SUFFIX:
+        await cb.answer()
+        return
+    await state.update_data(core=core)
+    data = await state.get_data()
+    await _confirm(cb, app, data.get("nickname", ""), "vless", data.get("type", ""), core)
+    await cb.answer()
+
+
+async def _confirm(
+    cb: CallbackQuery, app: App, nick: str, proto: str, utype: str, core: str = ""
+) -> None:
     await edit(
         cb,
         (
             "⚙️ <b>Подтверждение создания/добавления:</b>\n\n"
             f"Никнейм: <code>{nick}</code>\n"
-            f"Протокол: <code>{proto_label(proto, utype)}</code>\n\n"
+            f"Протокол: <code>{proto_label(proto, utype)}{CORE_SUFFIX.get(core, '')}</code>\n\n"
             "Выполнить операцию?"
         ),
         Kb(
@@ -383,12 +424,13 @@ async def new_confirm(cb: CallbackQuery, app: App, state: FSMContext) -> None:
     await state.clear()
     nick, proto = data.get("nickname", ""), data.get("protocol", "")
     utype = data.get("type", "") or ("ws" if proto == "vless" else "")
+    core = CoreKind(data["core"]) if data.get("core") in CORE_SUFFIX else None
     if not nick or proto not in PROTO_BUTTONS:
         await cb.answer()
         return
     await edit(cb, f"⏳ Добавление конфигурации для <code>{nick}</code>...")
     try:
-        _, res = await run(UserService(app).add_connection, nick, *parse_slot(proto, utype))
+        _, res = await run(UserService(app).add_connection, nick, *parse_slot(proto, utype), core)
         ok, msg = res.ok, res.message
     except ServiceError as e:  # в TransferBox ошибка добавления показывалась как успех
         ok, msg = False, str(e)

@@ -172,6 +172,7 @@ def _slot_label(protocol: Protocol, transport: Transport | None) -> str:
         (Protocol.VLESS, Transport.WS): "VLESS over WS",
         (Protocol.VLESS, Transport.GRPC): "VLESS over GRPC",
         (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS over HTTPUpgrade",
+        (Protocol.VLESS, Transport.XHTTP): "VLESS over XHTTP",
         (Protocol.NAIVE, None): "NaiveProxy",
         (Protocol.MIERU, None): "Mieru",
     }

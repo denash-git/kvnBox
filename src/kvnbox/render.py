@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from kvnbox.clients.subscription import build_subscriptions
 from kvnbox.core.models import Settings, User
 from kvnbox.core.paths import Paths
-from kvnbox.cores import caddy, mita, singbox
+from kvnbox.cores import caddy, mita, singbox, xray
 from kvnbox.cores.base import RenderedFile
 
 
@@ -27,6 +27,7 @@ def render_all(settings: Settings, users: Sequence[User], paths: Paths) -> Rende
     files = [
         *caddy.render(settings, users, paths),
         *singbox.render(settings, users, paths),
+        *xray.render(settings, users, paths),
         *mita.render(settings, users, paths),
     ]
     subscriptions = [

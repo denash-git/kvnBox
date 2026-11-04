@@ -15,15 +15,18 @@ from pathlib import Path
 from kvnbox.core.models import Settings
 from kvnbox.core.storage import atomic_write_text
 from kvnbox.cores.base import RenderedFile
+from kvnbox.cores.xray import xray_running
 from kvnbox.render import RenderPlan, render_all
 from kvnbox.services.app import App
 from kvnbox.services.schedule import write_cron
 from kvnbox.system.caddy_unit import ensure_caddy_unit
 from kvnbox.system.files import read_text, replace_directory, write_file
+from kvnbox.system.xray_unit import ensure_xray_unit
 
 CADDY = "caddy"
 SINGBOX = "sing-box"
 MITA = "mita"
+XRAY = "xray"
 MIERU_RULE_COMMENTS = ("Mieru TCP", "Mieru UDP")
 
 
@@ -43,8 +46,13 @@ class Applier:
 
     def apply(self) -> ApplyResult:
         settings = self.app.settings.load()
-        plan = render_all(settings, self.app.users.all(), self.paths)
+        users = self.app.users.all()
+        plan = render_all(settings, users, self.paths)
         log: list[str] = []
+        # Xray (этап 11): служба работает, только когда есть его подключения
+        xray_installed = self.app.installed("xray")
+        want_xray = xray_installed and xray_running(settings, users)
+        had_xray = xray_installed and self.app.systemd.is_active(XRAY)
 
         error = self.validate(plan)
         if error:
@@ -61,11 +69,15 @@ class Applier:
             write_file(f)
         log.append(f"записано файлов: {len(plan.files)}")
 
-        problem = self._restart_core(full=unit_changed)
+        problem = self._restart_core(full=unit_changed, xray=want_xray if xray_installed else None)
         if problem:
-            self._rollback(plan, previous)
+            self._rollback(plan, previous, xray=had_xray if xray_installed else None)
             return ApplyResult(False, f"{problem}. Прежняя конфигурация восстановлена.", log)
         log.append("caddy и sing-box перезапущены")
+        if want_xray:
+            log.append("xray перезапущен")
+        elif had_xray:
+            log.append("xray остановлен: подключений на Xray нет или он отключён")
 
         # подписки — только когда новая конфигурация уже работает
         replace_directory(self.paths.sub_dir, plan.subscriptions)
@@ -97,6 +109,14 @@ class Applier:
                     )
                     if not res.ok:
                         return f"Ошибка в конфигурации Caddy:\n{res.output}"
+                elif f.path == self.paths.xray_config and self.app.installed("xray"):
+                    tmp = staging / "xray.json"
+                    atomic_write_text(tmp, f.content)
+                    res = self.app.runner.run(
+                        ["xray", "run", "-test", "-config", str(tmp)], timeout=60
+                    )
+                    if not res.ok:
+                        return f"Ошибка в конфигурации Xray:\n{res.output}"
                 elif f.path == self.paths.singbox_config:
                     tmp = staging / "sing-box.json"
                     atomic_write_text(tmp, f.content)
@@ -119,7 +139,17 @@ class Applier:
     def _mita_paths(self) -> set[Path]:
         return {self.paths.mita_config, self.paths.mita_service_override}
 
-    def _restart_core(self, full: bool = False) -> str | None:
+    def _restart_core(self, full: bool = False, xray: bool | None = None) -> str | None:
+        """`xray`: True — запустить/перезапустить, False — остановить, None — не трогать."""
+        if xray is False:
+            self.app.systemd.stop(XRAY)
+            self.app.systemd.disable(XRAY)
+        elif xray:
+            ensure_xray_unit(self.paths, self.app.systemd)
+            self.app.systemd.enable(XRAY)
+            res = self.app.systemd.restart_clean(XRAY)
+            if not res.ok:
+                return f"Не удалось перезапустить xray: {res.output}"
         # новое окружение службы применяется только полным перезапуском
         res = (
             self.app.systemd.restart_clean(CADDY)
@@ -133,14 +163,16 @@ class Applier:
             return f"Не удалось перезапустить sing-box: {res.output}"
         return None
 
-    def _rollback(self, plan: RenderPlan, previous: dict[Path, str | None]) -> None:
+    def _rollback(
+        self, plan: RenderPlan, previous: dict[Path, str | None], xray: bool | None = None
+    ) -> None:
         for f in plan.files:
             content = previous.get(f.path)
             if content is None:
                 f.path.unlink(missing_ok=True)
             else:  # прежнее содержимое с правами и владельцем, которые нужны службе
                 write_file(RenderedFile(f.path, content, f.mode, f.owner, f.group))
-        self._restart_core()
+        self._restart_core(xray=xray)
 
     def _apply_mita(self, settings: Settings, mita_changed: bool) -> str | None:
         """Служба mita и правила фаервола для порта Mieru (как в TransferBox)."""

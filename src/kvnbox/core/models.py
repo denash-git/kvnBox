@@ -34,21 +34,26 @@ class Protocol(str, Enum):
 class Transport(str, Enum):
     WS = "ws"
     GRPC = "grpc"
-    # В меню и ссылках TransferBox называется «XHTTP», но в sing-box это HTTPUpgrade (D-015)
+    # В TransferBox назывался «XHTTP», но это HTTPUpgrade (D-015, D-040)
     HTTPUPGRADE = "httpupgrade"
+    # Настоящий XHTTP — только в Xray (этап 11)
+    XHTTP = "xhttp"
 
 
 class CoreKind(str, Enum):
     SINGBOX = "singbox"
+    XRAY = "xray"
     CADDY = "caddy"
     MITA = "mita"
 
 
 # Какие ядра умеют обслуживать протокол/транспорт. Первое — ядро по умолчанию.
+# Ядро выбирается при добавлении подключения и дальше не меняется (Q-010).
 SUPPORTED_CORES: dict[tuple[Protocol, Transport | None], tuple[CoreKind, ...]] = {
-    (Protocol.VLESS, Transport.WS): (CoreKind.SINGBOX,),
-    (Protocol.VLESS, Transport.GRPC): (CoreKind.SINGBOX,),
-    (Protocol.VLESS, Transport.HTTPUPGRADE): (CoreKind.SINGBOX,),
+    (Protocol.VLESS, Transport.WS): (CoreKind.SINGBOX, CoreKind.XRAY),
+    (Protocol.VLESS, Transport.GRPC): (CoreKind.SINGBOX, CoreKind.XRAY),
+    (Protocol.VLESS, Transport.HTTPUPGRADE): (CoreKind.SINGBOX, CoreKind.XRAY),
+    (Protocol.VLESS, Transport.XHTTP): (CoreKind.XRAY,),
     (Protocol.NAIVE, None): (CoreKind.CADDY,),
     (Protocol.MIERU, None): (CoreKind.MITA,),
 }
@@ -276,10 +281,58 @@ class VlessSettings(_Model):
     @field_validator("grpc_service")
     @classmethod
     def _service(cls, v: str) -> str:
-        v = v.lstrip("/")
-        if not re.fullmatch(r"[A-Za-z0-9._~-]*", v):
-            raise ValueError("имя gRPC-сервиса: латиница, цифры и . _ ~ -")
-        return v
+        return _grpc_service(v)
+
+
+def _grpc_service(v: str) -> str:
+    v = v.lstrip("/")
+    if not re.fullmatch(r"[A-Za-z0-9._~-]*", v):
+        raise ValueError("имя gRPC-сервиса: латиница, цифры и . _ ~ -")
+    return v
+
+
+def random_path() -> str:
+    """Случайный путь для новой установки (Q-012): `/a8f3k2q1`."""
+    return "/" + random_name(8)
+
+
+def random_name(length: int = 8) -> str:
+    alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+class XraySettings(_Model):
+    """Ядро Xray (этап 11). Пути пустые, пока Xray не установлен — создаются один раз
+    при установке (случайные) и дальше меняются только вручную в меню."""
+
+    enabled: bool = True  # «Отключить Xray» в меню: служба и маршруты убираются
+    ws_path: str = ""
+    grpc_service: str = ""
+    httpupgrade_path: str = ""
+    xhttp_path: str = ""
+
+    @field_validator("ws_path", "httpupgrade_path", "xhttp_path")
+    @classmethod
+    def _paths(cls, v: str) -> str:
+        return v if v == "" else _url_path(v)
+
+    @field_validator("grpc_service")
+    @classmethod
+    def _service(cls, v: str) -> str:
+        return _grpc_service(v)
+
+    @property
+    def configured(self) -> bool:
+        return all((self.ws_path, self.grpc_service, self.httpupgrade_path, self.xhttp_path))
+
+    @classmethod
+    def generated(cls) -> XraySettings:
+        return cls(
+            ws_path=random_path(),
+            grpc_service=random_name(8),
+            httpupgrade_path=random_path(),
+            xhttp_path=random_path(),
+        )
 
 
 class MieruSettings(_Model):
@@ -322,6 +375,7 @@ class Settings(_Model):
     bbr_enabled: bool = True
     site: SiteSettings = Field(default_factory=SiteSettings)
     vless: VlessSettings = Field(default_factory=VlessSettings)
+    xray: XraySettings = Field(default_factory=XraySettings)
     mieru: MieruSettings = Field(default_factory=MieruSettings)
     backup: BackupSettings = Field(default_factory=BackupSettings)
     telegram: TelegramSettings = Field(default_factory=TelegramSettings)
@@ -336,6 +390,34 @@ class Settings(_Model):
         if v and not re.fullmatch(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", v):
             raise ValueError(f"некорректный email: {v}")
         return v
+
+    @model_validator(mode="after")
+    def _distinct_paths(self) -> Settings:
+        """Caddy разводит трафик по ядрам по пути (этап 11) — пути не должны совпадать."""
+        paths = [
+            ("sing-box WS", self.vless.ws_path),
+            ("sing-box HTTPUpgrade", self.vless.httpupgrade_path),
+            ("Xray WS", self.xray.ws_path),
+            ("Xray HTTPUpgrade", self.xray.httpupgrade_path),
+            ("Xray XHTTP", self.xray.xhttp_path),
+        ]
+        if self.vless.grpc_service:
+            paths.append(("sing-box gRPC", "/" + self.vless.grpc_service))
+        if self.xray.grpc_service:
+            paths.append(("Xray gRPC", "/" + self.xray.grpc_service))
+        used = [(name, p.rstrip("/") or "/") for name, p in paths if p]
+        for i, (name, p) in enumerate(used):
+            if p == "/sub" or p.startswith("/sub/"):
+                raise ValueError(f"{name}: путь {p} занят подписками")
+            for other, q in used[i + 1 :]:
+                if p == q:
+                    raise ValueError(f"{name} и {other}: одинаковый путь {p}")
+        xhttp = self.xray.xhttp_path.rstrip("/")
+        if xhttp:
+            for name, p in used:
+                if name != "Xray XHTTP" and p.startswith(xhttp + "/"):
+                    raise ValueError(f"{name}: путь {p} внутри пути XHTTP {xhttp}")
+        return self
 
     @field_validator("domain")
     @classmethod

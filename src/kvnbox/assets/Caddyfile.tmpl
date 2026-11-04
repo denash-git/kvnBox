@@ -16,7 +16,7 @@
     # NaiveProxy with credentials and upstream to sing-box
     {{FORWARD_PROXY_BLOCK}}
 
-    # Route VLESS gRPC by Content-Type header (allows running on root /)
+{{XRAY_ROUTES}}    # Route VLESS gRPC by Content-Type header (allows running on root /)
     @grpc {
         header Content-Type application/grpc*
     }

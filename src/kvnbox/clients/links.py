@@ -12,6 +12,7 @@ from urllib.parse import quote
 
 from kvnbox.core.models import (
     Connection,
+    CoreKind,
     PasswordCredentials,
     Protocol,
     Settings,
@@ -27,6 +28,7 @@ LINK_SUFFIX = {
     (Protocol.VLESS, Transport.WS): "ws",
     (Protocol.VLESS, Transport.GRPC): "grpc",
     (Protocol.VLESS, Transport.HTTPUPGRADE): "httpupgrade",
+    (Protocol.VLESS, Transport.XHTTP): "xhttp",
     (Protocol.NAIVE, None): "naive",
     (Protocol.MIERU, None): "mieru",
 }
@@ -57,11 +59,15 @@ def build_link(user: User, conn: Connection, settings: Settings) -> str:
             f"vless://{conn.credentials.uuid}@{domain}:{PORT_HTTPS}"
             f"?encryption=none&security=tls&sni={domain}"
         )
+        # пути — у каждого ядра свои: по ним Caddy отдаёт запрос нужному ядру (этап 11)
+        p = settings.xray if conn.core is CoreKind.XRAY else settings.vless
         if conn.transport is Transport.WS:
-            return f"{base}&type=ws&path={settings.vless.ws_path}#{name}"
+            return f"{base}&type=ws&path={p.ws_path}#{name}"
         if conn.transport is Transport.GRPC:
-            return f"{base}&type=grpc&serviceName={settings.vless.grpc_service}#{name}"
-        return f"{base}&type=httpupgrade&path={settings.vless.httpupgrade_path}#{name}"
+            return f"{base}&type=grpc&serviceName={p.grpc_service}#{name}"
+        if conn.transport is Transport.XHTTP:
+            return f"{base}&type=xhttp&path={settings.xray.xhttp_path}&mode=auto#{name}"
+        return f"{base}&type=httpupgrade&path={p.httpupgrade_path}#{name}"
 
     creds = _password_creds(conn)
     return (

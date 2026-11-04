@@ -6,6 +6,7 @@ from __future__ import annotations
 import contextlib
 import subprocess
 
+from kvnbox.core.models import CoreKind, Transport
 from kvnbox.services import ServiceError
 from kvnbox.services.modules import (
     BbrModule,
@@ -13,9 +14,10 @@ from kvnbox.services.modules import (
     MieruModule,
     NetbirdModule,
     SingboxModule,
+    XrayModule,
 )
 from kvnbox.services.settings import SettingsService
-from kvnbox.tui.header import netbird_status
+from kvnbox.tui.header import netbird_status, xray_status
 from kvnbox.tui.menu import Menu
 from kvnbox.tui.term import BOLD, DIM, GREEN, RED, RESET, YELLOW
 from kvnbox.tui.widgets import BACK
@@ -35,18 +37,20 @@ def modules_menu(m: Menu) -> None:
             f"NetBird     [{netbird_status(nb_state, dot=False)}]",
             f"sing-box    [{_on(m.app.systemd.is_active('sing-box'))}]",
             f"Caddy       [{_on(m.app.systemd.is_active('caddy'))}]",
+            f"Xray        [{_xray_badge(m)}]",
             "Настроить пути VLESS",
             "Отключить BBR оптимизацию" if bbr else "Включить BBR оптимизацию",
             "Назад",
         ]
         choice = m.select("Модули", options)
-        if choice in (BACK, 6):
+        if choice in (BACK, 7):
             return
         [
             mieru_module_menu,
             netbird_module_menu,
             singbox_module_menu,
             caddy_module_menu,
+            xray_module_menu,
             change_vless_paths_menu,
             bbr_optimization_menu,
         ][choice](m)
@@ -134,7 +138,7 @@ def _confirm_versions(m: Menu, current: str, latest: str) -> bool:
     return False
 
 
-def update_core_menu(m: Menu, title: str, mod: SingboxModule | MieruModule) -> None:
+def update_core_menu(m: Menu, title: str, mod: SingboxModule | MieruModule | XrayModule) -> None:
     """Обновление sing-box / Mieru: проверка суммы, применение, возврат при сбое."""
     m.screen(title)
     m.progress("Получение информации о версиях...")
@@ -165,6 +169,97 @@ def update_core_menu(m: Menu, title: str, mod: SingboxModule | MieruModule) -> N
         m.fail("Обновление не удалось.")
         m.ui.center_print(res.message)
     m.ui.pause()
+
+
+# ─── Xray (этап 11) ──────────────────────────────────────────────────────────
+
+
+def _xray_badge(m: Menu) -> str:
+    if not m.app.installed("xray"):
+        return f"{DIM}не установлен{RESET}"
+    return xray_status(m.app, dot=False)
+
+
+def xray_module_menu(m: Menu) -> None:
+    mod = XrayModule(m.app)
+    while True:
+        if not m.app.installed("xray"):
+            choice = m.select("Модуль: Xray", ["Установить Xray", "Назад"])
+            if choice in (BACK, 1):
+                return
+            m.screen("Модули → Xray → Установка")
+            m.progress("Скачивание и проверка Xray...")
+            try:
+                res = mod.install()
+                m.show_result(res, "Xray установлен. Он включится с первым подключением на Xray.")
+            except ServiceError as e:
+                m.ui.out()
+                m.fail(str(e))
+            m.ui.pause()
+            continue
+        enabled = m.app.settings.load().xray.enabled
+        count = mod.connections_count()
+        options = ["Отключить Xray" if enabled else "Включить Xray"]
+        if m.app.systemd.is_active("xray"):
+            options.append("Перезапустить службу")
+        options += ["Просмотреть логи службы", "Пути Xray", "Обновить Xray"]
+        if count == 0:
+            options.append("Удалить Xray")
+        options.append("Назад")
+        info = [f"Версия: {BOLD}{mod.info().version or '?'}{RESET}    Подключений на Xray: {count}"]
+        choice = m.select("Модуль: Xray", options, info)
+        if choice == BACK or options[choice] == "Назад":
+            return
+        sel = options[choice]
+        if sel == "Отключить Xray":
+            m.screen("Модули → Xray → Отключение")
+            m.ui.out()
+            if count:
+                m.ui.center_print(
+                    f"{YELLOW}Подключения на Xray ({count}) не будут работать до включения.{RESET}"
+                )
+            m.ui.center_print(f"{DIM}Xray не удаляется: включить снова — этот же пункт.{RESET}")
+            m.ui.out()
+            if m.ui.read_prompt("Отключить Xray? (y/N): ") in ("y", "Y", "д", "Д"):
+                m.progress("Отключение Xray...")
+                m.show_result(mod.set_enabled(False), "Xray отключен.")
+            else:
+                m.ui.out()
+                m.ui.center_print("Отключение отменено.")
+            m.ui.pause()
+        elif sel == "Включить Xray":
+            m.screen("Модули → Xray → Включение")
+            m.progress("Включение Xray...")
+            m.show_result(
+                mod.set_enabled(True),
+                "Xray включен." + ("" if count else " Служба запустится с первым подключением."),
+            )
+            m.ui.pause()
+        elif sel == "Перезапустить службу":
+            _service_action(
+                m,
+                "Модули → Xray → Перезапуск",
+                "Перезапуск службы Xray...",
+                "Служба Xray перезапущена.",
+                mod.restart,
+            )
+        elif sel == "Просмотреть логи службы":
+            _logs(m, "Модули → Xray → Логи службы", "xray")
+        elif sel == "Пути Xray":
+            change_vless_paths_menu(m)
+        elif sel == "Обновить Xray":
+            update_core_menu(m, "Модули → Xray → Обновление", mod)
+        elif sel == "Удалить Xray":
+            m.screen("Модули → Xray → Удаление")
+            m.ui.out()
+            if m.ui.read_prompt("Удалить Xray с сервера? (y/N): ") in ("y", "Y", "д", "Д"):
+                m.progress("Удаление Xray...")
+                try:
+                    m.show_result(mod.uninstall(), "Xray удален.")
+                except ServiceError as e:
+                    m.ui.out()
+                    m.fail(str(e))
+            m.ui.pause()
 
 
 # ─── Caddy ───────────────────────────────────────────────────────────────────
@@ -458,28 +553,59 @@ def netbird_module_menu(m: Menu) -> None:
 # ─── пути VLESS и BBR ────────────────────────────────────────────────────────
 
 
+# (ядро, поле, подпись, транспорт) — порядок строк в меню путей
+_PATH_ROWS: list[tuple[str, str, str, Transport]] = [
+    ("vless", "ws_path", "sing-box  Путь WS:          ", Transport.WS),
+    ("vless", "grpc_service", "sing-box  Сервис gRPC:      ", Transport.GRPC),
+    ("vless", "httpupgrade_path", "sing-box  Путь HTTPUpgrade: ", Transport.HTTPUPGRADE),
+    ("xray", "ws_path", "Xray      Путь WS:          ", Transport.WS),
+    ("xray", "grpc_service", "Xray      Сервис gRPC:      ", Transport.GRPC),
+    ("xray", "httpupgrade_path", "Xray      Путь HTTPUpgrade: ", Transport.HTTPUPGRADE),
+    ("xray", "xhttp_path", "Xray      Путь XHTTP:       ", Transport.XHTTP),
+]
+
+
 def change_vless_paths_menu(m: Menu) -> None:
+    """Пути у каждого ядра свои (этап 11); строки Xray — если он установлен.
+    Смена пути меняет ссылки у подключений этого ядра — меню предупреждает."""
     svc = SettingsService(m.app)
     while True:
-        v = svc.get().vless
+        s = svc.get()
+        rows = [r for r in _PATH_ROWS if r[0] == "vless" or s.xray.configured]
         options = [
-            f"Путь VLESS WS:          {v.ws_path}",
-            f"Сервис VLESS gRPC:      {v.grpc_service or '(пусто)'}",
-            f"Путь VLESS HTTPUpgrade: {v.httpupgrade_path}",
-            "Назад",
+            f"{label}{getattr(getattr(s, core), field) or '(пусто)'}"
+            for core, field, label, _ in rows
         ]
+        options.append("Назад")
         choice = m.select("Настройки путей", options)
-        if choice in (BACK, 3):
+        if choice == BACK or choice == len(rows):
             return
+        core, field, _, transport = rows[choice]
+        kind = CoreKind.XRAY if core == "xray" else CoreKind.SINGBOX
+        affected = sum(
+            1
+            for u in m.app.users.all()
+            for c in u.connections
+            if c.core is kind and c.transport is transport
+        )
         m.screen("Модули → Пути VLESS")
         m.ui.out()
-        prompts = [
-            "Введите путь WS (должен начинаться со слэша /): ",
-            "Введите имя gRPC сервиса (можно пустой): ",
-            "Введите путь HTTPUpgrade (должен начинаться со слэша /): ",
-        ]
-        value = m.ui.read_prompt(prompts[choice]).replace(" ", "")
-        if choice != 1 and not value.startswith("/"):
+        if affected:
+            m.ui.center_print(
+                f"{YELLOW}⚠ Ссылки изменятся у подключений: {affected}. "
+                f"Клиентам нужно обновить подписку.{RESET}"
+            )
+            m.ui.out()
+        is_service = field == "grpc_service"
+        prompt = (
+            "Введите имя gRPC сервиса: "
+            if is_service
+            else "Введите путь (должен начинаться со слэша /): "
+        )
+        value = m.ui.read_prompt(prompt).replace(" ", "")
+        if not value:
+            continue
+        if not is_service and not value.startswith("/"):
             m.ui.out()
             m.fail("Некорректный путь (должен начинаться со слэша /)")
             m.ui.pause()
@@ -487,10 +613,7 @@ def change_vless_paths_menu(m: Menu) -> None:
         m.screen("Модули → Пути VLESS")
         m.progress("Применение настроек...")
         try:
-            kwargs = [{"ws_path": value}, {"grpc_service": value}, {"httpupgrade_path": value}][
-                choice
-            ]
-            res = svc.set_vless_paths(**kwargs)
+            res = svc.set_path(core, field, value)
             m.show_result(res, "Настройки успешно применены!")
         except ServiceError as e:
             m.ui.out()

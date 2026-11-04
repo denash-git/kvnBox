@@ -20,9 +20,19 @@ SLOT_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.WS): "VLESS over WebSocket",
     (Protocol.VLESS, Transport.GRPC): "VLESS over gRPC",
     (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS over HTTPUpgrade",
+    (Protocol.VLESS, Transport.XHTTP): "VLESS over XHTTP",
     (Protocol.NAIVE, None): "NaiveProxy",
     (Protocol.MIERU, None): "Mieru",
 }
+
+# Ядра, у которых есть выбор (VLESS); у Naive и Mieru ядро одно — не показываем
+CORE_LABELS = {CoreKind.SINGBOX: "sing-box", CoreKind.XRAY: "Xray"}
+
+
+def core_suffix(conn: Connection) -> str:
+    """« · sing-box» / « · Xray» для VLESS, иначе пусто (этап 11)."""
+    label = CORE_LABELS.get(conn.core)
+    return f" · {label}" if label and conn.protocol is Protocol.VLESS else ""
 
 
 def slot_label(conn: Connection) -> str:
@@ -34,6 +44,7 @@ MANAGE_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.WS): "VLESS over WS",
     (Protocol.VLESS, Transport.GRPC): "VLESS over GRPC",
     (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS over HTTPUpgrade",
+    (Protocol.VLESS, Transport.XHTTP): "VLESS over XHTTP",
     (Protocol.NAIVE, None): "NaiveProxy",
     (Protocol.MIERU, None): "Mieru",
 }
@@ -43,6 +54,7 @@ SHORT_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.WS): "VLESS WS",
     (Protocol.VLESS, Transport.GRPC): "VLESS gRPC",
     (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS HTTPUpgrade",
+    (Protocol.VLESS, Transport.XHTTP): "VLESS XHTTP",
     (Protocol.NAIVE, None): "Naive",
     (Protocol.MIERU, None): "Mieru",
 }
@@ -154,7 +166,14 @@ class UserService:
         transport: Transport | None = None,
         core: CoreKind | None = None,
     ) -> tuple[Connection, ApplyResult]:
+        wants_xray = core is CoreKind.XRAY or transport is Transport.XHTTP
+        if wants_xray and not self.xray_ready():
+            raise ServiceError("Xray не установлен. Установите: Модули → Xray → Установить Xray.")
         return self._change(lambda: self.app.users.add_connection(name, protocol, transport, core))
+
+    def xray_ready(self) -> bool:
+        """Можно ли добавлять подключения на Xray: программа стоит, пути заданы."""
+        return self.app.installed("xray") and self.app.settings.load().xray.configured
 
     def remove_connection(
         self, name: str, protocol: Protocol, transport: Transport | None

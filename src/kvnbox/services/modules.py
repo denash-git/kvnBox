@@ -2,24 +2,29 @@
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import tempfile
 import time
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from kvnbox.core.models import Settings
+from kvnbox.core.models import CoreKind, Settings, XraySettings
+from kvnbox.cores.xray import xray_running
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.apply import Applier, ApplyResult
 from kvnbox.services.settings import SettingsService
-from kvnbox.system.releases import ReleaseError, Releases, version_of
+from kvnbox.system.releases import Asset, ReleaseError, Releases, version_of
 from kvnbox.system.runner import Result
+from kvnbox.system.xray_unit import ensure_xray_unit
 
 SINGBOX_REPO = "SagerNet/sing-box"
 MIERU_REPO = "enfein/mieru"
 CADDY_REPO = "caddyserver/caddy"
+XRAY_REPO = "XTLS/Xray-core"
 NETBIRD_INSTALL_SCRIPT = "https://pkgs.netbird.io/install.sh"
 APT_ENV = {"DEBIAN_FRONTEND": "noninteractive"}
 
@@ -182,6 +187,172 @@ class SingboxModule(_DebCore):
         return ServiceInfo(
             self.unit, self.app.installed("sing-box"), self.app.systemd.state(self.unit), version
         )
+
+
+# ─── Xray (этап 11) ──────────────────────────────────────────────────────────
+
+
+XRAY_ARCH = {"amd64": "64", "arm64": "arm64-v8a"}
+
+
+def read_versions(path: Path) -> dict[str, str]:
+    """versions.env панели: KEY=VALUE, комментарии — «#»."""
+    text = path.read_text(encoding="utf-8") if path.exists() else ""
+    return dict(
+        line.split("=", 1)
+        for line in (raw.strip() for raw in text.splitlines())
+        if line and not line.startswith("#") and "=" in line
+    )
+
+
+class XrayModule(_Module):
+    """Xray: программа из архива GitHub (закреплённая версия — versions.env), служба
+    `xray` от своего пользователя. Служба работает, только когда есть подключения на
+    Xray и он не отключён в меню (Q-011)."""
+
+    unit = "xray"
+
+    def __init__(
+        self, app: App, applier: Applier | None = None, releases: Releases | None = None
+    ) -> None:
+        super().__init__(app, applier, releases)
+        self.settings = SettingsService(app, self.applier)
+
+    # ── состояние ────────────────────────────────────────────────────────────
+
+    def info(self) -> ServiceInfo:
+        res = self.app.runner.run(["xray", "version"], timeout=10)
+        words = res.stdout.split()
+        version = words[1] if res.ok and len(words) > 1 else ""
+        return ServiceInfo(
+            self.unit, self.app.installed("xray"), self.app.systemd.state(self.unit), version
+        )
+
+    def connections_count(self) -> int:
+        return sum(
+            1 for u in self.app.users.all() for c in u.connections if c.core is CoreKind.XRAY
+        )
+
+    def latest_version(self) -> str:
+        return version_of(self._latest(XRAY_REPO))
+
+    # ── установка ────────────────────────────────────────────────────────────
+
+    def _archive_name(self) -> str:
+        return f"Xray-linux-{XRAY_ARCH[self._arch()]}.zip"
+
+    def _put_binary(self, archive: Path) -> None:
+        """Достать из архива только программу `xray` и атомарно заменить."""
+        target = self.app.paths.xray_bin
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_name("xray.new")
+        with zipfile.ZipFile(archive) as z, z.open("xray") as src, tmp.open("wb") as dst:
+            shutil.copyfileobj(src, dst)
+        tmp.chmod(0o755)
+        os.replace(tmp, target)
+
+    def _prepare_system(self) -> None:
+        if not self.app.runner.run(["id", "-u", "xray"], timeout=10).ok:
+            res = self.app.runner.run(
+                ["useradd", "--system", "--no-create-home", "--shell", "/usr/sbin/nologin", "xray"],
+                timeout=30,
+            )
+            if not res.ok:
+                raise ServiceError(f"Не удалось создать пользователя xray: {res.output}")
+        conf_dir = self.app.paths.xray_config.parent
+        conf_dir.mkdir(parents=True, exist_ok=True)
+        conf_dir.chmod(0o750)
+        self.app.runner.run(["chown", "root:xray", str(conf_dir)], timeout=10)
+        ensure_xray_unit(self.app.paths, self.app.systemd)
+
+    def install(self) -> ApplyResult:
+        """Поставить закреплённую версию (versions.env панели) и задать случайные пути."""
+        versions = read_versions(self.app.paths.app_link / "versions.env")
+        arch = self._arch()
+        version = versions.get("XRAY_VERSION", "")
+        sha = versions.get(f"XRAY_SHA256_{arch.upper()}", "")
+        if not version or not sha:
+            raise ServiceError("В versions.env панели нет версии Xray.")
+        name = self._archive_name()
+        asset = Asset(
+            name=name,
+            url=f"https://github.com/{XRAY_REPO}/releases/download/v{version}/{name}",
+            sha256=sha,
+        )
+        with tempfile.TemporaryDirectory(dir=self.app.paths.root) as tmp:
+            try:
+                archive = self.releases.download_verified(asset, Path(tmp) / name)
+            except ReleaseError as e:
+                raise ServiceError(str(e)) from e
+            self._put_binary(archive)
+        self._prepare_system()
+
+        def paths(s: Settings) -> None:
+            if not s.xray.configured:
+                s.xray = XraySettings.generated()
+
+        return self.settings.update(paths)
+
+    def safe_update(self, tag: str | None = None) -> UpdateOutcome:
+        """Обновление из меню: сумма из GitHub, замена программы, возврат при сбое."""
+        if not self.app.installed("xray"):
+            raise ServiceError("Xray не установлен.")
+        current = self.info().version
+        tag = tag or self._latest(XRAY_REPO)
+        ver = version_of(tag)
+        with tempfile.TemporaryDirectory(dir=self.app.paths.root) as tmp:
+            work = Path(tmp)
+            try:
+                asset = self.releases.asset(XRAY_REPO, tag, self._archive_name())
+                archive = self.releases.download_verified(asset, work / asset.name)
+            except ReleaseError as e:
+                raise ServiceError(str(e)) from e  # ничего не тронуто
+            backup = work / "xray.prev"
+            shutil.copy2(self.app.paths.xray_bin, backup)
+            self._put_binary(archive)
+            result = self.applier.apply()
+            running = xray_running(self.app.settings.load(), self.app.users.all())
+            ok = result.ok and (not running or self._wait_active())
+            if ok:
+                return UpdateOutcome(True, f"Xray обновлён до версии {ver}.")
+            reason = result.message if not result.ok else "служба не запустилась"
+            shutil.copy2(backup, self.app.paths.xray_bin)
+            self.applier.apply()
+        return UpdateOutcome(
+            False,
+            f"Версия {ver} не заработала ({reason}). Возвращена версия {current or 'прежняя'}.",
+            rolled_back=True,
+        )
+
+    def _wait_active(self, seconds: int = 10) -> bool:
+        for _ in range(seconds):
+            if self.app.systemd.is_active(self.unit):
+                return True
+            time.sleep(1)
+        return self.app.systemd.is_active(self.unit)
+
+    # ── включение / удаление ─────────────────────────────────────────────────
+
+    def set_enabled(self, enabled: bool) -> ApplyResult:
+        def change(s: Settings) -> None:
+            s.xray.enabled = enabled
+
+        return self.settings.update(change)
+
+    def uninstall(self) -> ApplyResult:
+        if self.connections_count():
+            raise ServiceError("На Xray есть подключения — сначала удалите их.")
+        self.app.systemd.stop(self.unit)
+        self.app.systemd.disable(self.unit)
+        self.app.paths.xray_unit.unlink(missing_ok=True)
+        self.app.systemd.daemon_reload()
+        self.app.paths.xray_bin.unlink(missing_ok=True)
+        shutil.rmtree(self.app.paths.xray_config.parent, ignore_errors=True)
+
+        def reset(s: Settings) -> None:
+            s.xray = XraySettings()  # пути создадутся заново при следующей установке
+
+        return self.settings.update(reset)
 
 
 # ─── Caddy ───────────────────────────────────────────────────────────────────

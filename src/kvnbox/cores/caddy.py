@@ -8,6 +8,7 @@ from kvnbox.core.models import CoreKind, PasswordCredentials, Settings, Transpor
 from kvnbox.core.paths import Paths
 from kvnbox.cores import ports
 from kvnbox.cores.base import RenderedFile, active_connections, fill_template, load_asset
+from kvnbox.cores.xray import xray_running
 
 TEMPLATE = "Caddyfile.tmpl"
 
@@ -32,6 +33,74 @@ def forward_proxy_block(users: Sequence[User]) -> str:
     return f"forward_proxy {{\n        {body}\n    }}"
 
 
+_FAKESITE_ON_ERROR = """            @error status 400 401 403 404 502 503
+            handle_response @error {{
+                root * {fakesite}
+                rewrite * /index.html
+                file_server
+            }}"""
+
+
+def xray_routes(settings: Settings, users: Sequence[User], paths: Paths) -> str:
+    """Маршруты Xray (этап 11) — перед маршрутами sing-box. Пусто, если Xray не нужен:
+    тогда Caddyfile байт в байт как без Xray."""
+    if not xray_running(settings, users):
+        return ""
+    x = settings.xray
+    err = _FAKESITE_ON_ERROR.format(
+        fakesite=(paths.fakesite_dir / settings.site.template).as_posix()
+    )
+    p = ports.XRAY
+    return f"""    # Xray: VLESS gRPC by service name (before the generic gRPC route of sing-box)
+    @xray_grpc {{
+        header Content-Type application/grpc*
+        path /{x.grpc_service}/*
+    }}
+    handle @xray_grpc {{
+        reverse_proxy {ports.LOCALHOST}:{p[Transport.GRPC]} {{
+            transport http {{
+                versions h2c
+            }}
+{err}
+        }}
+    }}
+
+    # Xray: VLESS WS
+    @xray_websocket {{
+        header Connection *Upgrade*
+        header Upgrade    websocket
+        path {x.ws_path}
+    }}
+    handle @xray_websocket {{
+        reverse_proxy {ports.LOCALHOST}:{p[Transport.WS]} {{
+{err}
+        }}
+    }}
+
+    # Xray: VLESS HTTPUpgrade
+    handle {x.httpupgrade_path} {{
+        reverse_proxy {ports.LOCALHOST}:{p[Transport.HTTPUPGRADE]} {{
+{err}
+        }}
+    }}
+
+    # Xray: VLESS XHTTP
+    @xray_xhttp {{
+        path {x.xhttp_path} {x.xhttp_path}/*
+    }}
+    handle @xray_xhttp {{
+        reverse_proxy {ports.LOCALHOST}:{p[Transport.XHTTP]} {{
+            transport http {{
+                versions h2c 1.1
+            }}
+            flush_interval -1
+{err}
+        }}
+    }}
+
+"""
+
+
 def render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) -> str:
     email = settings.admin_email
     return fill_template(
@@ -40,6 +109,7 @@ def render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) ->
             "DOMAIN": settings.domain,
             "CADDY_TLS_EMAIL": f"email {email}" if email else "# anonymous ACME",
             "FORWARD_PROXY_BLOCK": forward_proxy_block(users),
+            "XRAY_ROUTES": xray_routes(settings, users, paths),
             "FAKESITE_DIR": (paths.fakesite_dir / settings.site.template).as_posix(),
             "SUB_DIR": paths.sub_dir.as_posix(),
             "VLESS_WS_PATH": settings.vless.ws_path,
