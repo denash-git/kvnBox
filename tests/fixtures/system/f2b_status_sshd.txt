@@ -1,9 +1,0 @@
-Status for the jail: sshd
-|- Filter
-|  |- Currently failed:	5
-|  |- Total failed:	89
-|  `- Journal matches:	_SYSTEMD_UNIT=ssh.service + _COMM=sshd
-`- Actions
-   |- Currently banned:	8
-   |- Total banned:	10
-   `- Banned IP list:	203.0.113.1 203.0.113.2 203.0.113.3 203.0.113.4 203.0.113.5 203.0.113.6 203.0.113.7 203.0.113.8

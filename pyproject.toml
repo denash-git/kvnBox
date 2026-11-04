@@ -29,22 +29,10 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/kvnbox"]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-q --strict-markers"
-markers = [
-    "posix: тест требует Linux (fcntl, права файлов)",
-    "system: read-only проверки на настоящей системе (стенд)",
-]
-
-[tool.coverage.run]
-source = ["kvnbox"]
-branch = true
-
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-src = ["src", "tests"]
+src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]

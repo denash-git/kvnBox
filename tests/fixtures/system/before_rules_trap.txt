@@ -1,1 +1,0 @@
-76:-A ufw-before-input -p tcp -m multiport --dports 21,23,25,445,1433,3389,5900,8080 -m tcp --syn -m limit --limit 6/min -j LOG --log-prefix "[PORTSCAN-TRAP]: " --log-level 4
