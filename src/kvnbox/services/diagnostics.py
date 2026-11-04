@@ -96,6 +96,17 @@ class DiagnosticsService:
             argv += ["-s", server_id]
         return self.app.runner.run(argv, timeout=180).output
 
+    def speedtest_json(self) -> str:
+        """Для бота: JSON Ookla, при неудаче — обычный текстовый вывод."""
+        self._require_speedtest()
+        res = self.app.runner.run(["speedtest", *SPEEDTEST_FLAGS, "--format=json"], timeout=180)
+        if res.ok and res.stdout.strip():
+            return res.stdout
+        res = self.app.runner.run(["speedtest", *SPEEDTEST_FLAGS], timeout=180)
+        if not res.ok:
+            raise ServiceError(res.output or "speedtest завершился с ошибкой")
+        return res.stdout or res.stderr
+
     # ── iperf3 (клиент ↔ VPS) ────────────────────────────────────────────────
 
     def public_ip(self) -> str:

@@ -1,0 +1,62 @@
+"""Перезапуск служб."""
+
+from __future__ import annotations
+
+from aiogram import F, Router
+from aiogram.filters import Command
+from aiogram.types import CallbackQuery, Message
+
+from kvnbox.bot.common import edit, run, show
+from kvnbox.bot.keyboards import (
+    back_to_main_keyboard,
+    service_confirm_keyboard,
+    services_menu_keyboard,
+)
+from kvnbox.services.app import App
+
+router = Router()
+ALLOWED = {"caddy", "sing-box", "mita", "netbird", "all"}
+
+
+@router.message(Command("services"))
+@router.callback_query(F.data == "services:menu")
+async def services_menu(event: Message | CallbackQuery) -> None:
+    await show(
+        event,
+        "🔄 <b>Управление службами</b>\n\nВыберите службу для перезапуска:",
+        services_menu_keyboard(),
+    )
+
+
+@router.callback_query(F.data.startswith("services:confirm:"))
+async def services_confirm(cb: CallbackQuery) -> None:
+    service = (cb.data or "").split(":")[2]
+    label = "все прокси-службы" if service == "all" else f"службу {service}"
+    await edit(
+        cb, f"❓ Вы действительно хотите перезапустить {label}?", service_confirm_keyboard(service)
+    )
+    await cb.answer()
+
+
+@router.callback_query(F.data.startswith("services:run:"))
+async def services_run(cb: CallbackQuery, app: App) -> None:
+    service = (cb.data or "").split(":")[2]
+    if service not in ALLOWED:
+        await cb.answer()
+        return
+    label = "Все службы" if service == "all" else service
+    await edit(cb, f"⏳ Перезапуск {label}...")
+    if service == "all":
+        units = ["caddy", "sing-box"]
+        units += [
+            u for u, binary in (("mita", "mita"), ("netbird", "netbird")) if app.installed(binary)
+        ]
+    else:
+        units = [service]
+    failed = [u for u in units if not (await run(app.systemd.restart, u)).ok]
+    if not failed:
+        text = f"🟢 <b>Успешно!</b>\nПерезапуск {label} выполнен успешно."
+    else:
+        text = f"🔴 <b>Ошибка!</b>\nНе удалось перезапустить службы: {', '.join(failed)}."
+    await edit(cb, text, back_to_main_keyboard())
+    await cb.answer()

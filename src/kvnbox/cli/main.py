@@ -401,6 +401,15 @@ def build_parser() -> argparse.ArgumentParser:
     bbr = group("bbr", "TCP BBR")
     cmd(bbr, "toggle", _say(lambda app, a: BbrModule(app).toggle()), "включить/выключить")
 
+    bot = group("bot", "Telegram-бот")
+
+    def bot_run(app: App, a: argparse.Namespace, out: TextIO) -> int:
+        from kvnbox.bot.main import run
+
+        return run(app)
+
+    cmd(bot, "run", bot_run, "запустить бота (служба kvnbox-bot)")
+
     job = group("job", "задачи по расписанию (cron)")
     cmd(job, "check-services", cmd_job_check_services, "проверить службы и ресурсы")
     cmd(job, "check-updates", cmd_job_check_updates, "проверить обновления")

@@ -7,6 +7,7 @@ requires-python = ">=3.10"
 license = { text = "MIT" }
 dependencies = [
     "pydantic>=2.9,<3",
+    "aiogram>=3.13,<4",
 ]
 
 [project.scripts]
@@ -48,6 +49,10 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
 ignore = ["RUF001", "RUF002", "RUF003"]  # кириллица в строках и комментариях
+
+[tool.ruff.lint.per-file-ignores]
+# тексты сообщений бота — одной строкой, как пользователь их видит
+"src/kvnbox/bot/handlers/*" = ["E501"]
 
 [tool.mypy]
 python_version = "3.10"
