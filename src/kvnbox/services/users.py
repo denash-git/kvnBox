@@ -21,6 +21,7 @@ SLOT_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.GRPC): "VLESS over gRPC",
     (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS over HTTPUpgrade",
     (Protocol.VLESS, Transport.XHTTP): "VLESS over XHTTP",
+    (Protocol.VLESS, Transport.CDN): "VLESS CDN",
     (Protocol.NAIVE, None): "NaiveProxy",
     (Protocol.MIERU, None): "Mieru",
 }
@@ -45,6 +46,7 @@ MANAGE_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.GRPC): "VLESS over GRPC",
     (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS over HTTPUpgrade",
     (Protocol.VLESS, Transport.XHTTP): "VLESS over XHTTP",
+    (Protocol.VLESS, Transport.CDN): "VLESS CDN",
     (Protocol.NAIVE, None): "NaiveProxy",
     (Protocol.MIERU, None): "Mieru",
 }
@@ -55,6 +57,7 @@ SHORT_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.GRPC): "VLESS gRPC",
     (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS HTTPUpgrade",
     (Protocol.VLESS, Transport.XHTTP): "VLESS XHTTP",
+    (Protocol.VLESS, Transport.CDN): "VLESS CDN",
     (Protocol.NAIVE, None): "Naive",
     (Protocol.MIERU, None): "Mieru",
 }
@@ -166,10 +169,17 @@ class UserService:
         transport: Transport | None = None,
         core: CoreKind | None = None,
     ) -> tuple[Connection, ApplyResult]:
-        wants_xray = core is CoreKind.XRAY or transport is Transport.XHTTP
+        wants_xray = core is CoreKind.XRAY or transport in (Transport.XHTTP, Transport.CDN)
         if wants_xray and not self.xray_ready():
             raise ServiceError("Xray не установлен. Установите: Модули → Xray → Установить Xray.")
+        if transport is Transport.CDN and not self.cdn_ready():
+            raise ServiceError("CDN не настроен: Модули → Xray → Настройки CDN.")
         return self._change(lambda: self.app.users.add_connection(name, protocol, transport, core))
+
+    def cdn_ready(self) -> bool:
+        """Протокол CDN: Xray готов, заданы домен CDN, origin-поддомен и путь."""
+        s = self.app.settings.load()
+        return self.xray_ready() and s.cdn.configured and bool(s.xray.cdn_path)
 
     def xray_ready(self) -> bool:
         """Можно ли добавлять подключения на Xray: программа стоит, пути заданы."""

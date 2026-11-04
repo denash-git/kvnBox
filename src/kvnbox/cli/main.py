@@ -45,6 +45,7 @@ from kvnbox.services.modules import (
 )
 from kvnbox.services.schedule import write_cron
 from kvnbox.services.security import SecurityService
+from kvnbox.services.settings import SettingsService
 from kvnbox.services.ssh import SshService
 from kvnbox.services.status import StatusService
 from kvnbox.services.users import UserService, slot_label
@@ -56,6 +57,7 @@ SLOTS: dict[str, tuple[Protocol, Transport | None]] = {
     "vless-grpc": (Protocol.VLESS, Transport.GRPC),
     "vless-httpupgrade": (Protocol.VLESS, Transport.HTTPUPGRADE),
     "vless-xhttp": (Protocol.VLESS, Transport.XHTTP),  # настоящий XHTTP, только Xray
+    "vless-cdn": (Protocol.VLESS, Transport.CDN),  # XHTTP через CDN, только Xray
     "naive": (Protocol.NAIVE, None),
     "mieru": (Protocol.MIERU, None),
 }
@@ -453,6 +455,14 @@ def build_parser() -> argparse.ArgumentParser:
         lambda app, a, out: _result(XrayModule(app).set_enabled(False), out),
         "отключить (ничего не удаляет)",
     )
+    sp = cmd(
+        xray,
+        "cdn",
+        lambda app, a, out: _result(SettingsService(app).set_cdn(a.domain, a.origin), out),
+        "протокол CDN: домен для клиентов и origin-поддомен («» — очистить)",
+    )
+    sp.add_argument("domain")
+    sp.add_argument("origin")
     cmd(
         xray,
         "uninstall",

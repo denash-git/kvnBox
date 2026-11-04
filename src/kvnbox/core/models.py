@@ -38,6 +38,8 @@ class Transport(str, Enum):
     HTTPUPGRADE = "httpupgrade"
     # Настоящий XHTTP — только в Xray (этап 11)
     XHTTP = "xhttp"
+    # XHTTP через CDN: данные в заголовках GET, packet-up (только Xray, только через CDN)
+    CDN = "cdn"
 
 
 class CoreKind(str, Enum):
@@ -54,6 +56,7 @@ SUPPORTED_CORES: dict[tuple[Protocol, Transport | None], tuple[CoreKind, ...]] =
     (Protocol.VLESS, Transport.GRPC): (CoreKind.SINGBOX, CoreKind.XRAY),
     (Protocol.VLESS, Transport.HTTPUPGRADE): (CoreKind.SINGBOX, CoreKind.XRAY),
     (Protocol.VLESS, Transport.XHTTP): (CoreKind.XRAY,),
+    (Protocol.VLESS, Transport.CDN): (CoreKind.XRAY,),
     (Protocol.NAIVE, None): (CoreKind.CADDY,),
     (Protocol.MIERU, None): (CoreKind.MITA,),
 }
@@ -310,8 +313,9 @@ class XraySettings(_Model):
     grpc_service: str = ""
     httpupgrade_path: str = ""
     xhttp_path: str = ""
+    cdn_path: str = ""  # создаётся при первой настройке CDN
 
-    @field_validator("ws_path", "httpupgrade_path", "xhttp_path")
+    @field_validator("ws_path", "httpupgrade_path", "xhttp_path", "cdn_path")
     @classmethod
     def _paths(cls, v: str) -> str:
         return v if v == "" else _url_path(v)
@@ -333,6 +337,29 @@ class XraySettings(_Model):
             httpupgrade_path=random_path(),
             xhttp_path=random_path(),
         )
+
+
+_HOST_RE = re.compile(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+")
+
+
+class CdnSettings(_Model):
+    """CDN (этап 11): клиенты ходят на `domain` (держит CDN), CDN приходит на сервер
+    с именем `origin_host` — на него Caddy получает свой сертификат."""
+
+    domain: str = ""
+    origin_host: str = ""
+
+    @field_validator("domain", "origin_host")
+    @classmethod
+    def _host(cls, v: str) -> str:
+        v = v.strip().lower()
+        if v and not _HOST_RE.fullmatch(v):
+            raise ValueError(f"некорректное имя: {v}")
+        return v
+
+    @property
+    def configured(self) -> bool:
+        return bool(self.domain and self.origin_host)
 
 
 class MieruSettings(_Model):
@@ -376,6 +403,7 @@ class Settings(_Model):
     site: SiteSettings = Field(default_factory=SiteSettings)
     vless: VlessSettings = Field(default_factory=VlessSettings)
     xray: XraySettings = Field(default_factory=XraySettings)
+    cdn: CdnSettings = Field(default_factory=CdnSettings)
     mieru: MieruSettings = Field(default_factory=MieruSettings)
     backup: BackupSettings = Field(default_factory=BackupSettings)
     telegram: TelegramSettings = Field(default_factory=TelegramSettings)
@@ -392,6 +420,13 @@ class Settings(_Model):
         return v
 
     @model_validator(mode="after")
+    def _cdn_hosts(self) -> Settings:
+        names = [n for n in (self.domain, self.cdn.domain, self.cdn.origin_host) if n]
+        if len(names) != len(set(names)):
+            raise ValueError("основной домен, домен CDN и origin-поддомен должны различаться")
+        return self
+
+    @model_validator(mode="after")
     def _distinct_paths(self) -> Settings:
         """Caddy разводит трафик по ядрам по пути (этап 11) — пути не должны совпадать."""
         paths = [
@@ -400,6 +435,7 @@ class Settings(_Model):
             ("Xray WS", self.xray.ws_path),
             ("Xray HTTPUpgrade", self.xray.httpupgrade_path),
             ("Xray XHTTP", self.xray.xhttp_path),
+            ("Xray CDN", self.xray.cdn_path),
         ]
         if self.vless.grpc_service:
             paths.append(("sing-box gRPC", "/" + self.vless.grpc_service))

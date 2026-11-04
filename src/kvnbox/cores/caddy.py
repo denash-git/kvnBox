@@ -8,7 +8,7 @@ from kvnbox.core.models import CoreKind, PasswordCredentials, Settings, Transpor
 from kvnbox.core.paths import Paths
 from kvnbox.cores import ports
 from kvnbox.cores.base import RenderedFile, active_connections, fill_template, load_asset
-from kvnbox.cores.xray import xray_running
+from kvnbox.cores.xray import cdn_active, xray_running
 
 TEMPLATE = "Caddyfile.tmpl"
 
@@ -98,7 +98,37 @@ def xray_routes(settings: Settings, users: Sequence[User], paths: Paths) -> str:
         }}
     }}
 
+{cdn_route(settings, users, err)}"""
+
+
+def cdn_route(settings: Settings, users: Sequence[User], err: str) -> str:
+    """Протокол CDN: принимается только с именем origin-поддомена (с ним приходит CDN),
+    напрямую по основному домену этот путь не работает."""
+    if not cdn_active(settings, users):
+        return ""
+    path = settings.xray.cdn_path
+    return f"""    # Xray: VLESS XHTTP via CDN (only with the CDN origin host name)
+    @xray_cdn {{
+        host {settings.cdn.origin_host}
+        path {path} {path}/*
+    }}
+    handle @xray_cdn {{
+        reverse_proxy {ports.LOCALHOST}:{ports.XRAY[Transport.CDN]} {{
+            transport http {{
+                versions h2c 1.1
+            }}
+            flush_interval -1
+{err}
+        }}
+    }}
+
 """
+
+
+def extra_hosts(settings: Settings) -> str:
+    """Origin-поддомен CDN в адресе сайта → Caddy получает на него свой сертификат.
+    Пусто, пока CDN не настроен (Caddyfile байт в байт как раньше)."""
+    return f", {settings.cdn.origin_host}" if settings.cdn.origin_host else ""
 
 
 def render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) -> str:
@@ -110,6 +140,7 @@ def render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) ->
             "CADDY_TLS_EMAIL": f"email {email}" if email else "# anonymous ACME",
             "FORWARD_PROXY_BLOCK": forward_proxy_block(users),
             "XRAY_ROUTES": xray_routes(settings, users, paths),
+            "EXTRA_HOSTS": extra_hosts(settings),
             "FAKESITE_DIR": (paths.fakesite_dir / settings.site.template).as_posix(),
             "SUB_DIR": paths.sub_dir.as_posix(),
             "VLESS_WS_PATH": settings.vless.ws_path,

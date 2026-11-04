@@ -250,11 +250,14 @@ PROTO_BUTTONS = {
 VLESS_TYPES = [("ws", "WebSocket (ws)"), ("grpc", "gRPC"), ("xhttp", "HTTPUpgrade")]
 # этап 11: настоящий XHTTP — callback «xh» («xhttp» исторически означает HTTPUpgrade)
 XHTTP_TYPE = ("xh", "XHTTP (только Xray)")
+CDN_TYPE = ("cdn", "CDN (через CDN, только Xray)")
 CORE_SUFFIX = {"singbox": " · sing-box", "xray": " · Xray"}
 
 
 def _vless_types(app: App) -> list[tuple[str, str]]:
-    return VLESS_TYPES + ([XHTTP_TYPE] if UserService(app).xray_ready() else [])
+    svc = UserService(app)
+    types = VLESS_TYPES + ([XHTTP_TYPE] if svc.xray_ready() else [])
+    return types + ([CDN_TYPE] if svc.cdn_ready() else [])
 
 
 def _existing_types(user: User | None) -> set[str]:

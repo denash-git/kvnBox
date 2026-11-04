@@ -17,6 +17,7 @@ ADD_OPTIONS: list[tuple[str, Protocol, Transport | None]] = [
     ("VLESS over gRPC", Protocol.VLESS, Transport.GRPC),
     ("VLESS over HTTPUpgrade", Protocol.VLESS, Transport.HTTPUPGRADE),
     ("VLESS over XHTTP (только Xray)", Protocol.VLESS, Transport.XHTTP),
+    ("VLESS CDN (через CDN, только Xray)", Protocol.VLESS, Transport.CDN),
     ("NaiveProxy", Protocol.NAIVE, None),
     ("Mieru", Protocol.MIERU, None),
 ]
@@ -207,11 +208,14 @@ def _offer_telegram(m: Menu, nick: str) -> None:
 def _available(m: Menu, user: User | None) -> list[tuple[str, Protocol, Transport | None]]:
     mieru_on = m.app.settings.load().mieru.enabled
     xray_ready = _svc(m).xray_ready()
+    cdn_ready = _svc(m).cdn_ready()
     out = []
     for label, protocol, transport in ADD_OPTIONS:
         if protocol is Protocol.MIERU and not mieru_on:
             continue
         if transport is Transport.XHTTP and not xray_ready:
+            continue
+        if transport is Transport.CDN and not cdn_ready:
             continue
         if user is not None and user.find(protocol, transport) is not None:
             continue

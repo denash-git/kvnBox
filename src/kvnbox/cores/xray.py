@@ -18,6 +18,26 @@ from kvnbox.cores.base import RenderedFile, active_connections
 TRANSPORTS = (Transport.WS, Transport.GRPC, Transport.HTTPUPGRADE, Transport.XHTTP)
 SERVICE_USER = "xray"
 
+# Протокол CDN (XHTTP через Яндекс CDN): параметры из образца владельца, без изменений.
+# Данные клиента — в заголовке X-Data обычных GET, маскировка padding. Порядок ключей —
+# как в образце (попадает в `extra` ссылки). Замеры: PLAN-stage11 §11.
+CDN_EXTRA: dict[str, str | bool] = {
+    "mode": "packet-up",
+    "scMaxEachPostBytes": "3500",
+    "scMinPostsIntervalMs": "0",
+    "uplinkChunkSize": "4000",
+    "uplinkDataKey": "X-Data",
+    "uplinkDataPlacement": "header",
+    "uplinkHTTPMethod": "GET",
+    "xPaddingBytes": "100-500",
+    "xPaddingHeader": "X-Cache",
+    "xPaddingKey": "_dc",
+    "xPaddingMethod": "tokenish",
+    "xPaddingObfsMode": True,
+    "xPaddingPlacement": "queryInHeader",
+}
+CDN_XMUX = {"maxConcurrency": 16, "cMaxReuseTimes": 64, "hKeepAlivePeriod": 60}
+
 
 def xray_running(settings: Settings, users: Sequence[User]) -> bool:
     """Нужна ли служба: Xray включён в меню и есть хотя бы одно включённое подключение."""
@@ -47,10 +67,23 @@ def stream_settings(settings: Settings, transport: Transport) -> dict[str, Any]:
             "network": "httpupgrade",
             "httpupgradeSettings": {"path": x.httpupgrade_path, "host": settings.domain},
         }
+    if transport is Transport.CDN:
+        # данные в заголовках возможны только в packet-up (иначе Xray не запускается)
+        return {"network": "xhttp", "xhttpSettings": {"path": x.cdn_path, **CDN_EXTRA}}
     return {"network": "xhttp", "xhttpSettings": {"path": x.xhttp_path, "mode": "auto"}}
 
 
+def cdn_active(settings: Settings, users: Sequence[User]) -> bool:
+    """Нужен ли вход CDN: CDN настроен, путь есть и есть включённое подключение."""
+    return (
+        settings.cdn.configured
+        and bool(settings.xray.cdn_path)
+        and any(c.transport is Transport.CDN for _, c in active_connections(users, CoreKind.XRAY))
+    )
+
+
 def build_config(settings: Settings, users: Sequence[User]) -> dict[str, Any]:
+    transports = TRANSPORTS + ((Transport.CDN,) if cdn_active(settings, users) else ())
     inbounds = [
         {
             "tag": f"vless-{t.value}-in",
@@ -60,7 +93,7 @@ def build_config(settings: Settings, users: Sequence[User]) -> dict[str, Any]:
             "settings": {"clients": clients(users, t), "decryption": "none"},
             "streamSettings": stream_settings(settings, t),
         }
-        for t in TRANSPORTS
+        for t in transports
     ]
     return {
         "log": {"loglevel": "warning"},

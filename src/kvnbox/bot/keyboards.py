@@ -234,7 +234,7 @@ def user_info_keyboard(user: User) -> Kb:
             ]
         )
     buttons = []
-    if len({c.slot for c in user.connections}) < 6:  # 6 слотов с XHTTP (этап 11)
+    if len({c.slot for c in user.connections}) < 7:  # 7 слотов с XHTTP и CDN (этап 11)
         buttons.append(Btn(text="➕ Протокол", callback_data=f"user:proto:add:{user.name}"))
     buttons.append(Btn(text="🌀 Подписка", callback_data=f"user:links:{user.name}"))
     rows.append(buttons)

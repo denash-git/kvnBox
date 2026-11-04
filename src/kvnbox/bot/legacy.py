@@ -11,6 +11,7 @@ TYPE_BY_TRANSPORT = {
     Transport.GRPC: "grpc",
     Transport.HTTPUPGRADE: "xhttp",  # исторически (TransferBox); это HTTPUpgrade
     Transport.XHTTP: "xh",  # настоящий XHTTP, только Xray (этап 11)
+    Transport.CDN: "cdn",  # XHTTP через CDN, только Xray
 }
 TRANSPORT_BY_TYPE = {v: k for k, v in TYPE_BY_TRANSPORT.items()}
 
@@ -22,7 +23,7 @@ def proto_type(conn: Connection) -> tuple[str, str]:
 
 # В подписях «xhttp» показывается как HTTPUpgrade (так он называется в sing-box);
 # в callback_data остаётся «xhttp» — старые кнопки в чате продолжают работать.
-_TYPE_LABEL = {"xhttp": "HTTPUpgrade", "xh": "XHTTP"}
+_TYPE_LABEL = {"xhttp": "HTTPUpgrade", "xh": "XHTTP", "cdn": "CDN"}
 
 
 def proto_label(proto: str, utype: str) -> str:

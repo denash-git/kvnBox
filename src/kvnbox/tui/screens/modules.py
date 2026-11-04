@@ -202,7 +202,7 @@ def xray_module_menu(m: Menu) -> None:
         options = ["Отключить Xray" if enabled else "Включить Xray"]
         if m.app.systemd.is_active("xray"):
             options.append("Перезапустить службу")
-        options += ["Просмотреть логи службы", "Пути Xray", "Обновить Xray"]
+        options += ["Просмотреть логи службы", "Пути Xray", "Настройки CDN", "Обновить Xray"]
         if count == 0:
             options.append("Удалить Xray")
         options.append("Назад")
@@ -247,6 +247,8 @@ def xray_module_menu(m: Menu) -> None:
             _logs(m, "Модули → Xray → Логи службы", "xray")
         elif sel == "Пути Xray":
             change_vless_paths_menu(m)
+        elif sel == "Настройки CDN":
+            cdn_settings_menu(m)
         elif sel == "Обновить Xray":
             update_core_menu(m, "Модули → Xray → Обновление", mod)
         elif sel == "Удалить Xray":
@@ -260,6 +262,37 @@ def xray_module_menu(m: Menu) -> None:
                     m.ui.out()
                     m.fail(str(e))
             m.ui.pause()
+
+
+def cdn_settings_menu(m: Menu) -> None:
+    """Протокол CDN: домен для клиентов и origin-поддомен, с которым приходит CDN."""
+    svc = SettingsService(m.app)
+    c = svc.get().cdn
+    m.screen("Модули → Xray → Настройки CDN")
+    pad = m.ui.block_pad()
+    m.ui.out(f"{pad}Домен CDN (в ссылках клиентов): {BOLD}{c.domain or '(не задан)'}{RESET}")
+    m.ui.out(
+        f"{pad}Origin-поддомен (с ним приходит CDN): {BOLD}{c.origin_host or '(не задан)'}{RESET}"
+    )
+    m.ui.out()
+    m.ui.out(f"{pad}{DIM}Origin-поддомен должен указывать на IP этого сервера (A-запись):{RESET}")
+    m.ui.out(f"{pad}{DIM}на него будет получен отдельный сертификат.{RESET}")
+    m.ui.out(f"{pad}{DIM}Enter — оставить как есть, «-» — очистить.{RESET}")
+    m.ui.out()
+    domain = m.ui.read_prompt("Домен CDN (например, cdn.example.com): ").strip()
+    origin = m.ui.read_prompt("Origin-поддомен (например, xxx.example.com): ").strip()
+    if not domain and not origin:
+        return
+    domain = "" if domain == "-" else (domain or c.domain)
+    origin = "" if origin == "-" else (origin or c.origin_host)
+    m.screen("Модули → Xray → Настройки CDN")
+    m.progress("Применение настроек...")
+    try:
+        m.show_result(svc.set_cdn(domain, origin), "Настройки CDN применены.")
+    except ServiceError as e:
+        m.ui.out()
+        m.fail(str(e))
+    m.ui.pause()
 
 
 # ─── Caddy ───────────────────────────────────────────────────────────────────
@@ -562,6 +595,7 @@ _PATH_ROWS: list[tuple[str, str, str, Transport]] = [
     ("xray", "grpc_service", "Xray      Сервис gRPC:      ", Transport.GRPC),
     ("xray", "httpupgrade_path", "Xray      Путь HTTPUpgrade: ", Transport.HTTPUPGRADE),
     ("xray", "xhttp_path", "Xray      Путь XHTTP:       ", Transport.XHTTP),
+    ("xray", "cdn_path", "Xray      Путь CDN:         ", Transport.CDN),
 ]
 
 
@@ -571,7 +605,11 @@ def change_vless_paths_menu(m: Menu) -> None:
     svc = SettingsService(m.app)
     while True:
         s = svc.get()
-        rows = [r for r in _PATH_ROWS if r[0] == "vless" or s.xray.configured]
+        rows = [
+            r
+            for r in _PATH_ROWS
+            if r[0] == "vless" or (s.xray.configured and (r[1] != "cdn_path" or s.xray.cdn_path))
+        ]
         options = [
             f"{label}{getattr(getattr(s, core), field) or '(пусто)'}"
             for core, field, label, _ in rows

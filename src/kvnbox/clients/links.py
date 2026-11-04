@@ -20,6 +20,7 @@ from kvnbox.core.models import (
     User,
     UuidCredentials,
 )
+from kvnbox.cores.xray import CDN_EXTRA, CDN_XMUX
 
 PORT_HTTPS = 443
 
@@ -29,9 +30,22 @@ LINK_SUFFIX = {
     (Protocol.VLESS, Transport.GRPC): "grpc",
     (Protocol.VLESS, Transport.HTTPUPGRADE): "httpupgrade",
     (Protocol.VLESS, Transport.XHTTP): "xhttp",
+    (Protocol.VLESS, Transport.CDN): "cdn",
     (Protocol.NAIVE, None): "naive",
     (Protocol.MIERU, None): "mieru",
 }
+
+
+def cdn_link(uuid: str, settings: Settings, name: str) -> str:
+    """Протокол CDN — как в образце владельца: адрес, SNI и host = домен CDN,
+    параметры XHTTP — в `extra` (JSON, URL-кодирован)."""
+    cdn = settings.cdn.domain
+    extra = quote(json.dumps({**CDN_EXTRA, "xmux": CDN_XMUX}, separators=(",", ":")), safe="")
+    return (
+        f"vless://{uuid}@{cdn}:{PORT_HTTPS}?encryption=none&security=tls&sni={cdn}"
+        f"&alpn=h2&type=xhttp&mode=packet-up&path={quote(settings.xray.cdn_path, safe='')}"
+        f"&host={cdn}&extra={extra}#{name}"
+    )
 
 
 def profile_name(user: User, conn: Connection) -> str:
@@ -67,6 +81,8 @@ def build_link(user: User, conn: Connection, settings: Settings) -> str:
             return f"{base}&type=grpc&serviceName={p.grpc_service}#{name}"
         if conn.transport is Transport.XHTTP:
             return f"{base}&type=xhttp&path={settings.xray.xhttp_path}&mode=auto#{name}"
+        if conn.transport is Transport.CDN:
+            return cdn_link(conn.credentials.uuid, settings, name)
         return f"{base}&type=httpupgrade&path={p.httpupgrade_path}#{name}"
 
     creds = _password_creds(conn)

@@ -7,7 +7,7 @@ from collections.abc import Callable
 
 from pydantic import ValidationError
 
-from kvnbox.core.models import FAKE_SITE_TEMPLATES, Settings
+from kvnbox.core.models import FAKE_SITE_TEMPLATES, CoreKind, Settings, Transport, random_path
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.apply import Applier, ApplyResult
@@ -73,6 +73,27 @@ class SettingsService:
 
         return self.update(change)
 
+    def set_cdn(self, domain: str, origin_host: str) -> ApplyResult:
+        """Протокол CDN: домен для клиентов и origin-поддомен (на него Caddy получит
+        сертификат). Путь создаётся случайным при первой настройке."""
+        domain, origin_host = domain.strip().lower(), origin_host.strip().lower()
+        if not domain or not origin_host:
+            in_use = any(
+                c.transport is Transport.CDN and c.core is CoreKind.XRAY
+                for u in self.app.users.all()
+                for c in u.connections
+            )
+            if in_use:
+                raise ServiceError("Есть подключения CDN — сначала удалите их.")
+
+        def change(s: Settings) -> None:
+            s.cdn.domain = domain
+            s.cdn.origin_host = origin_host
+            if domain and origin_host and not s.xray.cdn_path:
+                s.xray.cdn_path = random_path()
+
+        return self.update(change)
+
     def set_path(self, core: str, field: str, value: str) -> ApplyResult:
         """Путь одного ядра («vless» — sing-box, «xray»): ws_path, grpc_service,
         httpupgrade_path, xhttp_path. Совпадения путей ловит модель Settings."""
@@ -81,6 +102,7 @@ class SettingsService:
             "grpc_service",
             "httpupgrade_path",
             "xhttp_path",
+            "cdn_path",
         ):
             raise ServiceError(f"Неизвестная настройка пути: {core}.{field}")
         if core == "xray" and not value.strip("/"):

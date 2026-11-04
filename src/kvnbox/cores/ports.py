@@ -25,4 +25,5 @@ XRAY = {
     Transport.GRPC: 10013,
     Transport.HTTPUPGRADE: 10014,
     Transport.XHTTP: 10015,
+    Transport.CDN: 10016,  # XHTTP через CDN
 }

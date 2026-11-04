@@ -5,7 +5,7 @@
 }
 
 # Main HTTPS server
-:443, {{DOMAIN}} {
+:443, {{DOMAIN}}{{EXTRA_HOSTS}} {
     tls {
         issuer acme {
             {{CADDY_TLS_EMAIL}}
