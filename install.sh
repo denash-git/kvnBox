@@ -248,15 +248,6 @@ step_speedtest() {
     return 2
 }
 
-step_bbr() {
-    if ! grep -qw bbr /proc/sys/net/ipv4/tcp_available_congestion_control && ! modprobe tcp_bbr; then
-        NOTE="ядро не поддерживает BBR"
-        return 2
-    fi
-    printf 'net.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n' >/etc/sysctl.d/99-kvnbox-bbr.conf
-    sysctl -w net.core.default_qdisc=fq && sysctl -w net.ipv4.tcp_congestion_control=bbr
-}
-
 install_deb() {  # пакет, версия, url, sha256
     if [[ "$(deb_version "$1")" == "$2" ]]; then NOTE="$2, уже установлен"; return 0; fi
     local deb="$WORK/$1.deb"
@@ -408,7 +399,8 @@ ensure_caddy_unit(app.paths, app.systemd)
 
 step_init() {
     if [[ -f "$DATA/settings.json" ]]; then NOTE="данные уже есть — сохранены"; return 0; fi
-    kvn init --domain "$DOMAIN"
+    # BBR по умолчанию выключен — включается в меню
+    kvn init --domain "$DOMAIN" --no-bbr
 }
 
 step_firewall() { kvn firewall setup; }
@@ -509,7 +501,6 @@ add_step step_apt_update  "Обновление списка пакетов"
 add_step step_packages    "Пакеты Debian (Python, UFW, Fail2ban, iperf3…)"
 add_step step_source      "Загрузка kvnBox"
 add_step step_speedtest   "Ookla Speedtest"
-$REPAIR || add_step step_bbr "TCP BBR"
 add_step step_singbox     "sing-box"
 add_step step_mita        "Mieru (mita)"
 add_step step_swap        "Временный файл подкачки"

@@ -181,26 +181,36 @@ def mieru_module_menu(m: Menu) -> None:
             m.ui.pause()
             continue
         s = m.app.settings.load().mieru
-        options = (
-            ["Остановить службу", "Перезапустить службу"] if s.enabled else ["Запустить службу"]
-        )
+        # «Отключить» только выключает Mieru (служба и правила фаервола), пакет и
+        # настройки остаются — «Включить» возвращает как было
+        options = ["Отключить Mieru", "Перезапустить службу"] if s.enabled else ["Включить Mieru"]
         port_item = f"Изменить порт (Текущий порт: {s.port})"
-        options += [port_item, "Обновить Mieru", "Отключить Mieru", "Назад"]
+        options += [port_item, "Обновить Mieru", "Назад"]
         choice = m.select("Модуль: Mieru", options)
         if choice == BACK or options[choice] == "Назад":
             return
         sel = options[choice]
-        if sel in ("Запустить службу", "Остановить службу"):
-            start = sel == "Запустить службу"
-            m.screen(f"Модули → Mieru → {'Запуск' if start else 'Остановка'}")
-            m.progress(f"{'Запуск' if start else 'Остановка'} службы Mieru...")
-            res = mod.set_enabled(start)
-            m.show_result(
-                res,
-                "Служба Mieru запущена. Сервисы перезапущены."
-                if start
-                else "Служба Mieru остановлена. Сервисы перезапущены.",
+        if sel == "Включить Mieru":
+            m.screen("Модули → Mieru → Включение")
+            m.progress("Включение Mieru...")
+            m.show_result(mod.set_enabled(True), "Mieru включен. Сервисы перезапущены.")
+            m.ui.pause()
+        elif sel == "Отключить Mieru":
+            m.screen("Модули → Mieru → Отключение")
+            m.ui.out()
+            m.ui.center_print(
+                f"{YELLOW}Подключения Mieru у пользователей не будут работать до включения.{RESET}"
             )
+            m.ui.center_print(
+                f"{DIM}Mieru не удаляется: включить снова — этот же пункт меню.{RESET}"
+            )
+            m.ui.out()
+            if m.ui.read_prompt("Отключить Mieru? (y/N): ") in ("y", "Y", "д", "Д"):
+                m.progress("Отключение Mieru...")
+                m.show_result(mod.set_enabled(False), "Mieru отключен. Сервисы перезапущены.")
+            else:
+                m.ui.out()
+                m.ui.center_print("Отключение отменено.")
             m.ui.pause()
         elif sel == "Перезапустить службу":
             _service_action(
@@ -228,24 +238,6 @@ def mieru_module_menu(m: Menu) -> None:
         elif sel == "Обновить Mieru":
             m.screen("Модули → Mieru → Обновление")
             _install_mieru(m, mod)
-            m.ui.pause()
-        elif sel == "Отключить Mieru":
-            m.screen("Модули → Mieru → Отключение")
-            m.ui.out()
-            m.ui.center_print(
-                f"{RED}⚠️ ВНИМАНИЕ: Mieru будет отключен и удален с этого сервера!{RESET}"
-            )
-            m.ui.center_print(f"{DIM}Вернуть: Модули → Mieru → Установить Mieru{RESET}")
-            m.ui.out()
-            if m.ui.read_prompt("Вы уверены, что хотите отключить Mieru? (y/N): ") in ("y", "Y"):
-                m.progress("Остановка и отключение службы...")
-                m.ui.center_print(f"{DIM}[*] Удаление пакета...{RESET}")
-                mod.uninstall()
-                m.ui.out()
-                m.ok("Mieru (Mita) отключен и удален.")
-            else:
-                m.ui.out()
-                m.ui.center_print("Отключение отменено.")
             m.ui.pause()
 
 
