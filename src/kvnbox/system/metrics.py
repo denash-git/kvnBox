@@ -22,6 +22,7 @@ class Memory:
     used_mb: int  # как в `free`: total − available
     free_mb: int
     cache_mb: int  # buff/cache
+    exact_percent: float = 0.0  # точно, по килобайтам (как psutil) — для порогов алертов
 
     @property
     def percent(self) -> int:
@@ -77,6 +78,7 @@ def parse_meminfo(text: str) -> Memory:
         used_mb=(total - available) // 1024,
         free_mb=kb.get("MemFree", 0) // 1024,
         cache_mb=cache // 1024,
+        exact_percent=round((total - available) * 100 / total, 1) if total else 0.0,
     )
 
 
