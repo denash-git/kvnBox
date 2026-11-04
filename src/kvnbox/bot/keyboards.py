@@ -93,35 +93,11 @@ def ssh_back_keyboard() -> Kb:
 def security_menu_keyboard(active: bool, has_bans: bool = False) -> Kb:
     toggle = "🔴 Отключить защиту" if active else "🟢 Включить защиту"
     rows = [[Btn(text=_a(toggle), callback_data="settings:security_toggle")]]
-    if active:
+    if active and has_bans:
         rows.append(
-            [
-                Btn(
-                    text=_a("📋 Список заблокированных"),
-                    callback_data="settings:security_banned_list",
-                )
-            ]
+            [Btn(text=_a("🔓 Разблокировать всех"), callback_data="settings:security_unban_all")]
         )
-        if has_bans:
-            rows.append(
-                [
-                    Btn(
-                        text=_a("🔓 Разблокировать всех"),
-                        callback_data="settings:security_unban_all",
-                    )
-                ]
-            )
     rows += [[TO_SETTINGS], [MAIN]]
-    return Kb(inline_keyboard=rows)
-
-
-def security_banned_keyboard(has_bans: bool) -> Kb:
-    rows = []
-    if has_bans:
-        rows.append(
-            [Btn(text="🔓 Разблокировать всех", callback_data="settings:security_unban_all")]
-        )
-    rows += [[Btn(text="« Назад к Защите", callback_data="settings:security_menu")], [MAIN]]
     return Kb(inline_keyboard=rows)
 
 
@@ -181,7 +157,7 @@ def speedtest_menu_keyboard() -> Kb:
     return Kb(
         inline_keyboard=[
             [Btn(text=_a("🌐 VPS → Интернет (Ookla)"), callback_data="diag:speed_ookla")],
-            [Btn(text=_a("📶 Client ↔ VPS (iperf3)"), callback_data="diag:speed_iperf")],
+            [Btn(text=_a("📶 Client ⇄ VPS (iperf3)"), callback_data="diag:speed_iperf")],
             [Btn(text="« Назад в Диагностику", callback_data="diag:menu")],
             [MAIN],
         ]

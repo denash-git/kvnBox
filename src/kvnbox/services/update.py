@@ -9,7 +9,7 @@ from kvnbox import __version__
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.jobs import PANEL_REPO
-from kvnbox.system.releases import ReleaseError, Releases, version_of
+from kvnbox.system.releases import NoReleasesError, ReleaseError, Releases, version_of
 
 
 def version_key(v: str) -> tuple[int, ...]:
@@ -38,6 +38,8 @@ class UpdateService:
     def check(self) -> UpdateCheck:
         try:
             latest = version_of(self.releases.latest_tag(PANEL_REPO))
+        except NoReleasesError as e:
+            raise ServiceError("На GitHub пока нет опубликованных версий kvnBox.") from e
         except ReleaseError as e:
             raise ServiceError("Не удалось подключиться к GitHub для проверки обновлений.") from e
         return UpdateCheck(__version__, latest)

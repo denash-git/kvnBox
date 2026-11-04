@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import urllib.error
 import urllib.request
 from collections.abc import Callable
 from pathlib import Path
@@ -24,6 +25,10 @@ class ReleaseError(Exception):
     pass
 
 
+class NoReleasesError(ReleaseError):
+    """Репозиторий доступен, но в нём ещё нет ни одного релиза (GitHub отвечает 404)."""
+
+
 class Releases:
     def __init__(self, fetch: Fetch = http_get) -> None:
         self.fetch = fetch
@@ -34,6 +39,10 @@ class Releases:
             data = json.loads(
                 self.fetch(f"https://api.github.com/repos/{repo}/releases/latest", 20)
             )
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise NoReleasesError(f"В {repo} нет опубликованных релизов") from e
+            raise ReleaseError(f"Не удалось узнать последнюю версию {repo}: {e}") from e
         except Exception as e:  # сеть, лимит API, неверный JSON
             raise ReleaseError(f"Не удалось узнать последнюю версию {repo}: {e}") from e
         tag = data.get("tag_name") if isinstance(data, dict) else None

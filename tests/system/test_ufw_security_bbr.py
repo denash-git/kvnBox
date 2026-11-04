@@ -152,16 +152,61 @@ def test_bbr_state(paths: Paths) -> None:
     assert not Bbr(FakeRunner(), paths).is_active()
 
 
+def _kernel(paths: Paths) -> FakeRunner:
+    """sysctl -w меняет «ядро» (proc) по-настоящему."""
+
+    def sysctl_w(argv: list[str], _: str | None) -> Result:
+        key, value = argv[2].split("=")
+        if key == "net.ipv4.tcp_congestion_control":
+            _proc(paths, value)
+        return Result(0)
+
+    return FakeRunner().on("sysctl", "-w", result=sysctl_w)
+
+
 def test_bbr_enable_disable(paths: Paths) -> None:
     _proc(paths, "cubic")
-    fake = FakeRunner()
+    fake = _kernel(paths)
     bbr = Bbr(fake, paths)
-    assert bbr.enable()
+    assert bbr.enable() and bbr.is_active()
     assert "tcp_congestion_control=bbr" in paths.sysctl_bbr.read_text()
     assert ["sysctl", "-w", "net.ipv4.tcp_congestion_control=bbr"] in fake.calls
-    assert bbr.disable()
+    assert bbr.disable() and not bbr.is_active()
     assert not paths.sysctl_bbr.exists()
-    assert fake.calls[-1] == ["sysctl", "--system"]
+    # cubic выставляется ПОСЛЕ перечитывания sysctl.d, иначе оно вернёт bbr
+    assert fake.calls[-2:] == [
+        ["sysctl", "--system"],
+        ["sysctl", "-w", "net.ipv4.tcp_congestion_control=cubic"],
+    ]
+
+
+def test_bbr_disable_removes_transferbox_file(paths: Paths) -> None:
+    """Стенд: файл TransferBox оставался и возвращал bbr через sysctl --system."""
+    _proc(paths, "bbr")
+    legacy = paths.etc / "sysctl.d" / "99-transferbox-bbr.conf"
+    legacy.parent.mkdir(parents=True, exist_ok=True)
+    legacy.write_text("net.core.default_qdisc=fq\nnet.ipv4.tcp_congestion_control=bbr\n")
+    bbr = Bbr(_kernel(paths), paths)
+    assert bbr.disable() and not bbr.is_active()
+    assert not legacy.exists()
+    assert bbr.foreign_sources() == []
+
+
+def test_bbr_disable_fails_when_kernel_keeps_bbr(paths: Paths) -> None:
+    _proc(paths, "bbr")
+    assert not Bbr(FakeRunner(), paths).disable()  # sysctl «успешен», но ядро не сменилось
+
+
+def test_bbr_foreign_sources(paths: Paths) -> None:
+    d = paths.etc / "sysctl.d"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "10-hoster.conf").write_text("net.ipv4.tcp_congestion_control = bbr\n")
+    (d / "20-other.conf").write_text("# net.ipv4.tcp_congestion_control=bbr\nvm.swappiness=10\n")
+    (paths.etc / "sysctl.conf").write_text("net/ipv4/tcp_congestion_control=bbr\n")
+    assert Bbr(FakeRunner(), paths).foreign_sources() == [
+        paths.etc / "sysctl.conf",
+        d / "10-hoster.conf",
+    ]
 
 
 def test_bbr_unsupported(paths: Paths) -> None:

@@ -175,7 +175,23 @@ def test_speedtest_result_format() -> None:
         '"upload":{"bandwidth":6250000},"packetLoss":0}'
     )
     text = status.format_speedtest_result(raw)
-    assert "<code>ISP - Moscow (id: 1)</code>" in text and "<code>100.0 Mbps</code>" in text
+    assert text.splitlines()[2:] == [
+        "📥 Download: <code>100.0 Mbps</code>",
+        "📤 Upload: <code>50.0 Mbps</code>",
+        "⚡️ Ping: <code>3.21 ms</code>",
+        "      jitter: <code>0.50 ms</code>",
+        "📊 loss: <code>0.0%</code>",
+    ]
+    text = status.format_speedtest_result(
+        "Idle Latency: 7.96 ms (jitter: 0.09ms)\nDownload: 456.39 Mbps\nUpload: 566.46 Mbps\n"
+    )
+    assert "📥 Download: <code>456.39 Mbps</code>" in text
+    assert "jitter: <code>0.09 ms</code>" in text
+
+
+def test_no_emoji_arrow_in_bot() -> None:
+    """«↔» Telegram рисует картинкой-эмодзи — в боте только текстовая стрелка."""
+    assert "⇄" in kb.speedtest_menu_keyboard().inline_keyboard[1][0].text
 
 
 def test_settings_backup_toggle_and_time(env: Env) -> None:

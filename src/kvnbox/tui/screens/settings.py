@@ -357,7 +357,7 @@ def security_protection_menu(m: Menu) -> None:
         my_ip = _session_ip()
         options: list[str] = []
         if active and st is not None:
-            options += ["Отключить защиту от сканеров", "Просмотреть список заблокированных IP"]
+            options.append("Отключить защиту от сканеров")
             if my_ip:
                 options.append(f"Разблокировать мой текущий IP ({my_ip})")
             if sum(j.currently_banned for j in st.jails) > 0:
@@ -395,8 +395,6 @@ def security_protection_menu(m: Menu) -> None:
             m.ui.out()
             m.ok(svc.disable())
             time.sleep(2)
-        elif sel == "Просмотреть список заблокированных IP":
-            _banned_list(m)
         elif sel.startswith("Разблокировать мой текущий IP"):
             m.screen("Настройки → Разблокировка текущего IP")
             _unban(m, lambda ip=my_ip: svc.unban(ip))
@@ -425,24 +423,6 @@ def _unban(m: Menu, action: object) -> None:
     except ServiceError as e:
         m.ui.out()
         m.fail(str(e))
-
-
-def _banned_list(m: Menu) -> None:
-    m.screen("Заблокированные сканеры")
-    pad = m.ui.block_pad()
-    st = SecurityService(m.app).status()
-    ips = st.banned_ips
-    if not ips:
-        m.ui.out(f"{pad}Список заблокированных IP пуст. Сканеров не зафиксировано.")
-    else:
-        m.ui.out(f"{pad}Всего заблокировано: {len(ips)} IP\n")
-        for ip in ips[:60]:
-            jails = [j.name for j in st.jails if ip in j.banned_ips]
-            m.ui.out(f"{pad}• {ip}" + (f" ({', '.join(jails)})" if jails else ""))
-        if len(ips) > 60:
-            m.ui.out(f"\n{pad}... и ещё {len(ips) - 60} IP-адресов")
-    m.ui.out()
-    m.ui.pause()
 
 
 # ─── Telegram-бот ────────────────────────────────────────────────────────────

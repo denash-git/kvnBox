@@ -10,7 +10,6 @@ from aiogram.types import CallbackQuery, Message
 
 from kvnbox.bot.common import edit, run, show
 from kvnbox.bot.keyboards import (
-    security_banned_keyboard,
     security_menu_keyboard,
     settings_back_keyboard,
     settings_backup_keyboard,
@@ -143,9 +142,10 @@ async def ssh_port_msg(message: Message, app: App, state: FSMContext) -> None:
 
 # ─── BBR и обновления ────────────────────────────────────────────────────────
 
-BBR_BOT_TEXT = {  # формулировки бота TransferBox
-    "BBR оптимизация успешно отключена (переключено на cubic).": "BBR оптимизация отключена (переключено на cubic).",
-}
+BBR_BOT_TEXT = (  # формулировка бота TransferBox
+    "BBR оптимизация успешно отключена (переключено на cubic).",
+    "BBR оптимизация отключена (переключено на cubic).",
+)
 
 
 @router.callback_query(F.data == "settings:bbr_toggle")
@@ -154,7 +154,7 @@ async def bbr_toggle(cb: CallbackQuery, app: App) -> None:
         msg = await run(BbrModule(app).toggle)
     except ServiceError as e:
         msg = str(e)
-    await cb.answer(BBR_BOT_TEXT.get(msg, msg), show_alert=True)
+    await cb.answer(msg.replace(*BBR_BOT_TEXT), show_alert=True)
     await edit(cb, SETTINGS_TEXT, settings_menu_keyboard(app.bbr.is_active()))
 
 
@@ -346,7 +346,8 @@ async def _security_screen(cb: CallbackQuery, app: App) -> None:
     await edit(cb, security_text(st), security_menu_keyboard(st.active, bool(st.banned_ips)))
 
 
-@router.callback_query(F.data == "settings:security_menu")
+# «settings:security_banned_list» — кнопка списка из старых сообщений (список убран, D-033)
+@router.callback_query(F.data.in_({"settings:security_menu", "settings:security_banned_list"}))
 async def security_menu(cb: CallbackQuery, app: App) -> None:
     await _security_screen(cb, app)
     await cb.answer()
@@ -369,24 +370,3 @@ async def security_unban_all(cb: CallbackQuery, app: App) -> None:
     msg = await run(SecurityService(app).unban_all)
     await cb.answer(msg[:150], show_alert=True)
     await _security_screen(cb, app)
-
-
-@router.callback_query(F.data == "settings:security_banned_list")
-async def security_banned_list(cb: CallbackQuery, app: App) -> None:
-    st = await run(SecurityService(app).status)
-    ips = st.banned_ips
-    if not ips:
-        text = (
-            "📋 <b>Список заблокированных сканеров</b>\n\n"
-            "🟢 В настоящее время нет заблокированных IP-адресов. Система чиста."
-        )
-    else:
-        lines = ["📋 <b>Заблокированные IP:</b>\n"]
-        for ip in ips[:30]:
-            jails = [j.name for j in st.jails if ip in j.banned_ips]
-            lines.append(f"• <code>{ip}</code>" + (f" ({', '.join(jails)})" if jails else ""))
-        if len(ips) > 30:
-            lines.append(f"\n<i>... и ещё {len(ips) - 30} IP-адресов</i>")
-        text = "\n".join(lines)
-    await edit(cb, text, security_banned_keyboard(bool(ips)))
-    await cb.answer()

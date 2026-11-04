@@ -80,33 +80,37 @@ def status_text(app: App) -> str:
     )
 
 
+SPEEDTEST_TITLE = "🚀 <b>Тест скорости VPS → Интернет</b>\n\n"
+
+
+def _speed_lines(dl: str, ul: str, ping: str, jitter: str | None, loss: str) -> str:
+    """Короткий формат по просьбе пользователя (D-034): только числа, подписи англ."""
+    lines = [
+        f"📥 Download: <code>{dl} Mbps</code>",
+        f"📤 Upload: <code>{ul} Mbps</code>",
+        f"⚡️ Ping: <code>{ping} ms</code>",
+    ]
+    if jitter is not None:
+        lines.append(f"      jitter: <code>{jitter} ms</code>")
+    lines.append(f"📊 loss: <code>{loss}</code>")
+    return SPEEDTEST_TITLE + "\n".join(lines)
+
+
 def format_speedtest_result(raw: str) -> str:
-    """Порт format_speedtest_result: JSON Ookla, иначе разбор текстового вывода."""
+    """Результат Ookla: JSON, иначе разбор текстового вывода."""
     for line in raw.splitlines():
         line = line.strip()
         if line.startswith("{") and line.endswith("}"):
             try:
                 data = json.loads(line)
-                srv = data.get("server", {})
-                srv_str = f"{srv.get('name', 'Неизвестно')}"
-                if srv.get("location"):
-                    srv_str += f" - {srv['location']}"
-                if srv.get("id"):
-                    srv_str += f" (id: {srv['id']})"
                 ping = data.get("ping", {})
-                dl = round(data.get("download", {}).get("bandwidth", 0) * 8 / 1_000_000, 2)
-                ul = round(data.get("upload", {}).get("bandwidth", 0) * 8 / 1_000_000, 2)
-                loss = data.get("packetLoss", 0.0)
-                loss_str = f"{loss:.1f}%" if loss is not None else "0.0%"
-                return (
-                    "🚀 <b>Результаты теста скорости VPS → Интернет:</b>\n\n"
-                    f"🌐 <b>Сервер:</b> <code>{srv_str}</code>\n"
-                    f"🏢 <b>Провайдер:</b> <code>{data.get('isp', 'Неизвестно')}</code>\n\n"
-                    f"⚡ <b>Задержка (Ping):</b> <code>{ping.get('latency', 0.0):.2f} ms</code> "
-                    f"(jitter: <code>{ping.get('jitter', 0.0):.2f} ms</code>)\n"
-                    f"📥 <b>Входящая (Download):</b> <code>{dl} Mbps</code>\n"
-                    f"📤 <b>Исходящая (Upload):</b> <code>{ul} Mbps</code>\n"
-                    f"📊 <b>Потери пакетов:</b> <code>{loss_str}</code>"
+                loss = data.get("packetLoss")
+                return _speed_lines(
+                    str(round(data.get("download", {}).get("bandwidth", 0) * 8 / 1_000_000, 2)),
+                    str(round(data.get("upload", {}).get("bandwidth", 0) * 8 / 1_000_000, 2)),
+                    f"{ping.get('latency', 0.0):.2f}",
+                    f"{ping.get('jitter', 0.0):.2f}",
+                    f"{loss:.1f}%" if isinstance(loss, (int, float)) else "0.0%",
                 )
             except Exception:
                 pass
@@ -114,21 +118,15 @@ def format_speedtest_result(raw: str) -> str:
     def find(pattern: str) -> re.Match[str] | None:
         return re.search(pattern, raw, re.I)
 
-    srv_m, isp_m = find(r"Server:\s*(.+)"), find(r"ISP:\s*(.+)")
     lat_m = find(r"(?:Idle Latency|Latency):\s*([\d\.]+)\s*ms\s*(?:\(jitter:\s*([\d\.]+)ms)?")
     dl_m, ul_m = find(r"Download:\s*([\d\.]+)\s*Mbps"), find(r"Upload:\s*([\d\.]+)\s*Mbps")
     loss_m = find(r"Packet Loss:\s*([\d\.]+)%")
-    ping = f"<code>{lat_m.group(1) if lat_m else '—'} ms</code>"
-    if lat_m and lat_m.group(2):
-        ping += f" (jitter: <code>{lat_m.group(2)} ms</code>)"
-    return (
-        "🚀 <b>Результаты теста скорости VPS → Интернет:</b>\n\n"
-        f"🌐 <b>Сервер:</b> <code>{srv_m.group(1).strip() if srv_m else 'Неизвестно'}</code>\n"
-        f"🏢 <b>Провайдер:</b> <code>{isp_m.group(1).strip() if isp_m else 'Неизвестно'}</code>\n\n"
-        f"⚡ <b>Задержка (Ping):</b> {ping}\n"
-        f"📥 <b>Входящая (Download):</b> <code>{dl_m.group(1) if dl_m else '—'} Mbps</code>\n"
-        f"📤 <b>Исходящая (Upload):</b> <code>{ul_m.group(1) if ul_m else '—'} Mbps</code>\n"
-        f"📊 <b>Потери пакетов:</b> <code>{loss_m.group(1) + '%' if loss_m else '0.0%'}</code>"
+    return _speed_lines(
+        dl_m.group(1) if dl_m else "—",
+        ul_m.group(1) if ul_m else "—",
+        lat_m.group(1) if lat_m else "—",
+        lat_m.group(2) if lat_m and lat_m.group(2) else None,
+        loss_m.group(1) + "%" if loss_m else "0.0%",
     )
 
 
@@ -156,7 +154,7 @@ async def speed_menu(cb: CallbackQuery) -> None:
             "🚀 <b>Тестирование скорости сети</b>\n\n"
             "Выберите тип замера скорости:\n\n"
             "• <b>VPS → Интернет:</b> официальный замер канала сервера до узлов Ookla Speedtest.\n"
-            "• <b>Client ↔ VPS (iperf3):</b> замер прямого канала между вашим ПК/смартфоном и сервером."
+            "• <b>Client ⇄ VPS (iperf3):</b> замер прямого канала между вашим ПК/смартфоном и сервером."
         ),
         speedtest_menu_keyboard(),
     )
@@ -211,7 +209,7 @@ async def speed_iperf(cb: CallbackQuery, app: App) -> None:
     await edit(
         cb,
         (
-            "📶 <b>Замер скорости: Client ↔ VPS (iperf3)</b>\n\n"
+            "📶 <b>Замер скорости: Client ⇄ VPS (iperf3)</b>\n\n"
             "🟢 <b>Сервер iperf3 временно запущен на VPS!</b>\n"
             "<i>Служба и порт 5201 в фаерволе автоматически закроются через 3 минуты "
             "(или по кнопке «Остановить iperf3»).</i>\n\n"
@@ -234,7 +232,7 @@ async def iperf_stop(cb: CallbackQuery, app: App) -> None:
     await run(DiagnosticsService(app).iperf_stop)
     await edit(
         cb,
-        "📶 <b>Замер скорости: Client ↔ VPS (iperf3)</b>\n\n"
+        "📶 <b>Замер скорости: Client ⇄ VPS (iperf3)</b>\n\n"
         "⚪ <b>Сервер iperf3 остановлен.</b>\n"
         "Порт 5201 в фаерволе UFW успешно закрыт.",
         speedtest_menu_keyboard(),

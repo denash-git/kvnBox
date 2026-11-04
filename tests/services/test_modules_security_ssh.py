@@ -117,11 +117,24 @@ def test_bbr_toggle(env: Env) -> None:
     d.mkdir(parents=True)
     (d / "tcp_congestion_control").write_text("cubic\n")
     (d / "tcp_available_congestion_control").write_text("cubic bbr\n")
+
+    def sysctl_w(argv: list[str], _: str | None) -> Result:
+        key, value = argv[2].split("=")
+        if key == "net.ipv4.tcp_congestion_control":
+            (d / "tcp_congestion_control").write_text(value + "\n")
+        return Result(0)
+
+    env.runner.on("sysctl", "-w", result=sysctl_w)
     assert "включена" in BbrModule(env.app).toggle()
     assert env.app.settings.load().bbr_enabled
-    (d / "tcp_congestion_control").write_text("bbr\n")
-    assert "отключена" in BbrModule(env.app).toggle()
+    assert BbrModule(env.app).toggle() == (
+        "BBR оптимизация успешно отключена (переключено на cubic)."
+    )
     assert not env.app.settings.load().bbr_enabled
+    # чужой конфиг с bbr — предупреждаем, что вернётся после перезагрузки
+    BbrModule(env.app).toggle()
+    (env.paths.etc / "sysctl.conf").write_text("net.ipv4.tcp_congestion_control=bbr\n")
+    assert "после перезагрузки" in BbrModule(env.app).toggle()
 
 
 # ─── защита ──────────────────────────────────────────────────────────────────
@@ -185,3 +198,20 @@ def test_users_service_survives_bad_name_without_apply(env: Env) -> None:
     with pytest.raises(ServiceError):
         UserService(env.app).create("bad:name", Protocol.NAIVE)
     assert not env.runner.called("caddy")
+
+
+def test_update_check_no_releases_vs_network(env: Env) -> None:
+    import urllib.error
+
+    from kvnbox.services.update import UpdateService
+
+    def not_found(url: str, timeout: float) -> bytes:
+        raise urllib.error.HTTPError(url, 404, "Not Found", None, None)  # type: ignore[arg-type]
+
+    def offline(url: str, timeout: float) -> bytes:
+        raise OSError("network is unreachable")
+
+    with pytest.raises(ServiceError, match="пока нет опубликованных версий"):
+        UpdateService(env.app, Releases(not_found)).check()
+    with pytest.raises(ServiceError, match="Не удалось подключиться к GitHub"):
+        UpdateService(env.app, Releases(offline)).check()

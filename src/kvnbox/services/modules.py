@@ -301,7 +301,12 @@ class BbrModule:
             if not self.app.bbr.disable():
                 raise ServiceError("Ошибка при отключении BBR.")
             self.settings.update(lambda s: setattr(s, "bbr_enabled", False), apply=False)
-            return "BBR оптимизация успешно отключена (переключено на cubic)."
+            msg = "BBR оптимизация успешно отключена (переключено на cubic)."
+            foreign = self.app.bbr.foreign_sources()
+            if foreign:
+                names = ", ".join(str(p) for p in foreign)
+                msg += f"\nВнимание: BBR включится снова после перезагрузки из {names}."
+            return msg
         if not self.app.bbr.enable():
             raise ServiceError("Ядро вашей системы не поддерживает BBR.")
         self.settings.update(lambda s: setattr(s, "bbr_enabled", True), apply=False)
