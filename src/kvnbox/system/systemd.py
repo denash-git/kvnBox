@@ -17,8 +17,9 @@ class Systemd:
 
     def state(self, unit: str) -> str:
         """active / inactive / failed / activating … (как `systemctl is-active`)."""
-        out = self._ctl("is-active", unit, timeout=15).stdout.strip()
-        return out or "inactive"
+        res = self._ctl("is-active", unit, timeout=15)
+        out = res.stdout.strip()
+        return out or ("active" if res.ok else "inactive")
 
     def is_enabled(self, unit: str) -> bool:
         return self._ctl("is-enabled", "--quiet", unit, timeout=15).ok
