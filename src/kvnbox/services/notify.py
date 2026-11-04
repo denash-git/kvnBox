@@ -53,6 +53,12 @@ class Telegram:
         self._call("sendMessage", body.encode("utf-8"), "application/json")
 
     def send_document(self, path: Path, caption: str = "") -> None:
+        self._upload("sendDocument", "document", path, caption, "application/octet-stream")
+
+    def send_photo(self, path: Path, caption: str = "") -> None:
+        self._upload("sendPhoto", "photo", path, caption, "image/png")
+
+    def _upload(self, method: str, field: str, path: Path, caption: str, mime: str) -> None:
         boundary = "kvnbox" + secrets.token_hex(12)
         fields = {"chat_id": self.s.chat_id, "caption": caption, "parse_mode": "HTML"}
         parts: list[bytes] = []
@@ -62,13 +68,13 @@ class Telegram:
                 f"{value}\r\n".encode()
             )
         parts.append(
-            f'--{boundary}\r\nContent-Disposition: form-data; name="document"; '
-            f'filename="{path.name}"\r\nContent-Type: application/octet-stream\r\n\r\n'.encode()
+            f'--{boundary}\r\nContent-Disposition: form-data; name="{field}"; '
+            f'filename="{path.name}"\r\nContent-Type: {mime}\r\n\r\n'.encode()
             + path.read_bytes()
             + b"\r\n"
         )
         parts.append(f"--{boundary}--\r\n".encode())
-        self._call("sendDocument", b"".join(parts), f"multipart/form-data; boundary={boundary}")
+        self._call(method, b"".join(parts), f"multipart/form-data; boundary={boundary}")
 
     def _call(self, method: str, body: bytes, content_type: str) -> None:
         if not self.configured:

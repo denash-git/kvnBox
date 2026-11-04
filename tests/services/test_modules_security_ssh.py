@@ -34,14 +34,14 @@ def with_arch(env: Env) -> None:
 # ─── модули ──────────────────────────────────────────────────────────────────
 
 
-def test_mieru_install_enables_and_applies(env: Env) -> None:
+def test_mieru_install_does_not_enable(env: Env) -> None:
     with_arch(env)
     releases, fetched = fake_releases()
     result = MieruModule(env.app, releases=releases).install()
     assert result.ok
     assert fetched[-1].endswith("/v3.40.0/mita_3.40.0_amd64.deb")
     assert env.runner.called("dpkg", "-i")
-    assert env.app.settings.load().mieru.enabled
+    assert not env.app.settings.load().mieru.enabled  # включается отдельно (1:1)
 
 
 def test_mieru_port_and_uninstall(env: Env) -> None:

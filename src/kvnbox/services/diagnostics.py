@@ -33,6 +33,7 @@ class SpeedtestServer:
     id: str
     name: str
     location: str
+    country: str = ""
 
 
 class DiagnosticsService:
@@ -80,7 +81,8 @@ class DiagnosticsService:
             SpeedtestServer(
                 str(s.get("id", "")),
                 str(s.get("name", "")),
-                f"{s.get('location', '')}, {s.get('country', '')}".strip(", "),
+                str(s.get("location", "")),
+                str(s.get("country", "")),
             )
             for s in servers
         ]

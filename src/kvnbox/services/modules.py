@@ -134,8 +134,10 @@ class MieruModule(_Module):
         )
 
     def install(self) -> ApplyResult:
+        """Поставить mita. Как в TransferBox, модуль после установки не включается —
+        это отдельное действие («Запустить службу»)."""
         self._install_deb(self._deb_url())
-        return self.set_enabled(True)
+        return self.applier.apply()
 
     def update(self) -> ApplyResult:
         if not self.app.installed("mita"):
@@ -206,6 +208,20 @@ class NetbirdModule(_Module):
             peers = m.group(1).strip() if m else ""
         return NetbirdStatus(True, state, ip, peers)
 
+    def connection_state(self) -> str:
+        """not_installed / stopped / needs_login / connected / disconnected."""
+        if not self.app.installed("netbird"):
+            return "not_installed"
+        if not self.app.systemd.is_active(self.unit):
+            return "stopped"
+        res = self.app.runner.run(["netbird", "status"], timeout=20)
+        out = (res.stdout + res.stderr).lower()  # как `netbird status 2>&1`
+        if "needslogin" in out:
+            return "needs_login"
+        if "connected" in out and "management: disconnected" not in out:
+            return "connected"
+        return "disconnected"
+
     def detailed_status(self) -> str:
         return self.app.runner.run(["netbird", "status", "-d"], timeout=30).output
 
@@ -228,6 +244,8 @@ class NetbirdModule(_Module):
 
     def set_management_url(self, url: str) -> None:
         url = url.strip().rstrip("/")
+        if url and not re.match(r"https?://", url):
+            url = f"https://{url}"  # как в TransferBox
         if url and not re.fullmatch(r"https?://[A-Za-z0-9.-]+(:\d+)?(/[\w./-]*)?", url):
             raise ServiceError("Management URL: адрес вида https://netbird.example.com")
         self.settings.update(lambda s: setattr(s.netbird, "management_url", url), apply=False)

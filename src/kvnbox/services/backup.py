@@ -191,6 +191,12 @@ class BackupService:
                 log.append("NetBird установлен и подключён")
             except ServiceError as e:
                 log.append(f"NetBird: {e}")
+        if settings.telegram.enabled and settings.telegram.token and settings.telegram.chat_id:
+            from kvnbox.services.telegram_bot import BotService
+
+            BotService(self.app).ensure_unit()
+            self.app.systemd.restart("kvnbox-bot")
+            log.append("служба Telegram-бота восстановлена и запущена")
         write_cron(settings, self.app.paths)
         log.append("расписание задач обновлено")
         return log

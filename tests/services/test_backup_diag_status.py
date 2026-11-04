@@ -116,7 +116,7 @@ def test_speedtest_servers(env: Env) -> None:
     payload = {"servers": [{"id": 1234, "name": "ISP", "location": "Moscow", "country": "RU"}]}
     env.runner.on("speedtest", "-L", result=Result(0, json.dumps(payload)))
     (s,) = DiagnosticsService(env.app).speedtest_servers()
-    assert (s.id, s.name, s.location) == ("1234", "ISP", "Moscow, RU")
+    assert (s.id, s.name, s.location, s.country) == ("1234", "ISP", "Moscow", "RU")
     with pytest.raises(ServiceError):
         DiagnosticsService(env.app).speedtest("12; rm")
 

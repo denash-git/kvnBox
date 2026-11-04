@@ -141,13 +141,20 @@ class Jobs:
 
     # ── проверка обновлений (ежедневно) ──────────────────────────────────────
 
-    def check_updates(self) -> str | None:
-        """Последняя версия → кэш для шапки меню; уведомление — один раз на версию."""
+    def refresh_update_cache(self) -> str | None:
+        """Последняя версия панели → `.update_cache` (бейдж в шапке меню)."""
         try:
             latest = version_of(self.releases.latest_tag(PANEL_REPO))
         except ReleaseError:
             return None
         atomic_write_text(self.app.paths.root / ".update_cache", latest + "\n", 0o644)
+        return latest
+
+    def check_updates(self) -> str | None:
+        """Кэш версии + уведомление о новой версии — один раз на версию."""
+        latest = self.refresh_update_cache()
+        if latest is None:
+            return None
         if latest == __version__:
             return None
         notified_file = self.app.paths.root / ".update_notified"

@@ -11,6 +11,7 @@ dependencies = [
 
 [project.scripts]
 kvnbox = "kvnbox.__main__:main"
+menu = "kvnbox.cli.main:menu_main"
 
 [dependency-groups]
 dev = [

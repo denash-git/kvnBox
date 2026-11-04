@@ -29,6 +29,33 @@ def slot_label(conn: Connection) -> str:
     return SLOT_LABELS[conn.slot]
 
 
+# Подписи в меню управления пользователем: «VLESS over ${type^^}» в TransferBox
+MANAGE_LABELS: dict[tuple[Protocol, Transport | None], str] = {
+    (Protocol.VLESS, Transport.WS): "VLESS over WS",
+    (Protocol.VLESS, Transport.GRPC): "VLESS over GRPC",
+    (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS over XHTTP",
+    (Protocol.NAIVE, None): "NaiveProxy",
+    (Protocol.MIERU, None): "Mieru",
+}
+
+# Краткие подписи в списке пользователей
+SHORT_LABELS: dict[tuple[Protocol, Transport | None], str] = {
+    (Protocol.VLESS, Transport.WS): "VLESS WS",
+    (Protocol.VLESS, Transport.GRPC): "VLESS gRPC",
+    (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS XHTTP",
+    (Protocol.NAIVE, None): "Naive",
+    (Protocol.MIERU, None): "Mieru",
+}
+
+
+def _telegram_label(conn: Connection) -> str:
+    # «{proto.upper()} {type.upper()}» в TransferBox (у naive/mieru типа нет)
+    if conn.protocol is Protocol.VLESS and conn.transport is not None:
+        legacy = {"httpupgrade": "XHTTP"}.get(conn.transport.value, conn.transport.value.upper())
+        return f"VLESS {legacy}"
+    return conn.protocol.value.upper()
+
+
 class UserService:
     def __init__(self, app: App, applier: Applier | None = None) -> None:
         self.app = app
@@ -76,6 +103,34 @@ class UserService:
         if not res.ok:
             raise ServiceError("Не удалось построить QR-код (нужен пакет qrencode).")
         return path
+
+    def send_to_telegram(self, name: str) -> None:
+        """Ссылки, QR-коды подключений и подписки — в чат администратора
+        (как send_user_links в TransferBox)."""
+        import tempfile
+
+        from kvnbox.services.notify import NotifyError, Telegram
+
+        telegram = Telegram(self.app.settings.load().telegram)
+        user = self.get(name)
+        sub = self.subscription_url(user)
+        parts = [
+            f"🔑 <b>Ссылки для {user.name}:</b>\n",
+            "🌀 <b>Ссылка подписки:</b>",
+            f"<code>{sub}</code>\n",
+        ]
+        labeled = [(_telegram_label(c), self.link(user, c)) for c in user.connections]
+        for label, link in labeled:
+            parts += [f"🌐 <b>{label}:</b>", f"<code>{link}</code>\n"]
+        try:
+            telegram.send_message("\n".join(parts))
+            with tempfile.TemporaryDirectory(dir=self.app.paths.root) as tmp:
+                png = Path(tmp) / "qr.png"
+                for label, link in labeled:
+                    telegram.send_photo(self.qr_png(link, png), f"QR-код для {user.name} ({label})")
+                telegram.send_photo(self.qr_png(sub, png), f"QR-код подписки для {user.name}")
+        except NotifyError as e:
+            raise ServiceError(str(e)) from e
 
     # ── изменения (каждое — с применением конфигурации) ──────────────────────
 

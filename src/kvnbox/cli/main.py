@@ -265,8 +265,9 @@ def cmd_job_check_updates(app: App, a: argparse.Namespace, out: TextIO) -> int:
 
 
 def cmd_menu(app: App, a: argparse.Namespace, out: TextIO) -> int:
-    print("Меню появится на этапе 6.", file=out)
-    return EXIT_FAIL
+    from kvnbox.tui.menu import Menu
+
+    return Menu(app).run()
 
 
 # ─── парсер ──────────────────────────────────────────────────────────────────
@@ -414,6 +415,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 # ─── точка входа ─────────────────────────────────────────────────────────────
+
+
+def menu_main() -> int:
+    """Команда `menu` — как в TransferBox."""
+    return main(["menu"])
 
 
 def main(argv: list[str] | None = None, app: App | None = None, out: TextIO | None = None) -> int:
