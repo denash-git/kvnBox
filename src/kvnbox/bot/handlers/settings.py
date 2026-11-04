@@ -53,18 +53,12 @@ def ssh_text(st: SshStatus) -> str:
     lines = [
         "🔐 <b>Управление SSH</b>\n",
         f"• Порт SSH: <code>{st.port}</code>",
-        f"• Вход по паролю: {'🟢 Включен' if st.password_allowed else '🔴 Отключен'}",
+        # вход по паролю — слабое место: включён — красным (как в меню)
+        f"• Вход по паролю: {'🔴 Включен' if st.password_allowed else '🟢 Отключен'}",
         "• Вход по ключу: 🟢 Включен",
         f"• Установлено ключей: <code>{len(st.keys)}</code>\n",
     ]
-    if st.keys:
-        lines.append("🔑 <b>Список открытых ключей:</b>")
-        for k in st.keys:
-            comment = f" ({k.comment})" if k.comment else ""
-            lines.append(f"{k.index}. <code>{k.type}</code> <code>{k.fingerprint}</code>{comment}")
-        lines.append("")
-    else:
-        lines.append("<i>Список открытых ключей пуст.</i>\n")
+    # сами ключи в Telegram не показываем — только количество
     lines.append("<i>При отключении входа по паролю доступ будет возможен только по SSH-ключу</i>")
     return "\n".join(lines)
 

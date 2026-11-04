@@ -185,7 +185,7 @@ def mieru_module_menu(m: Menu) -> None:
             ["Остановить службу", "Перезапустить службу"] if s.enabled else ["Запустить службу"]
         )
         port_item = f"Изменить порт (Текущий порт: {s.port})"
-        options += [port_item, "Обновить Mieru", "Удалить Mieru", "Назад"]
+        options += [port_item, "Обновить Mieru", "Отключить Mieru", "Назад"]
         choice = m.select("Модуль: Mieru", options)
         if choice == BACK or options[choice] == "Назад":
             return
@@ -229,22 +229,23 @@ def mieru_module_menu(m: Menu) -> None:
             m.screen("Модули → Mieru → Обновление")
             _install_mieru(m, mod)
             m.ui.pause()
-        elif sel == "Удалить Mieru":
-            m.screen("Модули → Mieru → Удаление")
+        elif sel == "Отключить Mieru":
+            m.screen("Модули → Mieru → Отключение")
             m.ui.out()
             m.ui.center_print(
-                f"{RED}⚠️ ВНИМАНИЕ: Это полностью удалит Mieru с этого сервера!{RESET}"
+                f"{RED}⚠️ ВНИМАНИЕ: Mieru будет отключен и удален с этого сервера!{RESET}"
             )
+            m.ui.center_print(f"{DIM}Вернуть: Модули → Mieru → Установить Mieru{RESET}")
             m.ui.out()
-            if m.ui.read_prompt("Вы уверены, что хотите удалить Mieru? (y/N): ") in ("y", "Y"):
+            if m.ui.read_prompt("Вы уверены, что хотите отключить Mieru? (y/N): ") in ("y", "Y"):
                 m.progress("Остановка и отключение службы...")
                 m.ui.center_print(f"{DIM}[*] Удаление пакета...{RESET}")
                 mod.uninstall()
                 m.ui.out()
-                m.ok("Mieru (Mita) успешно удален.")
+                m.ok("Mieru (Mita) отключен и удален.")
             else:
                 m.ui.out()
-                m.ui.center_print("Удаление отменено.")
+                m.ui.center_print("Отключение отменено.")
             m.ui.pause()
 
 
@@ -411,9 +412,9 @@ def change_vless_paths_menu(m: Menu) -> None:
     while True:
         v = svc.get().vless
         options = [
-            f"Путь VLESS WS:      {v.ws_path}",
-            f"Сервис VLESS gRPC:  {v.grpc_service or '(пусто)'}",
-            f"Путь VLESS XHTTP:   {v.httpupgrade_path}",
+            f"Путь VLESS WS:          {v.ws_path}",
+            f"Сервис VLESS gRPC:      {v.grpc_service or '(пусто)'}",
+            f"Путь VLESS HTTPUpgrade: {v.httpupgrade_path}",
             "Назад",
         ]
         choice = m.select("Настройки путей", options)
@@ -424,7 +425,7 @@ def change_vless_paths_menu(m: Menu) -> None:
         prompts = [
             "Введите путь WS (должен начинаться со слэша /): ",
             "Введите имя gRPC сервиса (можно пустой): ",
-            "Введите путь XHTTP (должен начинаться со слэша /): ",
+            "Введите путь HTTPUpgrade (должен начинаться со слэша /): ",
         ]
         value = m.ui.read_prompt(prompts[choice]).replace(" ", "")
         if choice != 1 and not value.startswith("/"):

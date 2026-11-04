@@ -249,7 +249,6 @@ step_speedtest() {
 }
 
 step_bbr() {
-    if [[ "$ENABLE_BBR" != "true" ]]; then NOTE="пропущено"; return 0; fi
     if ! grep -qw bbr /proc/sys/net/ipv4/tcp_available_congestion_control && ! modprobe tcp_bbr; then
         NOTE="ядро не поддерживает BBR"
         return 2
@@ -282,9 +281,8 @@ step_mita() {
         "https://github.com/enfein/mieru/releases/download/v${MITA_VERSION}/mita_${MITA_VERSION}_${ARCH}.deb" \
         "${!sha}" || return 1
     if ! $had; then
-        # как TransferBox: сервер Mieru установлен, но выключен до включения в меню
+        # сервер Mieru установлен, но выключен до включения в меню
         systemctl disable --now mita || true
-        NOTE="${NOTE}, выключен до включения в меню"
     fi
 }
 
@@ -410,10 +408,7 @@ ensure_caddy_unit(app.paths, app.systemd)
 
 step_init() {
     if [[ -f "$DATA/settings.json" ]]; then NOTE="данные уже есть — сохранены"; return 0; fi
-    local args=(init --domain "$DOMAIN")
-    [[ -n "$EMAIL" ]] && args+=(--email "$EMAIL")
-    [[ "$ENABLE_BBR" != "true" ]] && args+=(--no-bbr)
-    kvn "${args[@]}"
+    kvn init --domain "$DOMAIN"
 }
 
 step_firewall() { kvn firewall setup; }
@@ -477,14 +472,13 @@ fi
 $TTY && [[ -n "${TERM:-}" ]] && clear
 echo -e "${BLUE}════════════════════════════════════════════════════════════${RESET}"
 echo -e "${YELLOW}                          kvnBox                            ${RESET}"
-echo -e "${YELLOW}               Установка Панели Управления                  ${RESET}"
+echo -e "${YELLOW}                     Панель Управления                      ${RESET}"
 echo -e "${BLUE}────────────────────────────────────────────────────────────${RESET}"
-echo -e "  Добро пожаловать в установщик kvnBox!"
-echo -e "  Скрипт настроит все в автоматическом режиме."
+echo -e "  Добро пожаловать!"
 echo -e "${BLUE}════════════════════════════════════════════════════════════${RESET}"
 echo
 
-DOMAIN="" EMAIL="" ENABLE_BBR="true"
+DOMAIN=""
 if [[ -f "$DATA/settings.json" ]]; then
     REPAIR=true
     echo -e "  ${CYAN}Панель уже установлена — режим восстановления.${RESET}"
@@ -502,10 +496,6 @@ else
             DOMAIN=""
         fi
     done
-    read -rp "  Введите email для Let's Encrypt (по умолчанию пусто — анонимный SSL): " EMAIL </dev/tty
-    EMAIL="${EMAIL// /}"
-    read -rp "  Включить BBR (TCP оптимизация)? [Y/n]: " bbr_input </dev/tty
-    [[ "${bbr_input,,}" == "n" ]] && ENABLE_BBR="false"
 fi
 echo
 
@@ -516,7 +506,7 @@ umask 022
 
 add_step step_system      "Проверка системы"
 add_step step_apt_update  "Обновление списка пакетов"
-add_step step_packages    "Установка системных пакетов"
+add_step step_packages    "Пакеты Debian (Python, UFW, Fail2ban, iperf3…)"
 add_step step_source      "Загрузка kvnBox"
 add_step step_speedtest   "Ookla Speedtest"
 $REPAIR || add_step step_bbr "TCP BBR"
@@ -548,9 +538,6 @@ echo -e "  Домен: ${GREEN}${DOMAIN}${RESET}"
 echo -e "  Команда управления: ${GREEN}menu${RESET}"
 echo
 if ! $REPAIR; then
-    echo -e "  Сгенерированы стартовые учетные записи для пользователя ${BOLD}admin${RESET}."
-    echo -e "  Запустите ${GREEN}menu${RESET} -> выберите ${BOLD}1${RESET}, чтобы просмотреть ссылки подключения и QR-коды."
-    echo
     echo -e "  ${YELLOW}⚠️ Важное примечание по SSL:${RESET}"
     echo -e "  Если ваш домен ${BOLD}${DOMAIN}${RESET} еще не направлен на IP этого сервера,"
     echo -e "  сертификат Let's Encrypt не будет получен сразу. Caddy автоматически"

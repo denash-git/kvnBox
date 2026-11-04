@@ -13,6 +13,7 @@ from kvnbox.services.settings import SettingsService
 from kvnbox.services.ssh import SshService
 from kvnbox.services.telegram_bot import BotService
 from kvnbox.services.update import UpdateService
+from kvnbox.system.fail2ban import SecurityStatus
 from kvnbox.tui.menu import Menu
 from kvnbox.tui.term import BLUE, BOLD, CYAN, DIM, GREEN, RED, RESET, YELLOW
 from kvnbox.tui.widgets import BACK
@@ -155,6 +156,11 @@ def apply_settings_menu(m: Menu) -> None:
 # ─── SSH ─────────────────────────────────────────────────────────────────────
 
 
+def _ok(m: Menu, text: str) -> None:
+    # в разделе SSH текст белый, зелёная только галочка (просьба владельца)
+    m.ui.center_print(f"{GREEN}✓{RESET} {text}")
+
+
 def ssh_management_menu(m: Menu) -> None:
     while True:
         choice = m.select(
@@ -173,7 +179,7 @@ def change_ssh_port_menu(m: Menu) -> None:
     cur = svc.status().port
     m.screen("Настройки → Управление SSH → Изменение порта SSH")
     pad = m.ui.block_pad()
-    m.ui.out(f"{pad}Текущий порт SSH: {CYAN}{cur}{RESET}")
+    m.ui.out(f"{pad}Текущий порт SSH: {BOLD}{cur}{RESET}")
     m.ui.out(f"{pad}{RED}⚠️ ВНИМАНИЕ: Изменение порта SSH — чувствительное действие.{RESET}")
     m.ui.out(f"{pad}Мы автоматически настроим фаервол UFW, чтобы не заблокировать доступ,")
     m.ui.out(f"{pad}но после изменения настоятельно рекомендуется проверить подключение")
@@ -189,7 +195,7 @@ def change_ssh_port_menu(m: Menu) -> None:
     port = int(value)
     if port == cur:
         m.ui.out()
-        m.ok("Введенный порт совпадает с текущим.")
+        _ok(m, "Введенный порт совпадает с текущим.")
         m.ui.pause()
         return
     m.progress("Применение изменений...")
@@ -201,7 +207,7 @@ def change_ssh_port_menu(m: Menu) -> None:
         m.ui.pause()
         return
     m.ui.out()
-    m.ok(f"SSH успешно переведен на порт {port}!")
+    _ok(m, f"SSH успешно переведен на порт {port}!")
     m.ui.out(f"{pad}{RED}⚠️ ВАЖНО: Откройте НОВОЕ окно терминала и попробуйте подключиться:{RESET}")
     m.ui.out(f"{pad}{BOLD}ssh root@<IP_сервера> -p {port}{RESET}")
     m.ui.out(f"{pad}{RED}НЕ ЗАКРЫВАЙТЕ текущее окно, пока не проверите подключение!{RESET}\n")
@@ -211,7 +217,7 @@ def change_ssh_port_menu(m: Menu) -> None:
     if answer in ("y", "Y", "д", "Д"):
         m.progress("Очистка старых правил UFW...")
         svc.confirm_port_change(old)
-        m.ok(f"Правило UFW для старого порта {old} удалено.")
+        _ok(m, f"Правило UFW для старого порта {old} удалено.")
     else:
         m.ui.out()
         m.ui.center_print(
@@ -253,7 +259,7 @@ def ssh_auth_menu(m: Menu) -> None:
                 try:
                     msg = svc.set_auth_mode("key")
                     m.ui.out()
-                    m.ok(msg)
+                    _ok(m, msg)
                     m.ui.out()
                     m.ui.center_print(
                         f"{YELLOW}⚠️ Вход по паролю отключен! Доступ возможен "
@@ -270,7 +276,7 @@ def ssh_auth_menu(m: Menu) -> None:
             try:
                 msg = svc.set_auth_mode("password")
                 m.ui.out()
-                m.ok(msg)
+                _ok(m, msg)
             except ServiceError as e:
                 m.ui.out()
                 m.fail(str(e))
@@ -298,11 +304,11 @@ def _generate_key(m: Menu, port: int) -> None:
     pad = m.ui.block_pad()
     name = private.name
     m.ui.out(
-        f"{pad}{GREEN}✓ Ключ Ed25519 успешно сгенерирован и добавлен в authorized_keys!{RESET}"
+        f"{pad}{GREEN}✓{RESET} Ключ Ed25519 успешно сгенерирован и добавлен в authorized_keys!"
     )
     m.ui.out()
     m.ui.out(f"{pad}Приватный ключ сохранен в файл:")
-    m.ui.out(f"{pad}{CYAN}{private.as_posix()}{RESET}")
+    m.ui.out(f"{pad}{BOLD}{private.as_posix()}{RESET}")
     m.ui.out()
     m.ui.out(f"{pad}{YELLOW}⚠️ ВАЖНО: Скачайте этот файл на ваш ПК перед отключением пароля!{RESET}")
     m.ui.out(f"{pad}Команда для скачивания (выполнить на вашем ПК):")
@@ -334,7 +340,7 @@ def _delete_key(m: Menu, count: int) -> None:
     try:
         msg = SshService(m.app).delete_key(int(value))
         m.ui.out()
-        m.ok(msg)
+        _ok(m, msg)
     except ServiceError as e:
         m.ui.out()
         m.fail(str(e))
@@ -371,7 +377,7 @@ def security_protection_menu(m: Menu) -> None:
         else:
             options.append("Установить компоненты и включить защиту")
         options.append("Назад")
-        choice = m.select("Защита от сканеров", options)
+        choice = m.select("Защита от сканеров", options, _security_info(installed, st))
         if choice == BACK or options[choice] == "Назад":
             return
         sel = options[choice]
@@ -416,6 +422,23 @@ def security_protection_menu(m: Menu) -> None:
                 m.progress(f"Разблокировка {ip}...")
                 _unban(m, lambda ip=ip: svc.unban(ip))
                 m.ui.pause()
+
+
+def _security_info(installed: bool, st: SecurityStatus | None) -> list[str]:
+    """Состояние и счётчики блокировок — как в Telegram-боте."""
+    if not installed:
+        return [f"Статус: {RED}● не установлена{RESET}"]
+    if st is None or not st.active:
+        return [f"Статус: {RED}● отключена{RESET}"]
+    bans = {j.name: j.currently_banned for j in st.jails}
+    return [
+        f"Статус: {GREEN}● включена{RESET}",
+        "",
+        "Текущие блокировки:",
+        f"  • Всего заблокировано: {BOLD}{len(st.banned_ips)}{RESET} IP",
+        f"  • Подбор паролей SSH: {BOLD}{bans.get('sshd', 0)}{RESET}",
+        f"  • Ловушки портов: {BOLD}{bans.get('portscan-trap', 0)}{RESET}",
+    ]
 
 
 def _unban(m: Menu, action: object) -> None:

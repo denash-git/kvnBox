@@ -15,9 +15,14 @@ def proto_type(conn: Connection) -> tuple[str, str]:
     return conn.protocol.value, TYPE_BY_TRANSPORT[conn.transport] if conn.transport else ""
 
 
+# В подписях «xhttp» показывается как HTTPUpgrade (так он называется в sing-box);
+# в callback_data остаётся «xhttp» — старые кнопки в чате продолжают работать.
+_TYPE_LABEL = {"xhttp": "HTTPUpgrade"}
+
+
 def proto_label(proto: str, utype: str) -> str:
-    """«VLESS XHTTP», «NAIVE» — как `f"{proto.upper()} {utype.upper()}".strip()`."""
-    return f"{proto.upper()} {utype.upper()}".strip()
+    """«VLESS WS», «VLESS HTTPUpgrade», «NAIVE»."""
+    return f"{proto.upper()} {_TYPE_LABEL.get(utype, utype.upper())}".strip()
 
 
 def conn_label(conn: Connection) -> str:

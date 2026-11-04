@@ -7,7 +7,7 @@ from collections.abc import Sequence
 from aiogram.types import InlineKeyboardButton as Btn
 from aiogram.types import InlineKeyboardMarkup as Kb
 
-from kvnbox.bot.legacy import proto_type
+from kvnbox.bot.legacy import proto_label, proto_type
 from kvnbox.core.models import User
 
 MAIN = Btn(text="« Главное меню", callback_data="menu:main")
@@ -223,7 +223,7 @@ def user_info_keyboard(user: User) -> Kb:
     for conn in user.connections:
         proto, utype = proto_type(conn)
         status = "🟢" if conn.enabled else "🔴"
-        label = f"{proto.upper()} {utype.upper()}".strip()
+        label = proto_label(proto, utype)
         rows.append(
             [
                 Btn(

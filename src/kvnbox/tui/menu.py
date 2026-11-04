@@ -27,8 +27,18 @@ class Menu:
     def header(self, title: str, show_status: bool = False) -> None:
         print_header(self.ui, title, self.status, show_status)
 
-    def select(self, title: str, options: Sequence[str]) -> int:
-        return self.ui.select_menu(title, options, lambda t: self.header(t, t == MAIN_TITLE))
+    def select(self, title: str, options: Sequence[str], info: Sequence[str] = ()) -> int:
+        """Меню стрелками; `info` — строки под шапкой (над пунктами)."""
+
+        def draw(t: str) -> None:
+            self.header(t, t == MAIN_TITLE)
+            if info:
+                pad = self.ui.block_pad()
+                for line in info:
+                    self.ui.out(f"{pad}{line}")
+                self.ui.out()
+
+        return self.ui.select_menu(title, options, draw)
 
     def screen(self, title: str) -> None:
         self.ui.clear_screen()

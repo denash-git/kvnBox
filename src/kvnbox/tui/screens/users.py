@@ -15,7 +15,7 @@ from kvnbox.tui.widgets import BACK
 ADD_OPTIONS: list[tuple[str, Protocol, Transport | None]] = [
     ("VLESS over WebSocket", Protocol.VLESS, Transport.WS),
     ("VLESS over gRPC", Protocol.VLESS, Transport.GRPC),
-    ("VLESS over XHTTP", Protocol.VLESS, Transport.HTTPUPGRADE),
+    ("VLESS over HTTPUpgrade", Protocol.VLESS, Transport.HTTPUPGRADE),
     ("NaiveProxy", Protocol.NAIVE, None),
     ("Mieru", Protocol.MIERU, None),
 ]
@@ -296,26 +296,10 @@ def create_user_menu(m: Menu) -> None:
     if not res.ok:
         _error(m, f"Ошибка создания пользователя: {res.message}")
         return
+    # как при добавлении протокола: сразу ссылка и QR, затем Telegram
     label = MANAGE_LABELS[conn.slot]
-    while True:
-        sel = m.select(
-            f"Пользователь создан: {nick}",
-            [
-                f"Показать QR и ссылку подключения ({label})",
-                "Показать QR и ссылку подписки (Все протоколы)",
-                "Завершить",
-            ],
-        )
-        user = _svc(m).get(nick)
-        if sel == 0:
-            m.ui.clear_screen()
-            m.header(f"Подключение: {nick} ({label})")
-            _print_connection(m, user, conn)
-            m.ui.pause()
-        elif sel == 1:
-            m.screen(f"Подписка пользователя: {nick}")
-            _print_subscription(m, user)
-            m.ui.pause()
-        else:
-            break
+    m.ui.clear_screen()
+    m.header(f"Пользователь создан: {nick} ({label})")
+    _print_connection(m, _svc(m).get(nick), conn)
     _offer_telegram(m, nick)
+    m.ui.pause()

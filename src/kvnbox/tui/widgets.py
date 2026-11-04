@@ -135,7 +135,10 @@ class Ui:
             if i:
                 self.t.write("\n")
             is_back = plain in BACK_LABELS
-            is_danger = "Удалить" in plain or plain == "Пересоздать конфигурации"
+            is_danger = "Удалить" in plain or plain in (
+                "Пересоздать конфигурации",
+                "Отключить Mieru",
+            )
             if is_back and i:
                 self.t.write("\n")
             if is_back and "\033" not in opt:

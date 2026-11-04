@@ -246,7 +246,7 @@ PROTO_BUTTONS = {
     "naive": Btn(text="NaiveProxy", callback_data="user:new:proto:naive"),
     "mieru": Btn(text="Mieru", callback_data="user:new:proto:mieru"),
 }
-VLESS_TYPES = [("ws", "WebSocket (ws)"), ("grpc", "gRPC"), ("xhttp", "HTTPUpgrade (xhttp)")]
+VLESS_TYPES = [("ws", "WebSocket (ws)"), ("grpc", "gRPC"), ("xhttp", "HTTPUpgrade")]
 
 
 def _existing_types(user: User | None) -> set[str]:

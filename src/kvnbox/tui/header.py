@@ -26,6 +26,10 @@ def _on_off(on: bool, yes: str, no: str) -> tuple[str, str]:
     return (f"{GREEN}● {yes}{RESET}", f"● {yes}") if on else (f"{RED}● {no}{RESET}", f"● {no}")
 
 
+def _bad_when_on(on: bool, yes: str, no: str) -> tuple[str, str]:
+    return (f"{RED}● {yes}{RESET}", f"● {yes}") if on else (f"{GREEN}● {no}{RESET}", f"● {no}")
+
+
 def netbird_status(state: str, dot: bool = True) -> str:
     """get_netbird_status: состояние подключения NetBird для шапки и экрана модуля."""
     d = "● " if dot else ""
@@ -75,7 +79,8 @@ def collect(app: App) -> HeaderStatus:
         text = netbird_status(NetbirdModule(app).connection_state())
         rows.append(("NetBird:", text, re.sub(r"\x1b\[[0-9;]*m", "", text)))
     rows += [
-        ("SSH пароль:", *_on_off(app.sshd.auth_mode() == "password", "включен", "отключен")),
+        # вход по паролю — слабое место: включён — красным, отключён — зелёным
+        ("SSH пароль:", *_bad_when_on(app.sshd.auth_mode() == "password", "включен", "отключен")),
         ("Защита:", *_on_off(app.fail2ban.is_active(), "активна", "отключена")),
     ]
     latest = st.update_cache()

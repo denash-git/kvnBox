@@ -19,7 +19,7 @@ T = TypeVar("T")
 SLOT_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.WS): "VLESS over WebSocket",
     (Protocol.VLESS, Transport.GRPC): "VLESS over gRPC",
-    (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS over XHTTP",
+    (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS over HTTPUpgrade",
     (Protocol.NAIVE, None): "NaiveProxy",
     (Protocol.MIERU, None): "Mieru",
 }
@@ -33,7 +33,7 @@ def slot_label(conn: Connection) -> str:
 MANAGE_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.WS): "VLESS over WS",
     (Protocol.VLESS, Transport.GRPC): "VLESS over GRPC",
-    (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS over XHTTP",
+    (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS over HTTPUpgrade",
     (Protocol.NAIVE, None): "NaiveProxy",
     (Protocol.MIERU, None): "Mieru",
 }
@@ -42,7 +42,7 @@ MANAGE_LABELS: dict[tuple[Protocol, Transport | None], str] = {
 SHORT_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.WS): "VLESS WS",
     (Protocol.VLESS, Transport.GRPC): "VLESS gRPC",
-    (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS XHTTP",
+    (Protocol.VLESS, Transport.HTTPUPGRADE): "VLESS HTTPUpgrade",
     (Protocol.NAIVE, None): "Naive",
     (Protocol.MIERU, None): "Mieru",
 }
@@ -51,7 +51,9 @@ SHORT_LABELS: dict[tuple[Protocol, Transport | None], str] = {
 def _telegram_label(conn: Connection) -> str:
     # «{proto.upper()} {type.upper()}» в TransferBox (у naive/mieru типа нет)
     if conn.protocol is Protocol.VLESS and conn.transport is not None:
-        legacy = {"httpupgrade": "XHTTP"}.get(conn.transport.value, conn.transport.value.upper())
+        legacy = {"httpupgrade": "HTTPUpgrade"}.get(
+            conn.transport.value, conn.transport.value.upper()
+        )
         return f"VLESS {legacy}"
     return conn.protocol.value.upper()
 
