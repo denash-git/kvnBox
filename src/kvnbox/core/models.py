@@ -265,7 +265,8 @@ class SiteSettings(_Model):
 class VlessSettings(_Model):
     ws_path: str = "/"
     grpc_service: str = ""
-    httpupgrade_path: str = "/xhttp"
+    # новые установки; у переехавших с TransferBox в settings.json остаётся «/xhttp»
+    httpupgrade_path: str = "/httpupgrade"
 
     @field_validator("ws_path", "httpupgrade_path")
     @classmethod

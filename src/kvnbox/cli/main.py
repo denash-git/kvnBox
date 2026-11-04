@@ -45,7 +45,8 @@ EXIT_OK, EXIT_FAIL, EXIT_USAGE = 0, 1, 2
 SLOTS: dict[str, tuple[Protocol, Transport | None]] = {
     "vless-ws": (Protocol.VLESS, Transport.WS),
     "vless-grpc": (Protocol.VLESS, Transport.GRPC),
-    "vless-xhttp": (Protocol.VLESS, Transport.HTTPUPGRADE),
+    "vless-httpupgrade": (Protocol.VLESS, Transport.HTTPUPGRADE),
+    "vless-xhttp": (Protocol.VLESS, Transport.HTTPUPGRADE),  # старое имя
     "naive": (Protocol.NAIVE, None),
     "mieru": (Protocol.MIERU, None),
 }

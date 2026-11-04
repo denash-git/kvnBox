@@ -22,11 +22,11 @@ from kvnbox.core.models import (
 
 PORT_HTTPS = 443
 
-# Суффикс имени профиля в ссылке. «xhttp» сохранён для 1:1 (D-015).
+# Суффикс имени профиля в ссылке (в TransferBox был «xhttp», D-015 → D-040).
 LINK_SUFFIX = {
     (Protocol.VLESS, Transport.WS): "ws",
     (Protocol.VLESS, Transport.GRPC): "grpc",
-    (Protocol.VLESS, Transport.HTTPUPGRADE): "xhttp",
+    (Protocol.VLESS, Transport.HTTPUPGRADE): "httpupgrade",
     (Protocol.NAIVE, None): "naive",
     (Protocol.MIERU, None): "mieru",
 }
