@@ -19,6 +19,7 @@ def cron_content(settings: Settings, paths: Paths) -> str:
         "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
         f"*/5 * * * * root {cli} job check-services >/dev/null 2>&1",
         f"0 0 * * * root {cli} job check-updates >/dev/null 2>&1",
+        f"0 10 * * * root {cli} job check-cert >/dev/null 2>&1",
     ]
     b = settings.backup
     if b.enabled:

@@ -33,7 +33,7 @@ from kvnbox.services.apply import Applier, ApplyResult
 from kvnbox.services.backup import BackupService, PasswordRequired
 from kvnbox.services.firewall import FirewallService
 from kvnbox.services.jobs import Jobs
-from kvnbox.services.modules import BbrModule, MieruModule, SingboxModule
+from kvnbox.services.modules import BbrModule, MieruModule, SingboxModule, UpdateOutcome
 from kvnbox.services.schedule import write_cron
 from kvnbox.services.security import SecurityService
 from kvnbox.services.ssh import SshService
@@ -61,6 +61,11 @@ def _result(res: ApplyResult, out: TextIO) -> int:
     print(("✓ " if res.ok else "✗ ") + res.message, file=out)
     for line in res.log:
         print(f"  - {line}", file=out)
+    return EXIT_OK if res.ok else EXIT_FAIL
+
+
+def _outcome(res: UpdateOutcome, out: TextIO) -> int:
+    print(("✓ " if res.ok else "✗ ") + res.message, file=out)
     return EXIT_OK if res.ok else EXIT_FAIL
 
 
@@ -266,6 +271,12 @@ def cmd_job_check_updates(app: App, a: argparse.Namespace, out: TextIO) -> int:
     return EXIT_OK
 
 
+def cmd_job_check_cert(app: App, a: argparse.Namespace, out: TextIO) -> int:
+    text = Jobs(app).check_cert()
+    print(text or "Сертификат в порядке.", file=out)
+    return EXIT_OK
+
+
 def cmd_menu(app: App, a: argparse.Namespace, out: TextIO) -> int:
     from kvnbox.tui.menu import Menu
 
@@ -405,8 +416,8 @@ def build_parser() -> argparse.ArgumentParser:
     cmd(
         singbox,
         "update",
-        lambda app, a, out: _result(SingboxModule(app).update(), out),
-        "обновить до последней версии",
+        lambda app, a, out: _outcome(SingboxModule(app).safe_update(), out),
+        "обновить до последней версии (с возвратом прежней при сбое)",
     )
 
     bbr = group("bbr", "TCP BBR")
@@ -424,6 +435,7 @@ def build_parser() -> argparse.ArgumentParser:
     job = group("job", "задачи по расписанию (cron)")
     cmd(job, "check-services", cmd_job_check_services, "проверить службы и ресурсы")
     cmd(job, "check-updates", cmd_job_check_updates, "проверить обновления")
+    cmd(job, "check-cert", cmd_job_check_cert, "проверить, продлевается ли сертификат")
     sp = cmd(
         job,
         "backup",

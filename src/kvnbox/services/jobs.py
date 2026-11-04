@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import contextlib
 import datetime as dt
+import html
 import json
 import time
 from dataclasses import dataclass
@@ -19,12 +20,14 @@ from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.backup import BackupService
 from kvnbox.services.notify import NotifyError, Telegram
+from kvnbox.system.cert import cert_expiry, find_cert, last_acme_error
 from kvnbox.system.files import read_text
 from kvnbox.system.metrics import CpuTimes, cpu_percent
 from kvnbox.system.releases import ReleaseError, Releases, version_of
 
 WATCHED_UNITS = ("caddy", "sing-box", "mita", "netbird")
 PANEL_REPO = "denash-git/kvnBox"
+CERT_ALERT_DAYS = 20
 
 
 @dataclass(frozen=True)
@@ -167,6 +170,50 @@ class Jobs:
         self._alert(text)
         atomic_write_text(notified_file, latest, 0o644)
         return latest
+
+    # ── сертификат домена (ежедневно) ────────────────────────────────────────
+
+    def check_cert(self, now: dt.datetime | None = None) -> str | None:
+        """Caddy продлевает сертификат сам примерно за 30 дней до конца. Если осталось
+        меньше CERT_ALERT_DAYS — продление не срабатывает: сообщить (раз в сутки — так
+        часто запускается задача). Когда сертификат снова свежий — сообщить один раз."""
+        now = now or dt.datetime.now(dt.timezone.utc)
+        domain = self.app.settings.load().domain
+        flag = self.app.paths.root / ".cert_alert"
+        path = find_cert(self.app.paths.caddy_data, domain)
+        expiry = cert_expiry(self.app.runner, path) if path else None
+        days = (expiry - now).days if expiry else None
+        if days is not None and days >= CERT_ALERT_DAYS:
+            if flag.exists():
+                flag.unlink()
+                text = (
+                    f"🟢 <b>Сертификат для {domain} продлён</b>\n\n"
+                    f"Действует до: <code>{expiry:%Y-%m-%d}</code>"
+                )
+                self._alert(text)
+                return text
+            return None
+        journal = self.app.runner.run(
+            ["journalctl", "-u", "caddy", "--since", "-3days", "--no-pager", "-o", "cat"],
+            timeout=30,
+        ).stdout
+        error = last_acme_error(journal)
+        if days is None:
+            text = f"⚠️ <b>Сертификат для {domain} не найден</b>\n\nCaddy не получил сертификат."
+        elif days < 0:
+            text = f"🔴 <b>Сертификат для {domain} истёк</b>\n\nПродление не сработало."
+        else:
+            text = (
+                f"⚠️ <b>Сертификат для {domain} не продлевается</b>\n\n"
+                f"Осталось дней: <code>{days}</code> (до <code>{expiry:%Y-%m-%d}</code>).\n"
+                "Обычно Caddy продлевает его за 30 дней до конца."
+            )
+        text += "\nПроверьте, что домен указывает на этот сервер."
+        if error:
+            text += f"\n\nПоследняя ошибка Caddy:\n<code>{html.escape(error)}</code>"
+        self._alert(text)
+        atomic_write_text(flag, now.isoformat(), 0o600)
+        return text
 
     # ── автобэкап в Telegram ─────────────────────────────────────────────────
 

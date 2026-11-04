@@ -3,8 +3,17 @@ change_vless_paths_menu, bbr_optimization_menu, update_singbox_menu."""
 
 from __future__ import annotations
 
+import contextlib
+import subprocess
+
 from kvnbox.services import ServiceError
-from kvnbox.services.modules import BbrModule, MieruModule, NetbirdModule, SingboxModule
+from kvnbox.services.modules import (
+    BbrModule,
+    CaddyModule,
+    MieruModule,
+    NetbirdModule,
+    SingboxModule,
+)
 from kvnbox.services.settings import SettingsService
 from kvnbox.tui.header import netbird_status
 from kvnbox.tui.menu import Menu
@@ -25,17 +34,19 @@ def modules_menu(m: Menu) -> None:
             f"Mieru       [{_on(settings.mieru.enabled)}]",
             f"NetBird     [{netbird_status(nb_state, dot=False)}]",
             f"sing-box    [{_on(m.app.systemd.is_active('sing-box'))}]",
+            f"Caddy       [{_on(m.app.systemd.is_active('caddy'))}]",
             "Настроить пути VLESS",
             "Отключить BBR оптимизацию" if bbr else "Включить BBR оптимизацию",
             "Назад",
         ]
         choice = m.select("Модули", options)
-        if choice in (BACK, 5):
+        if choice in (BACK, 6):
             return
         [
             mieru_module_menu,
             netbird_module_menu,
             singbox_module_menu,
+            caddy_module_menu,
             change_vless_paths_menu,
             bbr_optimization_menu,
         ][choice](m)
@@ -99,14 +110,91 @@ def singbox_module_menu(m: Menu) -> None:
         elif sel == "Просмотреть логи службы":
             _logs(m, "Модули → sing-box → Логи службы", "sing-box")
         elif sel == "Обновить sing-box":
-            update_singbox_menu(m)
+            update_core_menu(m, "Модули → sing-box → Обновление", mod)
 
 
-def update_singbox_menu(m: Menu) -> None:
-    mod = SingboxModule(m.app)
-    m.screen("Модули → sing-box → Обновление")
+def _confirm_versions(m: Menu, current: str, latest: str) -> bool:
+    """Текущая и свежая версия + подтверждение (ядра обновляются только вручную)."""
+    pad = m.ui.block_pad()
+    m.ui.out()
+    m.ui.out(f"{pad}Текущая установленная версия: {BOLD}{current or 'не установлен'}{RESET}")
+    m.ui.out(f"{pad}Последняя официальная версия: {BOLD}{latest}{RESET}\n")
+    if current.removeprefix("v") == latest.removeprefix("v"):
+        m.ui.out(f"{pad}{GREEN}✓{RESET} У вас уже установлена последняя официальная версия.")
+        question = f"Переустановить версию {latest}? [y/N]: "
+    else:
+        m.ui.out(f"{pad}{YELLOW}⚠ Доступна версия {latest}.{RESET}")
+        m.ui.out(f"{pad}{DIM}Если новая версия не заработает, вернётся прежняя.{RESET}\n")
+        question = "Обновить? [y/N]: "
+    if m.ui.read_prompt(question) in ("y", "Y", "д", "Д"):
+        return True
+    m.ui.out()
+    m.ui.center_print("Обновление отменено.")
+    m.ui.pause()
+    return False
+
+
+def update_core_menu(m: Menu, title: str, mod: SingboxModule | MieruModule) -> None:
+    """Обновление sing-box / Mieru: проверка суммы, применение, возврат при сбое."""
+    m.screen(title)
     m.progress("Получение информации о версиях...")
-    current = mod.info().version or "не установлен"
+    try:
+        latest = mod.latest_version()
+    except ServiceError:
+        m.ui.out()
+        m.fail("Ошибка: Не удалось получить последнюю версию с GitHub.")
+        m.ui.pause()
+        return
+    if not _confirm_versions(m, mod.info().version, latest):
+        return
+    m.screen(title)
+    m.progress(f"Скачивание и проверка версии {latest}...")
+    m.ui.center_print(f"{DIM}[*] Установка, проверка конфигурации и перезапуск...{RESET}")
+    try:
+        res = mod.safe_update()
+    except ServiceError as e:
+        m.ui.out()
+        m.fail(str(e))
+        m.ui.center_print(f"{DIM}Ничего не изменено.{RESET}")
+        m.ui.pause()
+        return
+    m.ui.out()
+    if res.ok:
+        m.ok(res.message)
+    else:
+        m.fail("Обновление не удалось.")
+        m.ui.center_print(res.message)
+    m.ui.pause()
+
+
+# ─── Caddy ───────────────────────────────────────────────────────────────────
+
+
+def caddy_module_menu(m: Menu) -> None:
+    mod = CaddyModule(m.app)
+    while True:
+        options = ["Перезапустить службу", "Просмотреть логи службы", "Обновить Caddy", "Назад"]
+        choice = m.select("Модуль: Caddy", options)
+        if choice in (BACK, 3):
+            return
+        if choice == 0:
+            _service_action(
+                m,
+                "Модули → Caddy → Перезапуск",
+                "Перезапуск службы Caddy...",
+                "Служба Caddy перезапущена.",
+                mod.restart,
+            )
+        elif choice == 1:
+            _logs(m, "Модули → Caddy → Логи службы", "caddy")
+        else:
+            update_caddy_menu(m, mod)
+
+
+def update_caddy_menu(m: Menu, mod: CaddyModule) -> None:
+    title = "Модули → Caddy → Обновление"
+    m.screen(title)
+    m.progress("Получение информации о версиях...")
     try:
         latest = mod.latest_version()
     except ServiceError:
@@ -116,41 +204,14 @@ def update_singbox_menu(m: Menu) -> None:
         return
     pad = m.ui.block_pad()
     m.ui.out()
-    m.ui.out(f"{pad}Текущая установленная версия: {BOLD}{current}{RESET}")
-    m.ui.out(f"{pad}Последняя официальная версия: {BOLD}{latest}{RESET}\n")
-    if current == latest:
-        m.ui.out(f"{pad}{GREEN}✓ У вас уже установлена последняя официальная версия.{RESET}")
-        answer = m.ui.read_prompt(
-            f"Хотите переустановить/принудительно обновить версию {latest}? [y/N]: "
-        )
-    else:
-        m.ui.out(f"{pad}{YELLOW}⚠ Доступно обновление до версии {latest}!{RESET}")
-        answer = m.ui.read_prompt("Продолжить обновление? [y/N]: ")
-    if answer not in ("y", "Y", "д", "Д"):
-        m.ui.out()
-        m.ui.center_print("Обновление отменено.")
-        m.ui.pause()
+    m.ui.out(f"{pad}Caddy собирается вместе с NaiveProxy — это занимает до 5 минут.")
+    m.ui.out(f"{pad}Прокси работают всё это время; Caddy заменяется в самом конце.")
+    if not _confirm_versions(m, mod.info().version, latest):
         return
-    m.screen("Модули → sing-box → Обновление")
-    m.progress(f"Запуск процесса обновления до версии {latest}...")
-    try:
-        res = mod.update()
-    except ServiceError as e:
-        m.ui.out()
-        m.fail(str(e))
-        m.ui.pause()
-        return
-    m.ui.out()
-    m.ok("sing-box успешно установлен/обновлен.")
-    m.progress("Проверка совместимости конфигурации...")
-    m.ui.out()
-    if res.ok:
-        m.ok("Служба sing-box успешно обновлена и перезапущена.")
-    else:
-        m.fail("ВНИМАНИЕ: Новая версия не совместима с вашим конфигом!")
-        m.ui.center_print(
-            f"{RED}Служба не будет перезапущена, чтобы сохранить работоспособность.{RESET}"
-        )
+    m.ui.clear_screen()
+    m.ui.t.cursor(True)
+    with contextlib.suppress(KeyboardInterrupt):
+        subprocess.run(mod.rebuild_command(latest), check=False)
     m.ui.pause()
 
 
@@ -236,9 +297,7 @@ def mieru_module_menu(m: Menu) -> None:
             m.show_result(res, f"Порт Mieru изменен на {value}. Сервисы перезапущены.")
             m.ui.pause()
         elif sel == "Обновить Mieru":
-            m.screen("Модули → Mieru → Обновление")
-            _install_mieru(m, mod)
-            m.ui.pause()
+            update_core_menu(m, "Модули → Mieru → Обновление", mod)
 
 
 # ─── NetBird ─────────────────────────────────────────────────────────────────

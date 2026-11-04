@@ -17,6 +17,7 @@ from kvnbox.core.storage import atomic_write_text
 from kvnbox.cores.base import RenderedFile
 from kvnbox.render import RenderPlan, render_all
 from kvnbox.services.app import App
+from kvnbox.services.schedule import write_cron
 from kvnbox.system.caddy_unit import ensure_caddy_unit
 from kvnbox.system.files import read_text, replace_directory, write_file
 
@@ -77,6 +78,8 @@ class Applier:
             log.append(mita_note)
 
         self.app.ufw.delete_port("80/tcp")  # порт 80 закрыт для скрытности
+        # расписание тоже часть конфигурации: новые задачи приходят с обновлением панели
+        write_cron(settings, self.paths)
         return ApplyResult(True, "Конфигурация применена, службы перезапущены.", log)
 
     def validate(self, plan: RenderPlan) -> str | None:

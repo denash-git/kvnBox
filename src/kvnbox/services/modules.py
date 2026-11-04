@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import re
+import shutil
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,6 +19,7 @@ from kvnbox.system.runner import Result
 
 SINGBOX_REPO = "SagerNet/sing-box"
 MIERU_REPO = "enfein/mieru"
+CADDY_REPO = "caddyserver/caddy"
 NETBIRD_INSTALL_SCRIPT = "https://pkgs.netbird.io/install.sh"
 APT_ENV = {"DEBIAN_FRONTEND": "noninteractive"}
 
@@ -58,17 +61,6 @@ class _Module:
             raise ServiceError(f"Неподдерживаемая архитектура: {arch or 'неизвестно'}")
         return arch
 
-    def _install_deb(self, url: str) -> None:
-        with tempfile.TemporaryDirectory(dir=self.app.paths.root) as tmp:
-            try:
-                deb = self.releases.download(url, Path(tmp) / Path(url).name)
-            except ReleaseError as e:
-                raise ServiceError(str(e)) from e
-            res = self.app.runner.run(["dpkg", "-i", str(deb)], timeout=300, env=APT_ENV)
-            if not res.ok:
-                raise ServiceError(f"Ошибка установки пакета: {res.output}")
-        self.app.systemd.daemon_reload()
-
     def _latest(self, repo: str) -> str:
         try:
             return self.releases.latest_tag(repo)
@@ -76,11 +68,113 @@ class _Module:
             raise ServiceError(str(e)) from e
 
 
+@dataclass(frozen=True)
+class UpdateOutcome:
+    ok: bool
+    message: str
+    rolled_back: bool = False
+
+
+class _DebCore(_Module):
+    """Ядро из deb-пакета GitHub-релиза: обновление только из меню (D-041) — с проверкой
+    контрольной суммы и возвратом прежней версии, если новая не заработала."""
+
+    repo = ""
+    binary = ""  # файл программы — запасная копия, если старый пакет не скачать
+    name = ""
+
+    def asset_name(self, version: str, arch: str) -> str:
+        raise NotImplementedError
+
+    def info(self) -> ServiceInfo:
+        raise NotImplementedError
+
+    def should_run(self) -> bool:
+        return True
+
+    def latest_version(self) -> str:
+        return version_of(self._latest(self.repo))
+
+    def _download(self, tag: str, arch: str, dest: Path) -> Path:
+        ver = version_of(tag)
+        name = self.asset_name(ver, arch)
+        try:
+            return self.releases.download_verified(
+                self.releases.asset(self.repo, tag, name), dest / name
+            )
+        except ReleaseError as e:
+            raise ServiceError(str(e)) from e
+
+    def _dpkg(self, deb: Path) -> None:
+        res = self.app.runner.run(["dpkg", "-i", str(deb)], timeout=300, env=APT_ENV)
+        if not res.ok:
+            raise ServiceError(f"Ошибка установки пакета: {res.output}")
+        self.app.systemd.daemon_reload()
+
+    def _wait_active(self, seconds: int = 10) -> bool:
+        for _ in range(seconds):
+            if self.app.systemd.is_active(self.unit):
+                return True
+            time.sleep(1)
+        return self.app.systemd.is_active(self.unit)
+
+    def install_verified(self, tag: str | None = None) -> None:
+        """Поставить релиз (по умолчанию последний) с проверкой контрольной суммы."""
+        tag = tag or self._latest(self.repo)
+        with tempfile.TemporaryDirectory(dir=self.app.paths.root) as tmp:
+            self._dpkg(self._download(tag, self._arch(), Path(tmp)))
+
+    def safe_update(self, tag: str | None = None) -> UpdateOutcome:
+        current = self.info().version
+        tag = tag or self._latest(self.repo)
+        ver = version_of(tag)
+        arch = self._arch()
+        with tempfile.TemporaryDirectory(dir=self.app.paths.root) as tmp:
+            work = Path(tmp)
+            new = self._download(tag, arch, work / "new")  # ошибка здесь — ничего не тронуто
+            old: Path | None = None
+            if current:
+                try:
+                    old = self._download(f"v{current}", arch, work / "old")
+                except ServiceError:
+                    old = None  # старого релиза нет — вернём копию программы
+            backup = work / "binary.prev"
+            binary = Path(self.binary)
+            if binary.exists():
+                shutil.copy2(binary, backup)
+            try:
+                self._dpkg(new)
+                result = self.applier.apply()
+                ok = result.ok and (not self.should_run() or self._wait_active())
+                reason = result.message if not result.ok else "служба не запустилась"
+            except ServiceError as e:
+                ok, reason = False, str(e)
+            if ok:
+                return UpdateOutcome(True, f"{self.name} обновлён до версии {ver}.")
+            # возврат прежней версии
+            if old is not None:
+                self._dpkg(old)
+            elif backup.exists():
+                shutil.copy2(backup, binary)
+            self.applier.apply()
+        return UpdateOutcome(
+            False,
+            f"Версия {ver} не заработала ({reason}). Возвращена версия {current or 'прежняя'}.",
+            rolled_back=True,
+        )
+
+
 # ─── sing-box ────────────────────────────────────────────────────────────────
 
 
-class SingboxModule(_Module):
+class SingboxModule(_DebCore):
     unit = "sing-box"
+    repo = SINGBOX_REPO
+    binary = "/usr/bin/sing-box"
+    name = "sing-box"
+
+    def asset_name(self, version: str, arch: str) -> str:
+        return f"sing-box_{version}_linux_{arch}.deb"
 
     def info(self) -> ServiceInfo:
         res = self.app.runner.run(["sing-box", "version"], timeout=10)
@@ -89,33 +183,53 @@ class SingboxModule(_Module):
             self.unit, self.app.installed("sing-box"), self.app.systemd.state(self.unit), version
         )
 
-    def latest_version(self) -> str:
-        return version_of(self._latest(SINGBOX_REPO))
 
-    def update(self) -> ApplyResult:
-        """Поставить последний релиз и перепроверить/перезапустить конфигурацию."""
-        tag = self._latest(SINGBOX_REPO)
-        ver = version_of(tag)
-        url = (
-            f"https://github.com/{SINGBOX_REPO}/releases/download/{tag}/"
-            f"sing-box_{ver}_linux_{self._arch()}.deb"
+# ─── Caddy ───────────────────────────────────────────────────────────────────
+
+
+class CaddyModule(_Module):
+    """Caddy собирается с NaiveProxy (xcaddy), поэтому обновление — пересборка
+    установщиком в режиме --rebuild-caddy (до 5 минут, с возвратом прежней версии)."""
+
+    unit = "caddy"
+
+    def info(self) -> ServiceInfo:
+        res = self.app.runner.run(["caddy", "version"], timeout=10)
+        version = res.stdout.split()[0] if res.ok and res.stdout.split() else ""
+        return ServiceInfo(
+            self.unit, self.app.installed("caddy"), self.app.systemd.state(self.unit), version
         )
-        self._install_deb(url)
-        result = self.applier.apply()
-        return ApplyResult(result.ok, f"sing-box {ver}: {result.message}", result.log)
+
+    def latest_version(self) -> str:
+        tag = self._latest(CADDY_REPO)
+        if not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
+            raise ServiceError(f"Неожиданная версия Caddy: {tag}")
+        return tag
+
+    def rebuild_command(self, tag: str) -> list[str]:
+        return ["bash", str(self.app.paths.app_link / "install.sh"), "--rebuild-caddy", tag]
 
 
 # ─── Mieru ───────────────────────────────────────────────────────────────────
 
 
-class MieruModule(_Module):
+class MieruModule(_DebCore):
     unit = "mita"
+    repo = MIERU_REPO
+    binary = "/usr/bin/mita"
+    name = "Mieru (mita)"
 
     def __init__(
         self, app: App, applier: Applier | None = None, releases: Releases | None = None
     ) -> None:
         super().__init__(app, applier, releases)
         self.settings = SettingsService(app, self.applier)
+
+    def asset_name(self, version: str, arch: str) -> str:
+        return f"mita_{version}_{arch}.deb"
+
+    def should_run(self) -> bool:
+        return self.app.settings.load().mieru.enabled
 
     def info(self) -> ServiceInfo:
         res = self.app.runner.run(["mita", "version"], timeout=10)
@@ -126,24 +240,16 @@ class MieruModule(_Module):
             res.stdout.strip() if res.ok else "",
         )
 
-    def _deb_url(self) -> str:
-        tag = self._latest(MIERU_REPO)
-        return (
-            f"https://github.com/{MIERU_REPO}/releases/download/{tag}/"
-            f"mita_{version_of(tag)}_{self._arch()}.deb"
-        )
-
     def install(self) -> ApplyResult:
-        """Поставить mita. Как в TransferBox, модуль после установки не включается —
-        это отдельное действие («Запустить службу»)."""
-        self._install_deb(self._deb_url())
+        """Поставить mita. Модуль после установки не включается — это отдельное
+        действие («Включить Mieru»)."""
+        self.install_verified()
         return self.applier.apply()
 
-    def update(self) -> ApplyResult:
+    def safe_update(self, tag: str | None = None) -> UpdateOutcome:
         if not self.app.installed("mita"):
             raise ServiceError("Mieru не установлен.")
-        self._install_deb(self._deb_url())
-        return self.applier.apply()
+        return super().safe_update(tag)
 
     def set_enabled(self, enabled: bool) -> ApplyResult:
         def change(s: Settings) -> None:

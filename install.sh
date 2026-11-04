@@ -17,6 +17,7 @@ VENV="${ROOT}/.venv"
 DATA="${ROOT}/data"
 CADDY_BIN="/usr/local/bin/caddy"
 LOG="/var/log/kvnbox-install.log"
+ACTION="Установка"   # «Установка» или «Обновление Caddy» — в сообщениях об ошибке
 WORK=""          # временный каталог установки (удаляется при выходе)
 SWAPFILE=""      # временный swap для сборки (удаляется при выходе)
 
@@ -117,13 +118,17 @@ fail_report() {
     exec 2>&3
     $TTY && printf '\033[?25h'
     echo
-    echo -e "${RED}✗ Установка остановлена на этапе «$1».${RESET}"
+    echo -e "${RED}✗ ${ACTION} остановлено на этапе «$1».${RESET}"
     [[ -n "$NOTE" ]] && echo -e "  ${NOTE}"
     echo -e "${DIM}──── последние строки журнала ────${RESET}"
     tail -n 20 "$LOG" | sed 's/^/  /'
     echo -e "${DIM}──────────────────────────────────${RESET}"
     echo -e "  Полный журнал: ${BOLD}${LOG}${RESET}"
-    echo -e "  Исправьте причину и запустите установщик ещё раз — готовые этапы пройдут быстро."
+    if $REBUILD; then
+        echo -e "  Работающий Caddy не изменён (или возвращён), прокси работают как раньше."
+    else
+        echo -e "  Исправьте причину и запустите установщик ещё раз — готовые этапы пройдут быстро."
+    fi
     exit 1
 }
 
@@ -285,8 +290,10 @@ has_naive() {  # бинарник Caddy с модулем forward_proxy (NaivePr
     grep -qx 'http.handlers.forward_proxy' <<<"$modules"
 }
 
+REBUILD=false    # --rebuild-caddy: собрать Caddy заново, даже если он уже есть
+
 caddy_ready() {
-    [[ -x "$CADDY_BIN" ]] && has_naive "$CADDY_BIN"
+    ! $REBUILD && [[ -x "$CADDY_BIN" ]] && has_naive "$CADDY_BIN"
 }
 
 step_swap() {
@@ -319,14 +326,50 @@ step_caddy() {
         export PATH="$GOBIN:$GOROOT/bin:$PATH"
         mkdir -p "$HOME" "$GOPATH" "$GOBIN" "$GOCACHE" "$GOTMPDIR"
         go telemetry off 2>/dev/null
+        # shellcheck disable=SC2153  # XCADDY_VERSION — из versions.env
         go install "github.com/caddyserver/xcaddy/cmd/xcaddy@${XCADDY_VERSION}" || exit 1
         xcaddy build "$CADDY_VERSION" --output "$WORK/caddy" \
             --with "github.com/caddyserver/forwardproxy=${FORWARDPROXY_MODULE}" || exit 1
     ) || return 1
     has_naive "$WORK/caddy" || return 1
+    $REBUILD && { NOTE="${CADDY_VERSION}"; return 0; }  # замена — отдельным этапом
     install -m 755 "$WORK/caddy" "${CADDY_BIN}.new" && mv -f "${CADDY_BIN}.new" "$CADDY_BIN" || return 1
     setcap cap_net_bind_service=+ep "$CADDY_BIN" || return 1
     NOTE="${CADDY_VERSION}"
+}
+
+caddy_healthy() {  # служба активна и сайт отвечает по HTTPS (до 20 с)
+    local domain code i
+    domain=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["domain"])' \
+        "$DATA/settings.json") || return 1
+    for i in $(seq 1 20); do
+        if systemctl is-active --quiet caddy; then
+            code=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 5 \
+                --resolve "${domain}:443:127.0.0.1" "https://${domain}/")
+            log "проверка caddy: попытка ${i}, HTTP ${code}"
+            [[ "$code" == "200" ]] && return 0
+        fi
+        sleep 1
+    done
+    return 1
+}
+
+step_caddy_replace() {  # только --rebuild-caddy: замена с возвратом прежней версии
+    local prev="${CADDY_BIN}.prev"
+    XDG_DATA_HOME="$WORK/xdg" XDG_CONFIG_HOME="$WORK/xdg" \
+        "$WORK/caddy" validate --config /etc/caddy/Caddyfile --adapter caddyfile || {
+        NOTE="Новая версия не принимает текущую конфигурацию — Caddy не заменён."
+        return 1
+    }
+    cp -p "$CADDY_BIN" "$prev" || return 1
+    install -m 755 "$WORK/caddy" "${CADDY_BIN}.new" && mv -f "${CADDY_BIN}.new" "$CADDY_BIN" \
+        && setcap cap_net_bind_service=+ep "$CADDY_BIN" && systemctl restart caddy && caddy_healthy \
+        && { rm -f "$prev"; NOTE="$("$CADDY_BIN" version | cut -d' ' -f1)"; return 0; }
+    log "новая версия не работает — возврат прежней"
+    mv -f "$prev" "$CADDY_BIN" && setcap cap_net_bind_service=+ep "$CADDY_BIN"
+    systemctl restart caddy
+    NOTE="Новая версия не запустилась — возвращена прежняя, сайт и прокси работают как раньше."
+    return 1
 }
 
 step_cleanup() {
@@ -459,6 +502,36 @@ LOCAL_SRC=""
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || true)"
 if [[ -n "$SELF_DIR" && -f "$SELF_DIR/src/kvnbox/__init__.py" && -f "$SELF_DIR/versions.env" ]]; then
     LOCAL_SRC="$SELF_DIR"
+fi
+
+# ─── режим: пересборка Caddy (меню «Модули → Caddy → Обновить Caddy») ────────
+# bash install.sh --rebuild-caddy v2.x.y — запускается из установленной панели.
+if [[ "${1:-}" == "--rebuild-caddy" ]]; then
+    [[ "${2:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die "Укажите версию Caddy: --rebuild-caddy v2.x.y"
+    [[ -n "$LOCAL_SRC" && -f "$DATA/settings.json" ]] || die "Панель kvnBox не установлена."
+    # shellcheck disable=SC1091
+    source "$LOCAL_SRC/versions.env" || die "Не прочитан versions.env."
+    CADDY_VERSION="$2" REBUILD=true ACTION="Обновление Caddy" LOG="/var/log/kvnbox-caddy-update.log"
+    umask 077
+    : >"$LOG" && chmod 600 "$LOG"
+    echo "kvnBox rebuild-caddy ${CADDY_VERSION} — $(date '+%F %T')" >>"$LOG"
+    umask 022
+    echo -e "  ${BOLD}Сборка Caddy ${CADDY_VERSION} с NaiveProxy${RESET}"
+    echo -e "  ${DIM}Прокси работают как обычно; Caddy заменяется только в конце, если новая версия запустилась.${RESET}"
+    echo
+    add_step step_system      "Проверка системы"
+    add_step step_swap        "Временный файл подкачки"
+    add_step step_go          "Загрузка Go"
+    add_step step_caddy       "Сборка Caddy + NaiveProxy (до 5 мин)"
+    add_step step_caddy_replace "Замена Caddy и проверка сайта"
+    add_step step_cleanup     "Очистка временных файлов"
+    START=$EPOCHSECONDS
+    show_list
+    run_steps
+    $TTY && printf '\033[?25h'
+    echo
+    echo -e "${GREEN}✓ Caddy обновлён до ${CADDY_VERSION} за $(fmt_time $((EPOCHSECONDS - START))).${RESET}"
+    exit 0
 fi
 
 $TTY && [[ -n "${TERM:-}" ]] && clear

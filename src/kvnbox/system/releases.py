@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import urllib.error
 import urllib.request
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 USER_AGENT = "kvnBox"
@@ -23,6 +25,13 @@ def http_get(url: str, timeout: float = 30) -> bytes:
 
 class ReleaseError(Exception):
     pass
+
+
+@dataclass(frozen=True)
+class Asset:
+    name: str
+    url: str
+    sha256: str
 
 
 class NoReleasesError(ReleaseError):
@@ -70,6 +79,35 @@ class Releases:
         if not tags:
             raise NoReleasesError(f"В {repo} нет опубликованных версий")
         return max(tags, key=lambda t: tuple(int(x) for x in t[1:].split(".")))
+
+    def asset(self, repo: str, tag: str, name: str) -> Asset:
+        """Файл релиза с контрольной суммой (поле `digest` в API GitHub)."""
+        try:
+            data = json.loads(
+                self.fetch(f"https://api.github.com/repos/{repo}/releases/tags/{tag}", 20)
+            )
+        except Exception as e:  # сеть, 404 (нет такой версии), неверный JSON
+            raise ReleaseError(f"Не удалось получить релиз {repo} {tag}: {e}") from e
+        assets = data.get("assets") if isinstance(data, dict) else None
+        for a in assets if isinstance(assets, list) else []:
+            if not isinstance(a, dict) or a.get("name") != name:
+                continue
+            url, digest = a.get("browser_download_url"), a.get("digest")
+            if not isinstance(url, str) or not isinstance(digest, str):
+                break
+            sha = digest.removeprefix("sha256:")
+            if not re.fullmatch(r"[0-9a-f]{64}", sha):
+                break
+            return Asset(name=name, url=url, sha256=sha)
+        raise ReleaseError(f"В релизе {repo} {tag} нет файла {name} с контрольной суммой")
+
+    def download_verified(self, asset: Asset, dest: Path, timeout: float = 300) -> Path:
+        path = self.download(asset.url, dest, timeout)
+        got = hashlib.sha256(path.read_bytes()).hexdigest()
+        if got != asset.sha256:
+            path.unlink(missing_ok=True)
+            raise ReleaseError(f"Контрольная сумма {asset.name} не совпала — файл отброшен")
+        return path
 
     def download(self, url: str, dest: Path, timeout: float = 300) -> Path:
         if not url.startswith("https://"):
