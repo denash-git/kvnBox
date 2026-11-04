@@ -173,7 +173,7 @@ class UserService:
         if wants_xray and not self.xray_ready():
             raise ServiceError("Xray не установлен. Установите: Модули → Xray → Установить Xray.")
         if transport is Transport.CDN and not self.cdn_ready():
-            raise ServiceError("CDN не настроен: Модули → Xray → Настройки CDN.")
+            raise ServiceError("CDN не настроен: Модули → Настройки CDN.")
         return self._change(lambda: self.app.users.add_connection(name, protocol, transport, core))
 
     def cdn_ready(self) -> bool:

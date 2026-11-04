@@ -39,11 +39,12 @@ def modules_menu(m: Menu) -> None:
             f"Caddy       [{_on(m.app.systemd.is_active('caddy'))}]",
             f"Xray        [{_xray_badge(m)}]",
             "Настроить пути протоколов",
+            "Настройки CDN",
             "Отключить BBR оптимизацию" if bbr else "Включить BBR оптимизацию",
             "Назад",
         ]
         choice = m.select("Модули", options)
-        if choice in (BACK, 7):
+        if choice in (BACK, 8):
             return
         [
             mieru_module_menu,
@@ -52,6 +53,7 @@ def modules_menu(m: Menu) -> None:
             caddy_module_menu,
             xray_module_menu,
             change_vless_paths_menu,
+            cdn_settings_menu,
             bbr_optimization_menu,
         ][choice](m)
 
@@ -202,7 +204,7 @@ def xray_module_menu(m: Menu) -> None:
         options = ["Отключить Xray" if enabled else "Включить Xray"]
         if m.app.systemd.is_active("xray"):
             options.append("Перезапустить службу")
-        options += ["Просмотреть логи службы", "Пути Xray", "Настройки CDN", "Обновить Xray"]
+        options += ["Просмотреть логи службы", "Обновить Xray"]
         if count == 0:
             options.append("Удалить Xray")
         options.append("Назад")
@@ -245,10 +247,6 @@ def xray_module_menu(m: Menu) -> None:
             )
         elif sel == "Просмотреть логи службы":
             _logs(m, "Модули → Xray → Логи службы", "xray")
-        elif sel == "Пути Xray":
-            change_vless_paths_menu(m)
-        elif sel == "Настройки CDN":
-            cdn_settings_menu(m)
         elif sel == "Обновить Xray":
             update_core_menu(m, "Модули → Xray → Обновление", mod)
         elif sel == "Удалить Xray":
@@ -268,7 +266,12 @@ def cdn_settings_menu(m: Menu) -> None:
     """Протокол CDN: домен для клиентов и origin-поддомен, с которым приходит CDN."""
     svc = SettingsService(m.app)
     c = svc.get().cdn
-    m.screen("Модули → Xray → Настройки CDN")
+    m.screen("Модули → Настройки CDN")
+    if not m.app.installed("xray"):
+        m.ui.out()
+        m.fail("Протокол CDN работает на ядре Xray — сначала установите его (Модули → Xray).")
+        m.ui.pause()
+        return
     pad = m.ui.block_pad()
     m.ui.out(f"{pad}Домен CDN (в ссылках клиентов): {BOLD}{c.domain or '(не задан)'}{RESET}")
     m.ui.out(
@@ -285,7 +288,7 @@ def cdn_settings_menu(m: Menu) -> None:
         return
     domain = "" if domain == "-" else (domain or c.domain)
     origin = "" if origin == "-" else (origin or c.origin_host)
-    m.screen("Модули → Xray → Настройки CDN")
+    m.screen("Модули → Настройки CDN")
     m.progress("Применение настроек...")
     try:
         m.show_result(svc.set_cdn(domain, origin), "Настройки CDN применены.")
