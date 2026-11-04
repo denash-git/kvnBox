@@ -38,7 +38,7 @@ def modules_menu(m: Menu) -> None:
             f"sing-box    [{_on(m.app.systemd.is_active('sing-box'))}]",
             f"Caddy       [{_on(m.app.systemd.is_active('caddy'))}]",
             f"Xray        [{_xray_badge(m)}]",
-            "Настроить пути VLESS",
+            "Настроить пути протоколов",
             "Отключить BBR оптимизацию" if bbr else "Включить BBR оптимизацию",
             "Назад",
         ]
@@ -577,7 +577,7 @@ def change_vless_paths_menu(m: Menu) -> None:
             for core, field, label, _ in rows
         ]
         options.append("Назад")
-        choice = m.select("Настройки путей", options)
+        choice = m.select("Пути протоколов", options)
         if choice == BACK or choice == len(rows):
             return
         core, field, _, transport = rows[choice]
@@ -588,7 +588,7 @@ def change_vless_paths_menu(m: Menu) -> None:
             for c in u.connections
             if c.core is kind and c.transport is transport
         )
-        m.screen("Модули → Пути VLESS")
+        m.screen("Модули → Пути протоколов")
         m.ui.out()
         if affected:
             m.ui.center_print(
@@ -610,7 +610,7 @@ def change_vless_paths_menu(m: Menu) -> None:
             m.fail("Некорректный путь (должен начинаться со слэша /)")
             m.ui.pause()
             continue
-        m.screen("Модули → Пути VLESS")
+        m.screen("Модули → Пути протоколов")
         m.progress("Применение настроек...")
         try:
             res = svc.set_path(core, field, value)

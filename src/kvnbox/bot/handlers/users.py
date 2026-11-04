@@ -371,7 +371,7 @@ async def new_type(cb: CallbackQuery, app: App, state: FSMContext) -> None:
             "\n\nВыберите ядро:",
             Kb(
                 inline_keyboard=[
-                    [Btn(text="sing-box (по умолчанию)", callback_data="user:new:core:singbox")],
+                    [Btn(text="sing-box", callback_data="user:new:core:singbox")],
                     [Btn(text="Xray", callback_data="user:new:core:xray")],
                     [Btn(text="❌ Отмена", callback_data=_cancel(app, nick))],
                 ]

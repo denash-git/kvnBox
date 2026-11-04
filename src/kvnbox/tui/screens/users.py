@@ -232,7 +232,7 @@ def _choose_core(
         return cores[0]
     if not _svc(m).xray_ready():
         return CoreKind.SINGBOX
-    choice = m.select(f"Ядро для {nick}: {label}", ["sing-box (по умолчанию)", "Xray", "Отмена"])
+    choice = m.select(f"Ядро для {nick}: {label}", ["sing-box", "Xray", "Отмена"])
     if choice in (BACK, 2):
         return CORE_CANCEL
     return CoreKind.SINGBOX if choice == 0 else CoreKind.XRAY
