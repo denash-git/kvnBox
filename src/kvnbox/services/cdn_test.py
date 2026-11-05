@@ -134,7 +134,7 @@ def _stat(values: list[int]) -> str:
 
 def report_lines(r: CdnReport) -> list[str]:
     """Строки отчёта без оформления: первая — итог."""
-    lines = [f"Через CDN: {r.ok_count} из {len(r.probes)} запросов успешно"]
+    lines = [f"Через CDN: {r.ok_count} из {len(r.probes)} запросов успешно", ""]
     d = r.direct
     lines.append(
         f"Origin {r.origin} напрямую: "
@@ -143,31 +143,31 @@ def report_lines(r: CdnReport) -> list[str]:
     lines.append(f"Домен CDN: {r.domain}")
     lines.append("")
     lines.append(
-        f"{'№':<2} {'узел CDN':<18} {'до CDN':>6} {'TLS':>4} {'туда':>5} {'обратно':>8} "
-        f"{'всего':>6}  (мс)"
+        f"{'№':<2} {'Узел CDN':<18} {'До CDN':>6} {'TLS':>4} {'Запрос':>6} {'Ответ':>6} "
+        f"{'Всего':>6}, мс"
     )
     for i, p in enumerate(r.probes, 1):
         node = (p.node or p.edge_ip or "—")[:18]
         if p.ok:
             lines.append(
                 f"{i:<2} {node:<18} {_v(p.connect_ms):>6} {_v(p.tls_ms):>4} "
-                f"{_v(p.to_origin_ms):>5} {_v(p.back_ms):>8} {_v(p.total_ms):>6}"
+                f"{_v(p.to_origin_ms):>6} {_v(p.back_ms):>6} {_v(p.total_ms):>6}"
             )
         else:
             lines.append(f"{i:<2} {node:<18} ✗ {p.error}")
     good = [p for p in r.probes if p.ok]
     if good:
         lines.append("")
-        lines.append("медиана / максимум, мс:")
+        lines.append("Медиана / максимум, мс:")
         for label, attr in (
-            ("до CDN (TCP)", "connect_ms"),
+            ("До CDN, TCP", "connect_ms"),
             ("TLS", "tls_ms"),
-            ("туда (→ origin)", "to_origin_ms"),
-            ("обратно (origin →)", "back_ms"),
-            ("всего", "total_ms"),
+            ("Запрос vps → cdn → origin", "to_origin_ms"),
+            ("Ответ origin → cdn → vps", "back_ms"),
+            ("Всего", "total_ms"),
         ):
             vals = [v for p in good if (v := getattr(p, attr)) is not None]
-            lines.append(f"  {label:<19} {_stat(vals)}")
+            lines.append(f"  {label:<26} {_stat(vals)}")
     if d.ok and r.probes and not good:
         lines.append("")
         lines.append("Сервер отвечает, CDN — нет: проверьте в ресурсе CDN источник,")

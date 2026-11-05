@@ -31,9 +31,9 @@ def diagnostics_menu(m: Menu) -> None:
             [
                 "Мониторинг ресурсов",
                 "Показать логи",
-                "Тест VPS → Интернет (speedtest-cli)",
-                "Замер скорости Client ↔ VPS (iperf3)",
-                "Тест CDN (VPS → CDN → origin)",
+                "Тест VPS → Интернет",
+                "Замер скорости Client ↔ VPS",
+                "Тест CDN",
                 "Назад",
             ],
         )
@@ -65,7 +65,7 @@ def logs_menu(m: Menu) -> None:
             if binary is None or m.app.installed(binary)
         ]
         options = [f"Последние {LOG_LINES} строк — {name}" for name, _ in units]
-        options += [f"Следить за логом {name} (Ctrl+C — выход)" for name, _ in units]
+        options += [f"Следить за логом {name}" for name, _ in units]
         options.append("Назад")
         choice = m.select("Просмотр логов", options)
         if choice == BACK or options[choice] == "Назад":
@@ -191,14 +191,16 @@ def run_speedtest_vps_internet(m: Menu) -> None:
     while True:
         choice = m.select(
             "VPS → Интернет",
-            [
-                "Тест на ближайшем сервере (автовыбор)",
+            info=[f"{DIM}Замер канала сервера до узлов Ookla, программа speedtest-cli{RESET}"],
+            options=[
+                "Тест на ближайшем сервере",
                 "Выбрать сервер из списка ближайших",
                 "Назад",
             ],
         )
         if choice == 0:
-            m.screen("Скорость VPS → Интернет (Автовыбор)")
+            m.screen("Скорость VPS → Интернет")
+            m.ui.out(f"  {DIM}Сервер Ookla выбирается автоматически{RESET}")
             m.ui.out(f"  {CYAN}Запуск теста, подождите...{RESET}\n")
             m.ui.out("\n".join("  " + line for line in diag.speedtest().splitlines()))
             m.ui.out()
@@ -222,7 +224,8 @@ def run_speedtest_vps_internet(m: Menu) -> None:
         if sel in (BACK, len(labels)):
             continue
         server = servers[sel]
-        m.screen(f"VPS → Интернет ({labels[sel]})")
+        m.screen("Скорость VPS → Интернет")
+        m.ui.out(f"  {DIM}Сервер: {labels[sel]}{RESET}")
         m.ui.out(f"  {CYAN}Запуск теста на сервере {server.id}, подождите...{RESET}\n")
         m.ui.out("\n".join("  " + line for line in diag.speedtest(server.id).splitlines()))
         m.ui.out()
@@ -232,7 +235,7 @@ def run_speedtest_vps_internet(m: Menu) -> None:
 
 def run_speedtest_client_vps(m: Menu) -> None:
     diag = DiagnosticsService(m.app)
-    m.screen("Замер скорости: Client ↔ VPS (iperf3)")
+    m.screen("Замер скорости Client ↔ VPS")
     if not m.app.installed("iperf3"):
         m.ui.out()
         m.fail("Не удалось установить iperf3. Установите вручную: apt install iperf3")
@@ -284,7 +287,9 @@ def run_speedtest_client_vps(m: Menu) -> None:
 
 def run_cdn_test(m: Menu) -> None:
     m.screen("Тест CDN")
-    m.progress(f"Запрос /health напрямую и {ROUNDS} раз через CDN (до минуты)...")
+    pad = m.ui.block_pad()
+    m.ui.out(f"{pad}{DIM}Путь: VPS → CDN → origin → CDN → VPS, ответ /health{RESET}")
+    m.progress(f"Запрос напрямую и {ROUNDS} раз через CDN, до минуты...")
     try:
         report = CdnTest(m.app).run()
     except ServiceError as e:
@@ -296,12 +301,8 @@ def run_cdn_test(m: Menu) -> None:
     lines = report_lines(report)
     good = report.ok_count == len(report.probes)
     (m.ok if good else m.fail)(lines[0])
-    pad = m.ui.block_pad()
     for line in lines[1:]:
         m.ui.out(f"{pad}{line.replace(chr(10007), RED + chr(10007) + RESET)}")
     m.ui.out()
-    m.ui.out(
-        f"{pad}{DIM}туда — от сервера через CDN до origin, обратно — от origin через CDN{RESET}"
-    )
-    m.ui.out(f"{pad}{DIM}до сервера; часы одни и те же — этого сервера.{RESET}")
+    m.ui.out(f"{pad}{DIM}Время запроса и ответа — по часам этого сервера.{RESET}")
     m.ui.pause()

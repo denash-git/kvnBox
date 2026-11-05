@@ -158,8 +158,8 @@ def speedtest_menu_keyboard() -> Kb:
     # тест не запускался. Обработчик kvnBox принимает оба значения.
     return Kb(
         inline_keyboard=[
-            [Btn(text=_a("🌐 VPS → Интернет (Ookla)"), callback_data="diag:speed_ookla")],
-            [Btn(text=_a("📶 Client ⇄ VPS (iperf3)"), callback_data="diag:speed_iperf")],
+            [Btn(text=_a("🌐 VPS → Интернет"), callback_data="diag:speed_ookla")],
+            [Btn(text=_a("📶 Client ⇄ VPS"), callback_data="diag:speed_iperf")],
             [Btn(text="« Назад в Диагностику", callback_data="diag:menu")],
             [MAIN],
         ]

@@ -246,11 +246,10 @@ def cdn_report_text(app: App) -> str:
     report = CdnTest(app).run()
     lines = report_lines(report)
     icon = "✅" if report.direct.ok and report.ok_count == len(report.probes) else "⚠️"
-    body = html.escape("\n".join(lines[1:]))
+    body = html.escape("\n".join(lines[1:]).strip("\n"))
     return (
         f"{icon} <b>Тест CDN:</b> {html.escape(lines[0])}\n\n<pre>{body}</pre>\n"
-        "<i>туда — от сервера через CDN до origin, обратно — от origin через CDN до сервера "
-        "(по часам сервера)</i>"
+        "<i>Время запроса и ответа — по часам этого сервера.</i>"
     )
 
 
