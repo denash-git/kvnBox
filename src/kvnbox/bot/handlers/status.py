@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import html
 import json
 import re
 import time
@@ -21,6 +22,7 @@ from kvnbox.bot.keyboards import (
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.apply import Applier
+from kvnbox.services.cdn_test import ROUNDS, CdnTest, report_lines
 from kvnbox.services.diagnostics import DiagnosticsService
 from kvnbox.services.modules import NetbirdModule
 from kvnbox.system.metrics import cpu_percent
@@ -238,6 +240,29 @@ async def iperf_stop(cb: CallbackQuery, app: App) -> None:
         speedtest_menu_keyboard(),
     )
     await cb.answer("iperf3 остановлен, порт закрыт", show_alert=False)
+
+
+def cdn_report_text(app: App) -> str:
+    report = CdnTest(app).run()
+    lines = report_lines(report)
+    icon = "✅" if report.direct.ok and report.ok_count == len(report.probes) else "⚠️"
+    body = html.escape("\n".join(lines[1:]))
+    return (
+        f"{icon} <b>Тест CDN:</b> {html.escape(lines[0])}\n\n<pre>{body}</pre>\n"
+        "<i>туда — от сервера через CDN до origin, обратно — от origin через CDN до сервера "
+        "(по часам сервера)</i>"
+    )
+
+
+@router.callback_query(F.data == "diag:cdn")
+async def cdn_test(cb: CallbackQuery, app: App) -> None:
+    await edit(cb, f"⏳ <b>Тест CDN...</b>\nЗапрос напрямую и {ROUNDS} раз через CDN, до минуты.")
+    await cb.answer()
+    try:
+        text = await run(cdn_report_text, app)
+    except ServiceError as e:
+        text = f"❌ <b>Тест CDN:</b> {html.escape(str(e))}"
+    await edit(cb, text, diagnostics_back_keyboard())
 
 
 @router.callback_query(F.data == "diag:recreate")

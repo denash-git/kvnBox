@@ -127,6 +127,9 @@ def cdn_route(settings: Settings, users: Sequence[User], err: str) -> str:
 
 CDN_HEALTH_PATH = "/health"
 CDN_HEALTH_BODY = '{"status":"ok"}'
+# Время (мс, часы этого сервера), когда запрос дошёл до origin: тест CDN делит путь
+# «сервер → CDN → origin → CDN → сервер» на «туда» и «обратно» по одним часам.
+CDN_TIME_HEADER = "X-Origin-Time"
 
 
 def cdn_health(settings: Settings) -> str:
@@ -142,6 +145,7 @@ def cdn_health(settings: Settings) -> str:
     handle @cdn_health {{
         header Content-Type application/json
         header Cache-Control no-store
+        header {CDN_TIME_HEADER} {{time.now.unix_ms}}
         respond `{CDN_HEALTH_BODY}` 200
     }}
 

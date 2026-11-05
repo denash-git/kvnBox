@@ -81,10 +81,15 @@ def _outcome(res: UpdateOutcome, out: TextIO) -> int:
 
 
 def _cdn_check(app: App, a: argparse.Namespace, out: TextIO) -> int:
-    rows = SettingsService(app).check_cdn()
-    for label, ok, detail in rows:
-        print(("✓ " if ok else "✗ ") + f"{label}: {detail}", file=out)
-    return EXIT_OK if all(ok for _, ok, _ in rows) else EXIT_FAIL
+    from kvnbox.services.cdn_test import CdnTest, report_lines
+
+    report = CdnTest(app).run()
+    good = report.direct.ok and report.ok_count == len(report.probes)
+    lines = report_lines(report)
+    print(("✓ " if good else "✗ ") + lines[0], file=out)
+    for line in lines[1:]:
+        print(f"  {line}" if line else "", file=out)
+    return EXIT_OK if good else EXIT_FAIL
 
 
 def _slot_name(conn: Connection) -> str:

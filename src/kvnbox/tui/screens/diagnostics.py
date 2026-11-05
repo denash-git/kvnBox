@@ -8,6 +8,7 @@ import re
 import subprocess
 
 from kvnbox.services import ServiceError
+from kvnbox.services.cdn_test import ROUNDS, CdnTest, report_lines
 from kvnbox.services.diagnostics import DiagnosticsService
 from kvnbox.system.metrics import cpu_percent
 from kvnbox.tui.menu import Menu
@@ -32,14 +33,19 @@ def diagnostics_menu(m: Menu) -> None:
                 "Показать логи",
                 "Тест VPS → Интернет (speedtest-cli)",
                 "Замер скорости Client ↔ VPS (iperf3)",
+                "Тест CDN (VPS → CDN → origin)",
                 "Назад",
             ],
         )
-        if choice in (BACK, 4):
+        if choice in (BACK, 5):
             return
-        [system_monitor_menu, logs_menu, run_speedtest_vps_internet, run_speedtest_client_vps][
-            choice
-        ](m)
+        [
+            system_monitor_menu,
+            logs_menu,
+            run_speedtest_vps_internet,
+            run_speedtest_client_vps,
+            run_cdn_test,
+        ][choice](m)
 
 
 # ─── логи ────────────────────────────────────────────────────────────────────
@@ -270,4 +276,32 @@ def run_speedtest_client_vps(m: Menu) -> None:
         diag.iperf_stop()
     m.ui.out()
     m.ok("Тестирование завершено.")
+    m.ui.pause()
+
+
+# ─── тест CDN ────────────────────────────────────────────────────────────────
+
+
+def run_cdn_test(m: Menu) -> None:
+    m.screen("Тест CDN")
+    m.progress(f"Запрос /health напрямую и {ROUNDS} раз через CDN (до минуты)...")
+    try:
+        report = CdnTest(m.app).run()
+    except ServiceError as e:
+        m.ui.out()
+        m.fail(str(e))
+        m.ui.pause()
+        return
+    m.ui.out()
+    lines = report_lines(report)
+    good = report.ok_count == len(report.probes)
+    (m.ok if good else m.fail)(lines[0])
+    pad = m.ui.block_pad()
+    for line in lines[1:]:
+        m.ui.out(f"{pad}{line.replace(chr(10007), RED + chr(10007) + RESET)}")
+    m.ui.out()
+    m.ui.out(
+        f"{pad}{DIM}туда — от сервера через CDN до origin, обратно — от origin через CDN{RESET}"
+    )
+    m.ui.out(f"{pad}{DIM}до сервера; часы одни и те же — этого сервера.{RESET}")
     m.ui.pause()

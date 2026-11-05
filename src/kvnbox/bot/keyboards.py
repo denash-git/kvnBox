@@ -137,6 +137,7 @@ def diagnostics_menu_keyboard() -> Kb:
         inline_keyboard=[
             [Btn(text=_a("📈 Мониторинг ресурсов"), callback_data="diag:resources")],
             [Btn(text=_a("🚀 Тест скорости"), callback_data="diag:speedtest")],
+            [Btn(text=_a("🛰 Тест CDN"), callback_data="diag:cdn")],
             [Btn(text=_a("⚙️ Пересоздать конфиги"), callback_data="diag:recreate")],
             [MAIN],
         ]

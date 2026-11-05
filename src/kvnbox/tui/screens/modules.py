@@ -271,48 +271,12 @@ def cdn_settings_menu(m: Menu) -> None:
         m.fail("Протокол CDN работает на ядре Xray — сначала установите его (Модули → Xray).")
         m.ui.pause()
         return
-    while True:
-        c = svc.get().cdn
-        info = [
-            f"Домен CDN (в ссылках клиентов): {BOLD}{c.domain or '(не задан)'}{RESET}",
-            f"Origin-поддомен (с ним приходит CDN): {BOLD}{c.origin_host or '(не задан)'}{RESET}",
-        ]
-        options = ["Изменить настройки", *(["Проверить CDN"] if c.configured else []), "Назад"]
-        choice = m.select("Модули → Настройки CDN", options, info)
-        if choice == BACK or options[choice] == "Назад":
-            return
-        if options[choice] == "Проверить CDN":
-            _check_cdn(m, svc)
-        else:
-            _edit_cdn(m, svc)
-
-
-def _check_cdn(m: Menu, svc: SettingsService) -> None:
-    m.screen("Модули → Настройки CDN → Проверка")
-    m.progress("Запрос /health напрямую и через CDN...")
-    try:
-        rows = svc.check_cdn()
-    except ServiceError as e:
-        m.ui.out()
-        m.fail(str(e))
-        m.ui.pause()
-        return
-    m.ui.out()
-    for label, ok, detail in rows:
-        (m.ok if ok else m.fail)(f"{label}: {detail}")
-    if rows[0][1] and not rows[1][1]:
-        pad = m.ui.block_pad()
-        m.ui.out()
-        m.ui.out(
-            f"{pad}{DIM}Сервер отвечает, CDN — нет: проверьте в CDN origin-хост, протокол{RESET}"
-        )
-        m.ui.out(f"{pad}{DIM}HTTPS к источнику и заголовок Host = origin-поддомен.{RESET}")
-    m.ui.pause()
+    _edit_cdn(m, svc)
 
 
 def _edit_cdn(m: Menu, svc: SettingsService) -> None:
     c = svc.get().cdn
-    m.screen("Модули → Настройки CDN → Изменение")
+    m.screen("Модули → Настройки CDN")
     pad = m.ui.block_pad()
     m.ui.out(f"{pad}Домен CDN (в ссылках клиентов): {BOLD}{c.domain or '(не задан)'}{RESET}")
     m.ui.out(
