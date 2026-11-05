@@ -16,7 +16,7 @@ ADD_OPTIONS: list[tuple[str, Protocol, Transport | None]] = [
     ("VLESS over WebSocket", Protocol.VLESS, Transport.WS),
     ("VLESS over gRPC", Protocol.VLESS, Transport.GRPC),
     ("VLESS over HTTPUpgrade", Protocol.VLESS, Transport.HTTPUPGRADE),
-    ("VLESS over XHTTP", Protocol.VLESS, Transport.XHTTP),
+    ("VLESS over XHTTP (только Xray)", Protocol.VLESS, Transport.XHTTP),
     ("VLESS CDN (через CDN, только Xray)", Protocol.VLESS, Transport.CDN),
     ("NaiveProxy", Protocol.NAIVE, None),
     ("Mieru", Protocol.MIERU, None),

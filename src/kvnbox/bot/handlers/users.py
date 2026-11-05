@@ -249,7 +249,7 @@ PROTO_BUTTONS = {
 }
 VLESS_TYPES = [("ws", "WebSocket (ws)"), ("grpc", "gRPC"), ("xhttp", "HTTPUpgrade")]
 # этап 11: настоящий XHTTP — callback «xh» («xhttp» исторически означает HTTPUpgrade)
-XHTTP_TYPE = ("xh", "XHTTP")
+XHTTP_TYPE = ("xh", "XHTTP (только Xray)")
 CDN_TYPE = ("cdn", "CDN (через CDN, только Xray)")
 CORE_SUFFIX = {"singbox": " · sing-box", "xray": " · Xray"}
 
