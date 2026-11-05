@@ -125,6 +125,29 @@ def cdn_route(settings: Settings, users: Sequence[User], err: str) -> str:
 """
 
 
+CDN_HEALTH_PATH = "/health"
+CDN_HEALTH_BODY = '{"status":"ok"}'
+
+
+def cdn_health(settings: Settings) -> str:
+    """Проверочный ответ для цепочки «CDN → origin»: только с именем origin-поддомена,
+    работает, как только CDN настроен (ещё до первых подключений и без Xray)."""
+    if not settings.cdn.origin_host:
+        return ""
+    return f"""    # CDN check: answers only with the CDN origin host name
+    @cdn_health {{
+        host {settings.cdn.origin_host}
+        path {CDN_HEALTH_PATH}
+    }}
+    handle @cdn_health {{
+        header Content-Type application/json
+        header Cache-Control no-store
+        respond `{CDN_HEALTH_BODY}` 200
+    }}
+
+"""
+
+
 def extra_hosts(settings: Settings) -> str:
     """Origin-поддомен CDN в адресе сайта → Caddy получает на него свой сертификат.
     Пусто, пока CDN не настроен (Caddyfile байт в байт как раньше)."""
@@ -139,7 +162,7 @@ def render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) ->
             "DOMAIN": settings.domain,
             "CADDY_TLS_EMAIL": f"email {email}" if email else "# anonymous ACME",
             "FORWARD_PROXY_BLOCK": forward_proxy_block(users),
-            "XRAY_ROUTES": xray_routes(settings, users, paths),
+            "XRAY_ROUTES": cdn_health(settings) + xray_routes(settings, users, paths),
             "EXTRA_HOSTS": extra_hosts(settings),
             "FAKESITE_DIR": (paths.fakesite_dir / settings.site.template).as_posix(),
             "SUB_DIR": paths.sub_dir.as_posix(),

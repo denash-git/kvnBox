@@ -80,6 +80,13 @@ def _outcome(res: UpdateOutcome, out: TextIO) -> int:
     return EXIT_OK if res.ok else EXIT_FAIL
 
 
+def _cdn_check(app: App, a: argparse.Namespace, out: TextIO) -> int:
+    rows = SettingsService(app).check_cdn()
+    for label, ok, detail in rows:
+        print(("✓ " if ok else "✗ ") + f"{label}: {detail}", file=out)
+    return EXIT_OK if all(ok for _, ok, _ in rows) else EXIT_FAIL
+
+
 def _slot_name(conn: Connection) -> str:
     return next(name for name, slot in SLOTS.items() if slot == conn.slot)
 
@@ -463,6 +470,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sp.add_argument("domain")
     sp.add_argument("origin")
+    cmd(
+        xray,
+        "cdn-check",
+        _cdn_check,
+        "проверить цепочку CDN: /health на origin напрямую и через CDN",
+    )
     cmd(
         xray,
         "uninstall",

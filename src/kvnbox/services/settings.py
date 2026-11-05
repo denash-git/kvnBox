@@ -8,6 +8,7 @@ from collections.abc import Callable
 from pydantic import ValidationError
 
 from kvnbox.core.models import FAKE_SITE_TEMPLATES, CoreKind, Settings, Transport, random_path
+from kvnbox.cores.caddy import CDN_HEALTH_BODY, CDN_HEALTH_PATH
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.apply import Applier, ApplyResult
@@ -93,6 +94,30 @@ class SettingsService:
                 s.xray.cdn_path = random_path()
 
         return self.update(change)
+
+    def check_cdn(self) -> list[tuple[str, bool, str]]:
+        """Проверка цепочки CDN по ответу /health: origin-поддомен напрямую на этом
+        сервере (сертификат и маршрут Caddy), затем тот же ответ через сеть CDN."""
+        c = self.get().cdn
+        if not c.configured:
+            raise ServiceError("CDN не настроен.")
+        local = ["--resolve", f"{c.origin_host}:443:127.0.0.1"]
+        return [
+            (f"Origin {c.origin_host} (на этом сервере)", *self._probe(c.origin_host, local)),
+            (f"Через CDN {c.domain}", *self._probe(c.domain, [])),
+        ]
+
+    def _probe(self, host: str, extra: list[str]) -> tuple[bool, str]:
+        url = f"https://{host}{CDN_HEALTH_PATH}"
+        argv = ["curl", "-sS", "-m", "15", "-o", "-", "-w", "\n%{http_code}", *extra, url]
+        res = self.app.runner.run(argv, timeout=30)
+        if not res.ok:
+            lines = res.output.splitlines()
+            return False, lines[-1] if lines else f"curl: код {res.returncode}"
+        body, _, code = res.stdout.rstrip().rpartition("\n")
+        if code == "200" and body.strip() == CDN_HEALTH_BODY:
+            return True, "ответ получен"
+        return False, f"HTTP {code}: {body.strip()[:60]}" if body.strip() else f"HTTP {code}"
 
     def set_path(self, core: str, field: str, value: str) -> ApplyResult:
         """Путь одного ядра («vless» — sing-box, «xray»): ws_path, grpc_service,
