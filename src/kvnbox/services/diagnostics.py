@@ -10,7 +10,13 @@ from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.system.metrics import Disk, Memory, cpu_percent, format_uptime
 
-LOG_UNITS = {"Caddy": "caddy", "sing-box": "sing-box", "Mieru": "mita", "NetBird": "netbird"}
+LOG_UNITS = {
+    "Caddy": "caddy",
+    "sing-box": "sing-box",
+    "Xray": "xray",
+    "Mieru": "mita",
+    "NetBird": "netbird",
+}
 IPERF_PORT = 5201
 IPERF_UNIT = "kvnbox-iperf3"
 SPEEDTEST_FLAGS = ["--accept-license", "--accept-gdpr"]

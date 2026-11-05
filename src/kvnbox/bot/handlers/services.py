@@ -12,20 +12,25 @@ from kvnbox.bot.keyboards import (
     service_confirm_keyboard,
     services_menu_keyboard,
 )
+from kvnbox.cores.xray import xray_running
 from kvnbox.services.app import App
 
 router = Router()
-ALLOWED = {"caddy", "sing-box", "mita", "netbird", "all"}
+ALLOWED = {"caddy", "sing-box", "xray", "mita", "netbird", "all"}
 
 
 @router.message(Command("services"))
 @router.callback_query(F.data == "services:menu")
-async def services_menu(event: Message | CallbackQuery) -> None:
+async def services_menu(event: Message | CallbackQuery, app: App) -> None:
     await show(
         event,
         "🔄 <b>Управление службами</b>\n\nВыберите службу для перезапуска:",
-        services_menu_keyboard(),
+        services_menu_keyboard(_xray_needed(app)),
     )
+
+
+def _xray_needed(app: App) -> bool:
+    return xray_running(app.settings.load(), app.users.all())
 
 
 @router.callback_query(F.data.startswith("services:confirm:"))
@@ -47,10 +52,14 @@ async def services_run(cb: CallbackQuery, app: App) -> None:
     label = "Все службы" if service == "all" else service
     await edit(cb, f"⏳ Перезапуск {label}...")
     if service == "all":
-        units = ["caddy", "sing-box"]
+        units = ["caddy", "sing-box", *(["xray"] if _xray_needed(app) else [])]
         units += [
             u for u, binary in (("mita", "mita"), ("netbird", "netbird")) if app.installed(binary)
         ]
+    elif service == "xray" and not _xray_needed(app):
+        await edit(cb, "⚪ Xray не нужен: отключён или нет подключений.", back_to_main_keyboard())
+        await cb.answer()
+        return
     else:
         units = [service]
     failed = [u for u in units if not (await run(app.systemd.restart, u)).ok]

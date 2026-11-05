@@ -19,6 +19,7 @@ from kvnbox.bot.keyboards import (
     iperf_running_keyboard,
     speedtest_menu_keyboard,
 )
+from kvnbox.core.models import CoreKind
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.apply import Applier
@@ -34,6 +35,17 @@ _iperf_task: asyncio.Task[None] | None = None
 
 def _service(app: App, unit: str) -> str:
     return "🟢 работает" if app.systemd.state(unit) == "active" else "🔴 не запущен"
+
+
+def _xray(app: App) -> str:
+    """Как в шапке меню: работает / отключён / ждёт подключений / не запущен."""
+    if not app.settings.load().xray.enabled:
+        return "🔴 отключен"
+    if app.systemd.is_active("xray"):
+        return "🟢 работает"
+    if not any(c.core is CoreKind.XRAY for u in app.users.all() for c in u.connections):
+        return "🟡 ждёт подключений"
+    return "🔴 не запущен"
 
 
 def _netbird(app: App) -> str:
@@ -64,11 +76,13 @@ def status_text(app: App) -> str:
         uptime += f"{hours} ч. "
     uptime += f"{minutes} мин."
     mita = _service(app, "mita") if app.installed("mita") else "⚪ не установлен"
+    xray = f"├─ Xray: {_xray(app)}\n" if app.installed("xray") else ""
     return (
         "📈 <b>Мониторинг ресурсов и служб</b>\n\n"
         "⚙️ <b>Состояние служб:</b>\n"
         f"├─ Caddy: {_service(app, 'caddy')}\n"
         f"├─ sing-box: {_service(app, 'sing-box')}\n"
+        f"{xray}"
         f"├─ Mieru: {mita}\n"
         f"├─ NetBird: {_netbird(app)}\n"
         f"├─ Защита (Fail2ban): {'🟢 активна' if app.fail2ban.is_active() else '🔴 отключена'}\n"

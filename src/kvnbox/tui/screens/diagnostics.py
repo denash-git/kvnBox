@@ -19,6 +19,7 @@ LOG_LINES = 100
 LOG_UNITS = [
     ("Caddy", "caddy", None),
     ("sing-box", "sing-box", None),
+    ("Xray", "xray", "xray"),
     ("Mieru", "mita", "mita"),
     ("NetBird", "netbird", "netbird"),
 ]

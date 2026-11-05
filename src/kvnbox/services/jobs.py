@@ -12,10 +12,12 @@ import html
 import json
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from kvnbox import __version__
 from kvnbox.core.storage import atomic_write_text
+from kvnbox.cores.xray import xray_running
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.backup import BackupService
@@ -82,13 +84,19 @@ class Jobs:
             return None
         return self.app.systemd.state(unit)
 
+    def watched_units(self) -> tuple[str, ...]:
+        """Xray — только когда он должен работать (включён и есть подключения):
+        без подключений служба остановлена штатно, это не авария."""
+        xray = xray_running(self.app.settings.load(), self.app.users.all())
+        return (*WATCHED_UNITS, "xray") if xray else WATCHED_UNITS
+
     def check_services(self) -> list[str]:
         """Возвращает отправленные (или подготовленные) уведомления."""
         old = self._load_state()
         new: dict[str, Any] = {}
         messages: list[str] = []
 
-        for unit in WATCHED_UNITS:
+        for unit in self.watched_units():
             state = self.unit_state(unit)
             if state is None:
                 continue
@@ -178,8 +186,15 @@ class Jobs:
         меньше CERT_ALERT_DAYS — продление не срабатывает: сообщить (раз в сутки — так
         часто запускается задача). Когда сертификат снова свежий — сообщить один раз."""
         now = now or dt.datetime.now(dt.timezone.utc)
-        domain = self.app.settings.load().domain
-        flag = self.app.paths.root / ".cert_alert"
+        s = self.app.settings.load()
+        sent = [self._check_cert(s.domain, self.app.paths.root / ".cert_alert", now)]
+        if s.cdn.origin_host:  # origin-поддомен CDN: без него CDN не достучится до сервера
+            flag = self.app.paths.root / f".cert_alert-{s.cdn.origin_host}"
+            sent.append(self._check_cert(s.cdn.origin_host, flag, now))
+        texts = [t for t in sent if t]
+        return "\n\n".join(texts) if texts else None
+
+    def _check_cert(self, domain: str, flag: Path, now: dt.datetime) -> str | None:
         path = find_cert(self.app.paths.caddy_data, domain)
         expiry = cert_expiry(self.app.runner, path) if path else None
         days = (expiry - now).days if expiry else None
