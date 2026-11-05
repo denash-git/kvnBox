@@ -18,14 +18,12 @@ from kvnbox.cores.base import RenderedFile, active_connections
 TRANSPORTS = (Transport.WS, Transport.GRPC, Transport.HTTPUPGRADE, Transport.XHTTP)
 SERVICE_USER = "xray"
 
-# Протокол CDN (XHTTP через Яндекс CDN): параметры из образца владельца. Данные клиента —
-# в заголовках X-Data-N обычных GET, маскировка padding. Порядок ключей — как в образце
-# (попадает в `extra` ссылки). Замеры: PLAN-stage11 §11, §11.1.
-# Отличие от образца (§11.1): 14000 байт на запрос вместо 3500 — отдача ~2 Мбит/с вместо
-# 0,7; больше не пропускают лимиты заголовков CDN.
+# Протокол CDN (XHTTP через Яндекс CDN): параметры из образца владельца, без изменений.
+# Данные клиента — в заголовке X-Data обычных GET, маскировка padding. Порядок ключей —
+# как в образце (попадает в `extra` ссылки). Замеры: PLAN-stage11 §11.
 CDN_EXTRA: dict[str, str | bool] = {
     "mode": "packet-up",
-    "scMaxEachPostBytes": "14000",
+    "scMaxEachPostBytes": "3500",
     "scMinPostsIntervalMs": "0",
     "uplinkChunkSize": "4000",
     "uplinkDataKey": "X-Data",
@@ -38,8 +36,6 @@ CDN_EXTRA: dict[str, str | bool] = {
     "xPaddingObfsMode": True,
     "xPaddingPlacement": "queryInHeader",
 }
-# Только сервер: 14000 байт в base64 + padding не помещаются в лимит заголовков 8192
-CDN_SERVER_EXTRA = {"serverMaxHeaderBytes": 32768}
 CDN_XMUX = {"maxConcurrency": 16, "cMaxReuseTimes": 64, "hKeepAlivePeriod": 60}
 
 
@@ -73,10 +69,7 @@ def stream_settings(settings: Settings, transport: Transport) -> dict[str, Any]:
         }
     if transport is Transport.CDN:
         # данные в заголовках возможны только в packet-up (иначе Xray не запускается)
-        return {
-            "network": "xhttp",
-            "xhttpSettings": {"path": x.cdn_path, **CDN_EXTRA, **CDN_SERVER_EXTRA},
-        }
+        return {"network": "xhttp", "xhttpSettings": {"path": x.cdn_path, **CDN_EXTRA}}
     return {"network": "xhttp", "xhttpSettings": {"path": x.xhttp_path, "mode": "auto"}}
 
 
