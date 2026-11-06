@@ -92,17 +92,6 @@ def _cdn_check(app: App, a: argparse.Namespace, out: TextIO) -> int:
     return EXIT_OK if good else EXIT_FAIL
 
 
-def _cdn_log(app: App, a: argparse.Namespace, out: TextIO) -> int:
-    from kvnbox.services.cdn_log import CdnLog
-
-    log = CdnLog(app)
-    print(f"Журнал CDN включён на {a.seconds} с — подключайтесь с телефона...", file=out)
-    out.flush()
-    print(log.run(a.seconds), file=out)
-    print(f"\nОтчёт сохранён: {log.report_path}", file=out)
-    return EXIT_OK
-
-
 def _slot_name(conn: Connection) -> str:
     return next(name for name, slot in SLOTS.items() if slot == conn.slot)
 
@@ -492,13 +481,6 @@ def build_parser() -> argparse.ArgumentParser:
         _cdn_check,
         "проверить цепочку CDN: /health на origin напрямую и через CDN",
     )
-    sp = cmd(
-        xray,
-        "cdn-log",
-        _cdn_log,
-        "журнал CDN: записать запросы CDN за N секунд и разобрать по сессиям",
-    )
-    sp.add_argument("--seconds", type=int, default=120)
     cmd(
         xray,
         "uninstall",

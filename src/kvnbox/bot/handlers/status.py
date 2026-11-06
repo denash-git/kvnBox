@@ -23,8 +23,6 @@ from kvnbox.core.models import CoreKind
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.apply import Applier
-from kvnbox.services.cdn_log import DURATION as CDN_LOG_DURATION
-from kvnbox.services.cdn_log import CdnLog
 from kvnbox.services.cdn_test import ROUNDS, CdnTest, report_lines
 from kvnbox.services.diagnostics import DiagnosticsService
 from kvnbox.services.modules import NetbirdModule
@@ -278,64 +276,6 @@ async def cdn_test(cb: CallbackQuery, app: App) -> None:
     except ServiceError as e:
         text = f"❌ <b>Тест CDN:</b> {html.escape(str(e))}"
     await edit(cb, text, diagnostics_back_keyboard())
-
-
-_cdn_log_running = False
-TG_CHUNK = 3500  # сообщение Telegram — до 4096 символов
-
-
-def chunks(text: str, size: int = TG_CHUNK) -> list[str]:
-    """Разбить отчёт по строкам на части, каждая не длиннее size."""
-    parts: list[str] = []
-    cur = ""
-    for line in text.splitlines():
-        if cur and len(cur) + len(line) + 1 > size:
-            parts.append(cur)
-            cur = ""
-        cur = f"{cur}\n{line}" if cur else line[:size]
-    if cur:
-        parts.append(cur)
-    return parts
-
-
-@router.callback_query(F.data == "diag:cdnlog")
-async def cdn_log(cb: CallbackQuery, app: App) -> None:
-    global _cdn_log_running
-    await cb.answer()
-    log = CdnLog(app)
-    try:
-        await run(log.check)
-    except ServiceError as e:
-        await edit(cb, f"❌ <b>Журнал CDN:</b> {html.escape(str(e))}", diagnostics_back_keyboard())
-        return
-    if _cdn_log_running:
-        await edit(
-            cb, "⏳ Журнал CDN уже идёт — дождитесь результата.", diagnostics_back_keyboard()
-        )
-        return
-    _cdn_log_running = True
-    try:
-        await edit(
-            cb,
-            f"📝 <b>Журнал CDN включён на {CDN_LOG_DURATION // 60} минуты.</b>\n\n"
-            "Подключайтесь с телефона через профиль CDN несколько раз: подключить, открыть "
-            "сайт, отключить. Результат придёт сюда.\n\n"
-            "<i>Caddy перезагрузился — текущие подключения переподключатся.</i>",
-        )
-        text = await run(log.run)
-    except ServiceError as e:
-        await edit(cb, f"❌ <b>Журнал CDN:</b> {html.escape(str(e))}", diagnostics_back_keyboard())
-        return
-    finally:
-        _cdn_log_running = False
-    parts = chunks(text)
-    for i, part in enumerate(parts):
-        body = f"<pre>{html.escape(part)}</pre>"
-        if i == len(parts) - 1:
-            if cb.message is not None:
-                await cb.message.answer(body, reply_markup=diagnostics_back_keyboard())
-        elif cb.message is not None:
-            await cb.message.answer(body)
 
 
 @router.callback_query(F.data == "diag:recreate")
