@@ -28,6 +28,7 @@ TEMPLATES = [
     ("Stratum Synergy (Стратум Синергия)", "stratum"),
     ("Облако: Nextcloud", "nextcloud"),
     ("Облако: ownCloud Infinite Scale", "ocis"),
+    ("Хранилище: SFTPGo", "sftpgo"),
 ]
 
 

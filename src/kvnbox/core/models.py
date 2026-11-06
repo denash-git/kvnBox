@@ -255,6 +255,7 @@ FAKE_SITE_TEMPLATES = (
     # этап 12: копии страниц входа self-hosted хранилищ
     "nextcloud",
     "ocis",
+    "sftpgo",
 )
 
 

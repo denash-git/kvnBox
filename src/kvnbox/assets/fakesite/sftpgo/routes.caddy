@@ -1,0 +1,49 @@
+    # Fake site: SFTPGo WebAdmin 2.7.6 (sign-in never succeeds, nothing is stored)
+    route {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options DENY
+            Referrer-Policy "strict-origin-when-cross-origin"
+            X-Robots-Tag "noindex, nofollow"
+            -Server
+        }
+        root * {{SITE_DIR}}
+
+        @sftp_health path /healthz
+        handle @sftp_health {
+            header Content-Type "text/plain; charset=utf-8"
+            respond `ok` 200
+        }
+
+        @sftp_login_post {
+            method POST
+            path /web/admin/login /web/client/login
+        }
+        handle @sftp_login_post {
+            method GET
+            rewrite * /login-error.html
+            file_server
+        }
+
+        @sftp_login path /web/admin/login /web/client/login
+        handle @sftp_login {
+            rewrite * /index.html
+            file_server
+        }
+
+        @sftp_root path / /web /web/ /web/admin /web/admin/ /web/client /web/client/
+        handle @sftp_root {
+            redir * /web/admin/login 302
+        }
+
+        @sftp_static path /static/*
+        handle @sftp_static {
+            file_server
+        }
+
+        # как оригинал: прочее — JSON 404
+        handle {
+            header Content-Type "application/json"
+            respond `{"message":"Not Found"}` 404
+        }
+    }
