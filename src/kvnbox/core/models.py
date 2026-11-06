@@ -256,6 +256,7 @@ FAKE_SITE_TEMPLATES = (
     "nextcloud",
     "ocis",
     "sftpgo",
+    "seafile",
 )
 
 

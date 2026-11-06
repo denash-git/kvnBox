@@ -1,0 +1,9 @@
+Шаблон фейкового сайта kvnBox «seafile».
+
+Страница входа, стили, шрифты, логотип и фон сняты с Seafile Server 11.0.13
+(community, русский язык). Seafile Server Community Edition — свободное ПО,
+лицензия GNU AGPL v3: https://github.com/haiwen/seafile-server
+Seafile — товарный знак Seafile Ltd.
+
+Это не Seafile: вход никогда не выполняется, введённые данные никуда
+не отправляются и не сохраняются.

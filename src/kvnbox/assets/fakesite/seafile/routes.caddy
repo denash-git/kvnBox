@@ -1,0 +1,50 @@
+    # Fake site: Seafile 11.0.13 (sign-in never succeeds, nothing is stored)
+    route {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            Referrer-Policy "same-origin"
+            X-Robots-Tag "noindex, nofollow"
+            -Server
+        }
+        root * {{SITE_DIR}}
+
+        @sf_login path /accounts/login /accounts/login/
+        handle @sf_login {
+            @sf_login_post method POST
+            handle @sf_login_post {
+                method GET
+                rewrite * /login-error.html
+                file_server
+            }
+            rewrite * /index.html
+            file_server
+        }
+
+        handle /api2/ping/ {
+            header Content-Type "application/json"
+            respond `"pong"` 200
+        }
+        handle /api2/server-info/ {
+            header Content-Type "application/json; charset=utf-8"
+            respond `{"version": "11.0.13", "encrypted_library_version": 2, "features": ["seafile-basic"]}` 200
+        }
+
+        @sf_media path /media/*
+        handle @sf_media {
+            file_server
+        }
+
+        @sf_root path /
+        handle @sf_root {
+            redir * /accounts/login/?next=/ 302
+        }
+
+        # как оригинал: прочее — страница 404 Seahub
+        handle {
+            rewrite * /404.html
+            file_server {
+                status 404
+            }
+        }
+    }
