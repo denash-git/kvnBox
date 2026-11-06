@@ -1,0 +1,159 @@
+    # Fake site: Nextcloud 34 (login page; sign-in never succeeds, nothing is stored)
+    @nc_login_post {
+        method POST
+        path /login /index.php/login
+    }
+    handle @nc_login_post {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag "noindex, nofollow"
+            Referrer-Policy no-referrer
+        }
+        header Location /login?direct=1
+        respond 303
+    }
+
+    @nc_root path / /index.php /index.php/
+    handle @nc_root {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag "noindex, nofollow"
+            Referrer-Policy no-referrer
+        }
+        redir * /login 302
+    }
+
+    @nc_login_error {
+        path /login /index.php/login
+        query direct=1
+    }
+    handle @nc_login_error {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag "noindex, nofollow"
+            Referrer-Policy no-referrer
+        }
+        root * {{SITE_DIR}}
+        rewrite * /login-error.html
+        file_server
+    }
+
+    @nc_login path /login /index.php/login
+    handle @nc_login {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag "noindex, nofollow"
+            Referrer-Policy no-referrer
+        }
+        root * {{SITE_DIR}}
+        rewrite * /login.html
+        file_server
+    }
+
+    handle /status.php {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag "noindex, nofollow"
+            Referrer-Policy no-referrer
+        }
+        header Content-Type "application/json; charset=utf-8"
+        respond `{"installed":true,"maintenance":false,"needsDbUpgrade":false,"version":"34.0.5.1","versionstring":"34.0.5","edition":"","productname":"Nextcloud","extendedSupport":false}` 200
+    }
+
+    @nc_dav path /remote.php/dav /remote.php/dav/* /remote.php/webdav /remote.php/webdav/* /public.php/dav/*
+    handle @nc_dav {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag "noindex, nofollow"
+            Referrer-Policy no-referrer
+        }
+        header WWW-Authenticate `Basic realm="Nextcloud", charset="UTF-8"`
+        header Content-Type "application/xml; charset=utf-8"
+        respond `<?xml version="1.0" encoding="utf-8"?>
+<d:error xmlns:d="DAV:" xmlns:s="http://sabredav.org/ns">
+  <s:exception>Sabre\DAV\Exception\NotAuthenticated</s:exception>
+  <s:message>No public access to this resource., AppAPIAuth has not passed, This request is not for a federated calendar, No 'Authorization: Basic' header found. Either the client didn't send one, or the server is misconfigured, No 'Authorization: Bearer' header found. Either the client didn't send one, or the server is mis-configured, No 'Authorization: Basic' header found. Either the client didn't send one, or the server is misconfigured</s:message>
+</d:error>
+` 401
+    }
+
+    @nc_ocs path /ocs/*
+    handle @nc_ocs {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag "noindex, nofollow"
+            Referrer-Policy no-referrer
+        }
+        header Content-Type "application/json; charset=utf-8"
+        respond `{"message":"CSRF check failed"}` 412
+    }
+
+    @nc_wellknown path /.well-known/caldav /.well-known/carddav
+    handle @nc_wellknown {
+        redir * /remote.php/dav/ 301
+    }
+
+    handle /cron.php {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag "noindex, nofollow"
+            Referrer-Policy no-referrer
+        }
+        header Content-Type "application/json; charset=utf-8"
+        respond `{"status":"success"}` 200
+    }
+
+    @nc_static {
+        not path *.html /NOTICE /routes.caddy
+        file {
+            root {{SITE_DIR}}
+        }
+    }
+    handle @nc_static {
+        root * {{SITE_DIR}}
+        file_server
+    }
+
+    @nc_apps path /apps/* /index.php/apps/*
+    handle @nc_apps {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag "noindex, nofollow"
+            Referrer-Policy no-referrer
+        }
+        header Content-Type "application/json; charset=utf-8"
+        respond `{"message":"Current user is not logged in"}` 401
+    }
+
+    handle {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options SAMEORIGIN
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag "noindex, nofollow"
+            Referrer-Policy no-referrer
+        }
+        root * {{SITE_DIR}}
+        rewrite * /404.html
+        file_server {
+            status 404
+        }
+    }

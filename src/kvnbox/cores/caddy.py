@@ -158,7 +158,38 @@ def extra_hosts(settings: Settings) -> str:
     return f", {settings.cdn.origin_host}" if settings.cdn.origin_host else ""
 
 
+def _default_site_block(site_dir: str) -> str:
+    return (
+        "    # Fake site serving (SPA fallback for standard visits, scanners, probes)\n"
+        "    handle {\n"
+        f"        root * {site_dir}\n"
+        "        try_files {path} {path}/ /index.html\n"
+        "        file_server\n"
+        "    }"
+    )
+
+
+def site_routes(template: str, site_dir: str) -> str | None:
+    """Свои маршруты шаблона сайта (`fakesite/<шаблон>/routes.caddy`, этап 12): страница
+    входа, служебные адреса продукта, 404 как у оригинала. У прежних шаблонов файла нет —
+    остаётся общий блок, Caddyfile байт в байт прежний."""
+    try:
+        text = load_asset(f"fakesite/{template}/routes.caddy")
+    except (FileNotFoundError, OSError):
+        return None
+    return text.rstrip("\n").replace("{{SITE_DIR}}", site_dir)
+
+
 def render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) -> str:
+    text = _render_caddyfile(settings, users, paths)
+    site_dir = (paths.fakesite_dir / settings.site.template).as_posix()
+    routes = site_routes(settings.site.template, site_dir)
+    if routes is not None:
+        text = text.replace(_default_site_block(site_dir), routes, 1)
+    return text
+
+
+def _render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) -> str:
     email = settings.admin_email
     return fill_template(
         load_asset(TEMPLATE),

@@ -26,6 +26,7 @@ TEMPLATES = [
     ("Synaptic Dynamics (Синаптическая Динамика)", "synapse"),
     ("Chronos Temporal (Хроно-Вектор)", "chronos"),
     ("Stratum Synergy (Стратум Синергия)", "stratum"),
+    ("Облако: Nextcloud", "nextcloud"),
 ]
 
 

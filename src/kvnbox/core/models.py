@@ -246,7 +246,15 @@ def _ensure_unique(what: str, values: list[str]) -> None:
 
 # ─── Настройки инстанса ──────────────────────────────────────────────────────
 
-FAKE_SITE_TEMPLATES = ("aether", "chronos", "nexus", "stratum", "synapse")
+FAKE_SITE_TEMPLATES = (
+    "aether",
+    "chronos",
+    "nexus",
+    "stratum",
+    "synapse",
+    # этап 12: копии страниц входа self-hosted хранилищ
+    "nextcloud",
+)
 
 
 _URL_PATH_RE = re.compile(r"/[A-Za-z0-9/._~-]*")
