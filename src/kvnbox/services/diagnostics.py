@@ -155,3 +155,10 @@ class DiagnosticsService:
     def iperf_stop(self) -> None:
         self.app.systemd.stop(IPERF_UNIT)
         self.app.ufw.delete_by_comment("iperf3 TCP", "iperf3 UDP")
+
+    def reboot_server(self) -> None:
+        """Перезагрузить сервер. Без ожидания: systemd начнёт перезагрузку после ответа
+        (бот успевает отправить сообщение)."""
+        res = self.app.runner.run(["systemctl", "--no-block", "reboot"], timeout=30)
+        if not res.ok:
+            raise ServiceError(f"Не удалось перезагрузить сервер: {res.output.strip()}")

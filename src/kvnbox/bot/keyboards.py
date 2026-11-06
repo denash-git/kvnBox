@@ -52,17 +52,27 @@ def main_menu_keyboard() -> Kb:
     )
 
 
-def settings_menu_keyboard(bbr_active: bool) -> Kb:
-    bbr = "🚀 Отключить BBR" if bbr_active else "🚀 Включить BBR"
+def settings_menu_keyboard() -> Kb:
+    """Управление BBR — только в меню на сервере (TUI); на его месте — перезагрузка."""
     return Kb(
         inline_keyboard=[
             [Btn(text=_a("🔐 Управление SSH"), callback_data="settings:ssh_menu")],
             [Btn(text=_a("🔄 Перезапуск служб"), callback_data="services:menu")],
-            [Btn(text=_a(bbr), callback_data="settings:bbr_toggle")],
+            [Btn(text=_a("🔁 Перезагрузка сервера"), callback_data="settings:reboot")],
             [Btn(text=_a("🛡️ Защита от сканеров"), callback_data="settings:security_menu")],
             [Btn(text=_a("💾 Резервные копии"), callback_data="settings:backup_menu")],
             [Btn(text=_a("🌐 Шаблон сайта"), callback_data="settings:site_menu")],
             [Btn(text=_a("🔄 Проверить обновления"), callback_data="settings:check_updates")],
+            [MAIN],
+        ]
+    )
+
+
+def reboot_confirm_keyboard() -> Kb:
+    return Kb(
+        inline_keyboard=[
+            [Btn(text="✅ Да, перезагрузить", callback_data="settings:reboot_confirm")],
+            [TO_SETTINGS],
             [MAIN],
         ]
     )

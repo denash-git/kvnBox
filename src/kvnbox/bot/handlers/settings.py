@@ -1,4 +1,4 @@
-"""Настройки: SSH, BBR, обновления, бэкапы, шаблон сайта, защита от сканеров."""
+"""Настройки: SSH, перезагрузка сервера, обновления, бэкапы, шаблон сайта, защита от сканеров."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from aiogram.types import CallbackQuery, Message
 
 from kvnbox.bot.common import edit, notify_and_apply, run, show
 from kvnbox.bot.keyboards import (
+    reboot_confirm_keyboard,
     security_menu_keyboard,
     settings_back_keyboard,
     settings_backup_keyboard,
@@ -23,8 +24,8 @@ from kvnbox.core.models import FAKE_SITE_TEMPLATES, SITE_TEMPLATE_LABELS
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.backup import BackupService
+from kvnbox.services.diagnostics import DiagnosticsService
 from kvnbox.services.jobs import Jobs
-from kvnbox.services.modules import BbrModule
 from kvnbox.services.security import SecurityService
 from kvnbox.services.settings import SettingsService
 from kvnbox.services.ssh import SshService, SshStatus
@@ -46,7 +47,7 @@ SETTINGS_TEXT = "⚙️ <b>Настройки системы</b>"
 @router.callback_query(F.data == "settings:menu")
 async def settings_menu(event: Message | CallbackQuery, app: App, state: FSMContext) -> None:
     await state.clear()
-    await show(event, SETTINGS_TEXT, settings_menu_keyboard(app.bbr.is_active()))
+    await show(event, SETTINGS_TEXT, settings_menu_keyboard())
 
 
 # ─── SSH ─────────────────────────────────────────────────────────────────────
@@ -137,22 +138,36 @@ async def ssh_port_msg(message: Message, app: App, state: FSMContext) -> None:
     await message.answer(text, reply_markup=ssh_back_keyboard(), parse_mode="HTML")
 
 
-# ─── BBR и обновления ────────────────────────────────────────────────────────
+# ─── перезагрузка сервера и обновления ───────────────────────────────────────
 
-BBR_BOT_TEXT = (  # формулировка бота TransferBox
-    "BBR оптимизация успешно отключена (переключено на cubic).",
-    "BBR оптимизация отключена (переключено на cubic).",
+REBOOT_CONFIRM_TEXT = (
+    "🔁 <b>Перезагрузка сервера</b>\n\n"
+    "Сервер перезагрузится: VPN и бот будут недоступны примерно 1–2 минуты, "
+    "затем всё запустится само.\n\n"
+    "Перезагрузить сервер?"
 )
 
 
 @router.callback_query(F.data == "settings:bbr_toggle")
-async def bbr_toggle(cb: CallbackQuery, app: App) -> None:
+async def bbr_moved(cb: CallbackQuery) -> None:
+    """Кнопка BBR из старых сообщений: управление BBR теперь только в меню на сервере."""
+    await cb.answer("Управление BBR — в меню на сервере (команда menu).", show_alert=True)
+
+
+@router.callback_query(F.data == "settings:reboot")
+async def reboot_ask(cb: CallbackQuery) -> None:
+    await edit(cb, REBOOT_CONFIRM_TEXT, reboot_confirm_keyboard())
+    await cb.answer()
+
+
+@router.callback_query(F.data == "settings:reboot_confirm")
+async def reboot_confirm(cb: CallbackQuery, app: App) -> None:
+    await cb.answer()
     try:
-        msg = await run(BbrModule(app).toggle)
+        await edit(cb, "🔁 <b>Сервер перезагружается...</b>\n\nБот вернётся через 1–2 минуты.")
+        await run(DiagnosticsService(app).reboot_server)
     except ServiceError as e:
-        msg = str(e)
-    await cb.answer(msg.replace(*BBR_BOT_TEXT), show_alert=True)
-    await edit(cb, SETTINGS_TEXT, settings_menu_keyboard(app.bbr.is_active()))
+        await edit(cb, f"❌ <b>Ошибка:</b>\n\n<code>{e}</code>", settings_back_keyboard())
 
 
 @router.callback_query(F.data == "settings:check_updates")
