@@ -1,0 +1,55 @@
+    # Fake site: Immich 3.3.6 (SvelteKit SPA; sign-in never succeeds, nothing is stored)
+    route {
+        header {
+            X-Content-Type-Options nosniff
+            Referrer-Policy "strict-origin-when-cross-origin"
+            X-Robots-Tag "noindex, nofollow"
+            -Server
+        }
+        root * {{SITE_DIR}}
+
+        handle /api/server/ping {
+            header Content-Type "application/json; charset=utf-8"
+            respond `{"res":"pong"}` 200
+        }
+        handle /api/server/version {
+            header Content-Type "application/json; charset=utf-8"
+            respond `{"major":3,"minor":3,"patch":6,"prerelease":null}` 200
+        }
+        handle /api/server/config {
+            header Content-Type "application/json; charset=utf-8"
+            rewrite * /api-config.json
+            file_server
+        }
+        handle /api/server/features {
+            header Content-Type "application/json; charset=utf-8"
+            rewrite * /api-features.json
+            file_server
+        }
+        @imm_api path /api/*
+        handle @imm_api {
+            header Content-Type "application/json; charset=utf-8"
+            respond `{"message":"Unauthorized","statusCode":401,"error":"Unauthorized"}` 401
+        }
+
+        @imm_login {
+            method POST
+            path /auth/login
+        }
+        handle @imm_login {
+            method GET
+            rewrite * /login-error.html
+            file_server
+        }
+
+        @imm_static path /_app/* /custom.css /favicon.ico /favicon-*.png /apple-icon-*.png /manifest.json /robots.txt
+        handle @imm_static {
+            file_server
+        }
+
+        # SPA: любой другой путь отдаёт приложение (страницу входа)
+        handle {
+            rewrite * /index.html
+            file_server
+        }
+    }

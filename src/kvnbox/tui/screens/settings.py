@@ -30,6 +30,7 @@ TEMPLATES = [
     ("Облако: ownCloud Infinite Scale", "ocis"),
     ("Хранилище: SFTPGo", "sftpgo"),
     ("Облако: Seafile", "seafile"),
+    ("Фотоархив: Immich", "immich"),
 ]
 
 

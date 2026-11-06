@@ -257,6 +257,7 @@ FAKE_SITE_TEMPLATES = (
     "ocis",
     "sftpgo",
     "seafile",
+    "immich",
 )
 
 
