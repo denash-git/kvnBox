@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from pathlib import Path
 
 from kvnbox.core.models import CoreKind, PasswordCredentials, Settings, Transport, User
 from kvnbox.core.paths import Paths
@@ -158,7 +159,38 @@ def extra_hosts(settings: Settings) -> str:
     return f", {settings.cdn.origin_host}" if settings.cdn.origin_host else ""
 
 
-def render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) -> str:
+_SITE_LOG = "    log {\n        output stderr\n        level ERROR\n    }"
+
+
+def cdn_log_block(settings: Settings, log_file: Path) -> str:
+    """«Журнал CDN» (Диагностика): журнал запросов Caddy в файл — только запросы CDN
+    (origin-поддомен + путь CDN), всё остальное пропускается (`log_skip`)."""
+    host, path = settings.cdn.origin_host, settings.xray.cdn_path
+    return (
+        "    @kvn_not_cdn {\n"
+        "        not {\n"
+        f"            host {host}\n"
+        f"            path {path} {path}/*\n"
+        "        }\n"
+        "    }\n"
+        "    log_skip @kvn_not_cdn\n"
+        "    log {\n"
+        f"        output file {log_file.as_posix()}\n"
+        "        format json\n"
+        "    }"
+    )
+
+
+def render_caddyfile(
+    settings: Settings, users: Sequence[User], paths: Paths, cdn_log: Path | None = None
+) -> str:
+    text = _render_caddyfile(settings, users, paths)
+    if cdn_log is not None:
+        text = text.replace(_SITE_LOG, cdn_log_block(settings, cdn_log), 1)
+    return text
+
+
+def _render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) -> str:
     email = settings.admin_email
     return fill_template(
         load_asset(TEMPLATE),

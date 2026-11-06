@@ -6,8 +6,10 @@ from __future__ import annotations
 import contextlib
 import re
 import subprocess
+import time
 
 from kvnbox.services import ServiceError
+from kvnbox.services.cdn_log import DURATION, CdnLog
 from kvnbox.services.cdn_test import ROUNDS, CdnTest, report_lines
 from kvnbox.services.diagnostics import DiagnosticsService
 from kvnbox.system.metrics import cpu_percent
@@ -35,10 +37,11 @@ def diagnostics_menu(m: Menu) -> None:
                 "Тест VPS → Интернет",
                 "Замер скорости Client ↔ VPS",
                 "Тест CDN",
+                "Журнал CDN",
                 "Назад",
             ],
         )
-        if choice in (BACK, 5):
+        if choice in (BACK, 6):
             return
         [
             system_monitor_menu,
@@ -46,6 +49,7 @@ def diagnostics_menu(m: Menu) -> None:
             run_speedtest_vps_internet,
             run_speedtest_client_vps,
             run_cdn_test,
+            run_cdn_log,
         ][choice](m)
 
 
@@ -306,4 +310,68 @@ def run_cdn_test(m: Menu) -> None:
         m.ui.out(f"{pad}{line.replace(chr(10007), RED + chr(10007) + RESET)}")
     m.ui.out()
     m.ui.out(f"{pad}{DIM}Время запроса и ответа — по часам этого сервера.{RESET}")
+    m.ui.pause()
+
+
+# ─── журнал CDN ──────────────────────────────────────────────────────────────
+
+
+def run_cdn_log(m: Menu) -> None:
+    log = CdnLog(m.app)
+    try:
+        log.check()
+    except ServiceError as e:
+        m.screen("Журнал CDN")
+        m.ui.out()
+        m.fail(str(e))
+        m.ui.pause()
+        return
+    info = [
+        f"На {DURATION // 60} минуты сервер запишет запросы только протокола CDN.",
+        "В это время подключайтесь с телефона через профиль CDN",
+        "(несколько раз: подключить, открыть сайт, отключить).",
+        f"{DIM}Caddy перезагрузится — текущие подключения переподключатся.{RESET}",
+    ]
+    if m.select("Журнал CDN", ["Начать", "Назад"], info) != 0:
+        return
+    m.screen("Журнал CDN")
+    m.progress("Включение журнала...")
+    try:
+        path = log.start()
+    except ServiceError as e:
+        m.ui.out()
+        m.fail(str(e))
+        m.ui.pause()
+        return
+    started = time.time()
+    pad = m.ui.block_pad()
+    m.ui.out()
+    m.ok("Журнал включён — подключайтесь с телефона.")
+    m.ui.out()
+    m.ui.t.cursor(False)
+    try:
+        while (left := DURATION - int(time.time() - started)) > 0:
+            hint = f"{DIM}Enter — закончить раньше{RESET}"
+            m.ui.t.write(f"\r{pad}Осталось: {CYAN}{left:3d} с{RESET}   {hint}  ")
+            key = m.ui.t.wait_input(1.0)
+            if key is not None and key in ("ENTER", "q", "Q", "0"):
+                break
+    except KeyboardInterrupt:
+        pass
+    finally:
+        m.ui.t.cursor(True)
+        m.ui.out()
+        m.progress("Выключение журнала и разбор...")
+        try:
+            log.stop()
+        except ServiceError as e:
+            m.fail(str(e))
+    text = log.collect(path, started, time.time())
+    m.screen("Журнал CDN — результат")
+    for line in text.splitlines():
+        m.ui.out(f"{pad}{line.replace('✗', RED + '✗' + RESET).replace('⚠', YELLOW + '⚠' + RESET)}")
+    m.ui.out()
+    m.ui.out(
+        f"{pad}{DIM}Отчёт сохранён: {log.report_path} — его можно скопировать и прислать.{RESET}"
+    )
     m.ui.pause()
