@@ -1,0 +1,67 @@
+[[- $nonce := randBytes 32 -]][[- .RespHeader.Set "Content-Security-Policy" (printf "default-src 'none';base-uri 'none';manifest-src 'self';script-src 'nonce-%s';script-src-elem 'strict-dynamic' 'nonce-%s';style-src 'self' 'unsafe-inline';img-src 'self' data: blob: https://*.tile.openstreetmap.org;font-src 'self' data:;connect-src 'self';media-src 'self';frame-src 'self';frame-ancestors 'self';form-action 'self'" $nonce $nonce) -]][[- $rid := randAlphaNum 20 -]][[- .RespHeader.Set "X-Request-Id" $rid -]][[- $inst := printf "oc%s" (.Host | sha1sum | trunc 10) -]][[- $sid := uuidv4 | replace "-" "" -]][[- $sc := printf "%s=%s; path=/; HttpOnly; SameSite=Lax" $inst $sid -]][[- .RespHeader.Add "Set-Cookie" $sc -]][[- .RespHeader.Add "Set-Cookie" (printf "oc_sessionPassphrase=%s; path=/; HttpOnly; SameSite=Lax" (randAlphaNum 128)) -]][[- .RespHeader.Add "Set-Cookie" $sc -]][[- .RespHeader.Add "Set-Cookie" "nc_sameSiteCookielax=true; path=/; httponly;expires=Fri, 31-Dec-2100 23:59:59 GMT; SameSite=lax" -]][[- .RespHeader.Add "Set-Cookie" "nc_sameSiteCookiestrict=true; path=/; httponly;expires=Fri, 31-Dec-2100 23:59:59 GMT; SameSite=strict" -]][[- .RespHeader.Add "Set-Cookie" $sc -]][[- .RespHeader.Add "Set-Cookie" $sc -]][[- "" ]]<!DOCTYPE html>
+<html class="ng-csp" data-placeholder-focus="false" lang="cs" data-locale="cs" translate="no" >
+	<head
+ data-requesttoken="">
+		<meta charset="utf-8">
+		<title>
+			Nextcloud		</title>
+		<meta name="csp-nonce" nonce="[[ $nonce ]]">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+				<meta name="apple-itunes-app" content="app-id=1125420102">
+				<meta name="theme-color" content="#00679e">
+		<link rel="icon" href="/apps/theming/favicon?v=22f7c1d3">
+		<link rel="apple-touch-icon" href="/apps/theming/icon?v=22f7c1d3">
+		<link rel="mask-icon" sizes="any" href="/core/img/favicon-mask.svg" color="#00679e">
+		<link rel="manifest" href="/core/img/manifest.json" crossorigin="use-credentials">
+		<link rel="stylesheet" href="/core/css/server.css?v=d87f58ac-0">
+<link rel="stylesheet" href="/apps/theming/css/default.css?v=29827a6f-0">
+<link rel="stylesheet" href="/core/css/guest.css?v=d87f58ac-0">
+		<script nonce="[[ $nonce ]]" type="importmap">
+{"imports":{"/dist/theming-theming.mjs":"/dist/theming-theming.mjs?v=d87f58ac-0"}}
+</script>
+<script nonce="[[ $nonce ]]" defer src="/dist/core-common.js?v=d87f58ac-0"></script>
+<script nonce="[[ $nonce ]]" defer src="/dist/core-main.js?v=d87f58ac-0"></script>
+<script nonce="[[ $nonce ]]" defer src="/core/l10n/cs.js?v=d87f58ac-0"></script>
+<script nonce="[[ $nonce ]]" defer src="/apps/theming/l10n/cs.js?v=d87f58ac-0"></script>
+<script nonce="[[ $nonce ]]" type="module" src="/dist/theming-theming.mjs?v=d87f58ac-0"></script>
+<script nonce="[[ $nonce ]]" defer src="/apps/files_sharing/l10n/cs.js?v=d87f58ac-0"></script>
+<script nonce="[[ $nonce ]]" defer src="/dist/files_sharing-main.js?v=d87f58ac-0"></script>
+		<link rel="stylesheet" media="" href="/apps/theming/theme/default.css?plain=1&amp;v=22f7c1d3" class="theme"/><link rel="stylesheet" media="(prefers-color-scheme: light)" href="/apps/theming/theme/light.css?plain=1&amp;v=22f7c1d3" class="theme"/><link rel="stylesheet" media="(prefers-color-scheme: dark)" href="/apps/theming/theme/dark.css?plain=1&amp;v=22f7c1d3" class="theme"/><link rel="stylesheet" media="(prefers-contrast: more)" href="/apps/theming/theme/light-highcontrast.css?plain=1&amp;v=22f7c1d3" class="theme"/><link rel="stylesheet" media="(prefers-color-scheme: dark) and (prefers-contrast: more)" href="/apps/theming/theme/dark-highcontrast.css?plain=1&amp;v=22f7c1d3" class="theme"/><link rel="stylesheet" media="" href="/apps/theming/theme/light.css?plain=0&amp;v=22f7c1d3" class="theme"/><link rel="stylesheet" media="" href="/apps/theming/theme/dark.css?plain=0&amp;v=22f7c1d3" class="theme"/><link rel="stylesheet" media="" href="/apps/theming/theme/light-highcontrast.css?plain=0&amp;v=22f7c1d3" class="theme"/><link rel="stylesheet" media="" href="/apps/theming/theme/dark-highcontrast.css?plain=0&amp;v=22f7c1d3" class="theme"/><link rel="stylesheet" media="" href="/apps/theming/theme/opendyslexic.css?plain=0&amp;v=22f7c1d3" class="theme"/><meta name="color-scheme" content="light dark"/>	</head>
+	<body id="body-login"  data-themes="">
+		<noscript>
+	<div id="nojavascript">
+		<div>
+			Tato aplikace potřebuje pro správnou funkčnost JavaScript. <a href="https://www.enable-javascript.com/" target="_blank" rel="noreferrer noopener">Povolte ho</a> a stránku znovu načtěte.		</div>
+	</div>
+</noscript>
+		<div id="initial-state-container" style="display: none;">
+			<input type="hidden" id="initial-state-core-versionHash" value="ImQ4N2Y1OGFjIg==">
+			<input type="hidden" id="initial-state-theming-data" value="eyJuYW1lIjoiTmV4dGNsb3VkIiwic2xvZ2FuIjoiYmV6cGVcdTAxMGRuXHUwMGZkIGRvbW92IHBybyB2XHUwMTYxZWNobmEgdmFcdTAxNjFlIGRhdGEiLCJ1cmwiOiJodHRwczpcL1wvbmV4dGNsb3VkLmNvbSIsImltcHJpbnRVcmwiOiIiLCJwcml2YWN5VXJsIjoiIiwicHJpbWFyeUNvbG9yIjoiIzAwNjc5ZSIsImJhY2tncm91bmRDb2xvciI6IiMwMDY3OWUiLCJkZWZhdWx0UHJpbWFyeUNvbG9yIjoiIzAwNjc5ZSIsImRlZmF1bHRCYWNrZ3JvdW5kQ29sb3IiOiIjMDA2NzllIiwiaW52ZXJ0ZWQiOmZhbHNlLCJjYWNoZUJ1c3RlciI6IjIyZjdjMWQzIiwiZW5hYmxlZFRoZW1lcyI6W119">
+			<input type="hidden" id="initial-state-comments-maxAutoCompleteResults" value="MTA=">
+	</div>
+		<div class="wrapper">
+			<div class="v-align">
+									<header>
+						<div id="header" class="header-guest">
+							<div class="logo"></div>
+						</div>
+					</header>
+								<div class="guest-content">
+					<h1 class="hidden-visually">
+						Nextcloud					</h1>
+						<div class="body-login-container update">
+		<div class="icon-big icon-search"></div>
+		<h2>Stránka nenalezena</h2>
+		<p class="infogroup">Stránku se na serveru nepodařilo nalézt nebo nemáte oprávnění ji zobrazit.</p>
+		<p><a class="button primary" href="/">
+			Zpět na Nextcloud		</a></p>
+	</div>
+				</div>
+			</div>
+		</div>
+				<footer class="guest-box ">
+			<p class="info">
+				<a href="https://nextcloud.com" target="_blank" rel="noreferrer noopener" class="entity-name">Nextcloud</a> – bezpečný domov pro všechna vaše data			</p>
+		</footer>
+	</body>
+</html>

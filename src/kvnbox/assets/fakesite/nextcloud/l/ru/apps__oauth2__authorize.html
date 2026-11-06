@@ -1,0 +1,64 @@
+[[- $nonce := randBytes 32 -]][[- .RespHeader.Set "Content-Security-Policy" (printf "default-src 'none';base-uri 'none';manifest-src 'self';script-src 'nonce-%s';script-src-elem 'strict-dynamic' 'nonce-%s';style-src 'self' 'unsafe-inline';img-src 'self' data: blob: https://*.tile.openstreetmap.org;font-src 'self' data:;connect-src 'self';media-src 'self';frame-src 'self';frame-ancestors 'self';form-action 'self'" $nonce $nonce) -]][[- $rid := randAlphaNum 20 -]][[- .RespHeader.Set "X-Request-Id" $rid -]][[- $inst := printf "oc%s" (.Host | sha1sum | trunc 10) -]][[- $sid := uuidv4 | replace "-" "" -]][[- $sc := printf "%s=%s; path=/; HttpOnly; SameSite=Lax" $inst $sid -]][[- .RespHeader.Add "Set-Cookie" $sc -]][[- .RespHeader.Add "Set-Cookie" (printf "oc_sessionPassphrase=%s; path=/; HttpOnly; SameSite=Lax" (randAlphaNum 128)) -]][[- .RespHeader.Add "Set-Cookie" $sc -]][[- .RespHeader.Add "Set-Cookie" "nc_sameSiteCookielax=true; path=/; httponly;expires=Fri, 31-Dec-2100 23:59:59 GMT; SameSite=lax" -]][[- .RespHeader.Add "Set-Cookie" "nc_sameSiteCookiestrict=true; path=/; httponly;expires=Fri, 31-Dec-2100 23:59:59 GMT; SameSite=strict" -]][[- .RespHeader.Add "Set-Cookie" $sc -]][[- .RespHeader.Add "Set-Cookie" $sc -]][[- "" ]]<!DOCTYPE html>
+<html class="ng-csp" data-placeholder-focus="false" lang="ru" data-locale="ru" translate="no" >
+	<head
+ data-requesttoken="">
+		<meta charset="utf-8">
+		<title>
+			Nextcloud		</title>
+		<meta name="csp-nonce" nonce="[[ $nonce ]]">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+				<meta name="apple-itunes-app" content="app-id=1125420102">
+				<meta name="theme-color" content="#00679e">
+		<link rel="icon" href="/apps/theming/favicon?v=22f7c1d3">
+		<link rel="apple-touch-icon" href="/apps/theming/icon?v=22f7c1d3">
+		<link rel="mask-icon" sizes="any" href="/core/img/favicon-mask.svg" color="#00679e">
+		<link rel="manifest" href="/core/img/manifest.json" crossorigin="use-credentials">
+		<link rel="stylesheet" href="/core/css/styles.css?v=d87f58ac-0">
+<link rel="stylesheet" href="/core/css/header.css?v=d87f58ac-0">
+<link rel="stylesheet" href="/core/css/exception.css?v=d87f58ac-0">
+<link rel="stylesheet" href="/apps/theming/css/default.css?v=29827a6f-0">
+<link rel="stylesheet" href="/core/css/guest.css?v=d87f58ac-0">
+					</head>
+	<body id="body-login"  data-themes="">
+		<noscript>
+	<div id="nojavascript">
+		<div>
+			Для корректной работы приложения требуется JavaScript. <a href="https://www.enable-javascript.com/" target="_blank" rel="noreferrer noopener">Включите JavaScript</a> и обновите страницу.		</div>
+	</div>
+</noscript>
+		<div id="initial-state-container" style="display: none;">
+			<input type="hidden" id="initial-state-core-versionHash" value="ImQ4N2Y1OGFjIg==">
+			<input type="hidden" id="initial-state-comments-maxAutoCompleteResults" value="MTA=">
+	</div>
+		<div class="wrapper">
+			<div class="v-align">
+									<header>
+						<div id="header" class="header-guest">
+							<div class="logo"></div>
+						</div>
+					</header>
+								<div class="guest-content">
+					<h1 class="hidden-visually">
+						Nextcloud					</h1>
+					<div class="guest-box wide">
+	<h2>Внутренняя ошибка сервера</h2>
+	<p>Сервер не смог выполнить запрос.</p>
+	<p>Если ошибка повторится, отправьте администратору сервера технические подробности ниже.</p>
+	<p>Подробности — в журнале сервера.</p>
+	
+	<h3>Технические подробности</h3>
+	<ul>
+		<li>Удалённый адрес: [[ .ClientIP ]]</li>
+		<li>Идентификатор запроса: [[ $rid ]]</li>
+			</ul>
+
+	</div>
+				</div>
+			</div>
+		</div>
+				<footer class="guest-box ">
+			<p class="info">
+				<a href="https://nextcloud.com" target="_blank" rel="noreferrer noopener" class="entity-name">Nextcloud</a> – надёжный дом для всех ваших данных			</p>
+		</footer>
+	</body>
+</html>

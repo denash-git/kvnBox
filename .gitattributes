@@ -2,3 +2,5 @@
 *.png binary
 *.jpg binary
 *.ico binary
+# снятые с оригиналов файлы фейковых сайтов — байт в байт (CRLF в ответах nginx и т. п.)
+src/kvnbox/assets/fakesite/** -text

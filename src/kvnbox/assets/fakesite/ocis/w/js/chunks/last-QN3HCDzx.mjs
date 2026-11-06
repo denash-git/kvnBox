@@ -1,0 +1,1 @@
+import{b as e}from"./_baseFlatten-DmIS0zYH.mjs";import{bM as l,bN as s}from"./PortalTarget.vue_vue_type_script_setup_true_lang-CaahUOSh.mjs";function o(t){var n=t==null?0:t.length;return n?e(t):[]}function i(t){return l(s(t,void 0,o),t+"")}function r(t){var n=t==null?0:t.length;return n?t[n-1]:void 0}export{o as a,i as f,r as l};

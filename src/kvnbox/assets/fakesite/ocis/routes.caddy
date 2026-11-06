@@ -1,113 +1,261 @@
-    # Fake site: ownCloud Infinite Scale 8.2.2 (sign-in never succeeds, nothing is stored)
-    @ocis_logon {
-        method POST
-        path /signin/v1/identifier/_/logon /signin/v1/identifier/
-    }
-    handle @ocis_logon {
-        header {
-            X-Content-Type-Options nosniff
-            X-Frame-Options DENY
-            Referrer-Policy no-referrer
-            X-Permitted-Cross-Domain-Policies none
-            X-Robots-Tag none
-            -Server
-        }
-        header Content-Type "text/plain; charset=utf-8"
-        respond `400 Bad Request` 400
-    }
-
-    @ocis_login path /signin/v1/identifier /signin/v1/identifier/ / /index.html
-    handle @ocis_login {
-        header {
-            X-Content-Type-Options nosniff
-            X-Frame-Options DENY
-            Referrer-Policy no-referrer
-            X-Permitted-Cross-Domain-Policies none
-            X-Robots-Tag none
-            -Server
-        }
+    # Fake site: ownCloud Infinite Scale 8.2.2 (original web UI + IdP; sign-in never succeeds, nothing is stored)
+    route {
         root * {{SITE_DIR}}
-        rewrite * /index.html
-        file_server
-    }
-
-    handle /status.php {
+        # заголовки прокси oCIS на всех ответах
         header {
-            X-Content-Type-Options nosniff
-            X-Frame-Options DENY
-            Referrer-Policy no-referrer
-            X-Permitted-Cross-Domain-Policies none
-            X-Robots-Tag none
-            -Server
+            Content-Security-Policy "child-src 'self'; connect-src 'self' blob: https://raw.githubusercontent.com/owncloud/awesome-ocis/; default-src 'none'; font-src 'self' data:; frame-ancestors 'self'; frame-src 'self' blob: https://embed.diagrams.net/; img-src 'self' data: blob: https://raw.githubusercontent.com/owncloud/awesome-ocis/; manifest-src 'self'; media-src 'self'; object-src 'self' blob:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+            Referrer-Policy "no-referrer"
+            Strict-Transport-Security "max-age=315360000; includeSubDomains; preload"
+            X-Content-Type-Options "nosniff"
+            X-Frame-Options "SAMEORIGIN"
+            X-Permitted-Cross-Domain-Policies "none"
+            X-Robots-Tag "none"
+            X-Xss-Protection "0"
         }
-        header Content-Type "application/json"
-        root * {{SITE_DIR}}
-        rewrite * /status.json
-        file_server
-    }
 
-    handle /ocs/v1.php/cloud/capabilities {
-        header {
-            X-Content-Type-Options nosniff
-            X-Frame-Options DENY
-            Referrer-Policy no-referrer
-            X-Permitted-Cross-Domain-Policies none
-            X-Robots-Tag none
-            -Server
+        # --- IdP (/signin/v1) ---
+        @oc_authorize path /signin/v1/identifier/_/authorize
+        handle @oc_authorize {
+            header Cache-Control "no-store"
+            header Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+            header Pragma "no-cache"
+            header +Referrer-Policy "origin"
+            header +X-Content-Type-Options "nosniff"
+            header X-Idp-Version "8.2.2"
+            templates {
+                between [[ ]]
+            }
+            respond `[[- $q := append (splitList "&" .Req.URL.RawQuery) "flow=oidc" | sortAlpha | join "&" -]]
+[[- .RespHeader.Set "Location" (printf "https://%s/signin/v1/identifier?%s" .Host $q) -]]
+[[- .RespHeader.Set "Last-Modified" (dateInZone "Mon, 02 Jan 2006 15:04:05 GMT" now "UTC") -]]` 302
         }
-        header Content-Type "text/xml; charset=utf-8"
-        root * {{SITE_DIR}}
-        rewrite * /signin/v1/ocs-v1.xml
-        file_server
-    }
-    handle /ocs/v2.php/cloud/capabilities {
-        header {
-            X-Content-Type-Options nosniff
-            X-Frame-Options DENY
-            Referrer-Policy no-referrer
-            X-Permitted-Cross-Domain-Policies none
-            X-Robots-Tag none
-            -Server
+        @oc_noxsrf {
+            method POST
+            path /signin/v1/identifier/_/hello /signin/v1/identifier/_/logon
+            not header Kopano-Konnect-XSRF 1
         }
-        header Content-Type "text/xml; charset=utf-8"
-        root * {{SITE_DIR}}
-        rewrite * /signin/v1/ocs-v2.xml
-        file_server
-    }
+        handle @oc_noxsrf {
+            header Content-Type "text/plain; charset=utf-8"
+            header Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+            header +X-Content-Type-Options "nosniff"
+            header X-Idp-Version "8.2.2"
+            respond `400 Bad Request` 400
+        }
+        @oc_hello {
+            method POST
+            path /signin/v1/identifier/_/hello
+        }
+        handle @oc_hello {
+            vars oc_body {http.request.body}
+            header Cache-Control "no-cache, no-store, must-revalidate"
+            header Content-Type "application/json; encoding=utf-8"
+            header Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+            header Pragma "no-cache"
+            header X-Idp-Version "8.2.2"
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- $st := placeholder "http.vars.oc_body" | regexFind "\"state\"\\s*:\\s*\"[^\"]*\"" | regexFind "\"[^\"]*\"$" | trimAll "\"" -]]
+[[- .RespHeader.Set "Last-Modified" (dateInZone "Mon, 02 Jan 2006 15:04:05 GMT" now "UTC") -]]
+{
+  "state": "[[ $st ]]",
+  "flow": "",
+  "success": false,
+  "branding": {}
+}
+` 200
+        }
+        @oc_logon {
+            method POST
+            path /signin/v1/identifier/_/logon
+        }
+        handle @oc_logon {
+            vars oc_body {http.request.body}
+            header Cache-Control "no-cache, no-store, must-revalidate"
+            header Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+            header Pragma "no-cache"
+            header X-Idp-Version "8.2.2"
+            header Content-Type "text/plain"
+            templates {
+                between [[ ]]
+                mime text/plain
+            }
+            respond `[[- $st := placeholder "http.vars.oc_body" | regexFind "\"state\"\\s*:\\s*\"[^\"]*\"" | regexFind "\"[^\"]*\"$" | trimAll "\"" -]]
+[[- .RespHeader.Set "Kopano-Konnect-State" $st -]]
+[[- .RespHeader.Del "Content-Type" -]]
+[[- .RespHeader.Set "Last-Modified" (dateInZone "Mon, 02 Jan 2006 15:04:05 GMT" now "UTC") -]]` 204
+        }
+        @oc_endsession path /signin/v1/identifier/_/endsession
+        handle @oc_endsession {
+            header Location "https://{http.request.host}/signin/v1/goodbye"
+            header X-Idp-Version "8.2.2"
+            respond 302
+        }
+        @oc_idp_page path /signin/v1/identifier /signin/v1/identifier/ /signin/v1/goodbye /signin/v1/chooseaccount /signin/v1/consent
+        handle @oc_idp_page {
+            rewrite * /d/idp.html
+            header Cache-Control "no-store, no-cache, must-revalidate"
+            header Content-Type "text/html; charset=utf-8"
+            header Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+            header +Referrer-Policy "origin"
+            header +Strict-Transport-Security "max-age=31536000; includeSubDomains"
+            header +X-Content-Type-Options "nosniff"
+            header +X-Frame-Options "DENY"
+            header X-Idp-Version "8.2.2"
+            header -Etag
+            header -Accept-Ranges
+            templates {
+                between [[ ]]
+            }
+            file_server
+        }
+        @oc_idp_static {
+            path /signin/v1/static/*
+            file /w{path}
+        }
+        handle @oc_idp_static {
+            rewrite * /w{path}
+            header Cache-Control "no-cache"
+            header Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+            header X-Idp-Version "8.2.2"
+            header +X-Content-Type-Options "nosniff"
+            header -Etag
+            file_server
+        }
+        @oc_idp_404 path /signin/v1 /signin/v1/*
+        handle @oc_idp_404 {
+            header Cache-Control "no-cache, no-store, max-age=0, must-revalidate, value"
+            header Content-Type "text/plain; charset=utf-8"
+            header Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+            header X-Idp-Version "8.2.2"
+            header +X-Content-Type-Options "nosniff"
+            respond `404 page not found
+` 404
+        }
 
-    @ocis_bearer path /remote.php/dav /remote.php/dav/* /remote.php/webdav /remote.php/webdav/* /dav /dav/* /graph/*
-    handle @ocis_bearer {
-        header {
-            X-Content-Type-Options nosniff
-            X-Frame-Options DENY
-            Referrer-Policy no-referrer
-            X-Permitted-Cross-Domain-Policies none
-            X-Robots-Tag none
-            -Server
+        # --- служебные ответы ---
+        @oc_oidc_conf path /.well-known/openid-configuration
+        handle @oc_oidc_conf {
+            rewrite * /d/openid-configuration.json
+            header Content-Type "application/json"
+            header -Etag
+            header -Last-Modified
+            header -Accept-Ranges
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            file_server
         }
-        header WWW-Authenticate `Bearer realm="{host}", charset="UTF-8"`
-        respond 401
-    }
-
-    @ocis_static {
-        path /signin/v1/static/* /themes/* /robots.txt /favicon.ico
-    }
-    handle @ocis_static {
-        root * {{SITE_DIR}}
-        file_server
-    }
-
-    # SPA: прочие пути отдают оболочку приложения (вход), как оригинал
-    handle {
-        header {
-            X-Content-Type-Options nosniff
-            X-Frame-Options DENY
-            Referrer-Policy no-referrer
-            X-Permitted-Cross-Domain-Policies none
-            X-Robots-Tag none
-            -Server
+        @oc_webfinger path /.well-known/webfinger
+        handle @oc_webfinger {
+            header Content-Type "text/plain; charset=utf-8"
+            respond `absent or malformed 'resource' parameter` 400
         }
-        root * {{SITE_DIR}}
-        rewrite * /index.html
-        file_server
+        @oc_config path /config.json
+        handle @oc_config {
+            rewrite * /w/config.json
+            header Cache-Control "no-cache, no-store, max-age=0, must-revalidate, value"
+            header Content-Type "application/json"
+            header Expires "Thu, 01 Jan 1970 00:00:00 GMT"
+            header Vary "Origin"
+            header X-Web-Version "8.2.2"
+            header -Etag
+            header -Accept-Ranges
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            file_server
+        }
+        @oc_status path /status.php
+        handle @oc_status {
+            rewrite * /d/status.json
+            header Content-Type "application/json"
+            header -Etag
+            header -Last-Modified
+            header -Accept-Ranges
+            file_server
+        }
+        @oc_caps1 path /ocs/v1.php/cloud/capabilities
+        handle @oc_caps1 {
+            rewrite * /d/capabilities-v1.xml
+            header Content-Type "text/xml; charset=utf-8"
+            header -Etag
+            header -Last-Modified
+            header -Accept-Ranges
+            file_server
+        }
+        @oc_caps2 path /ocs/v2.php/cloud/capabilities
+        handle @oc_caps2 {
+            rewrite * /d/capabilities-v2.xml
+            header Content-Type "text/xml; charset=utf-8"
+            header -Etag
+            header -Last-Modified
+            header -Accept-Ranges
+            file_server
+        }
+        @oc_jwks path /konnect/v1/jwks.json
+        handle @oc_jwks {
+            rewrite * /d/jwks.json
+            header Content-Type "application/jwk-set+json"
+            header -Etag
+            header -Last-Modified
+            header -Accept-Ranges
+            file_server
+        }
+        @oc_applist path /app/list
+        handle @oc_applist {
+            rewrite * /d/app-list.json
+            header Content-Type "application/json"
+            header -Etag
+            header -Last-Modified
+            header -Accept-Ranges
+            file_server
+        }
+        # API без входа: пустой 401
+        @oc_api path /remote.php /remote.php/* /dav /dav/* /webdav /webdav/* /ocs /ocs/* /graph /graph/* /api /api/* /archiver /archiver/* /konnect/* /ocm/* /thumbnails/* /data/*
+        handle @oc_api {
+            header WWW-Authenticate `Bearer realm="{http.request.host}", charset="UTF-8"`
+            respond 401
+        }
+        @oc_data path /data
+        handle @oc_data {
+            respond 403
+        }
+
+        # --- ownCloud Web ---
+        @oc_web_file {
+            not path / /index.html
+            file /w{path}
+        }
+        handle @oc_web_file {
+            rewrite * /w{path}
+            header Cache-Control "max-age=604800"
+            header Vary "Origin"
+            header Samesite "Strict"
+            header X-Web-Version "8.2.2"
+            header -Etag
+            header -Accept-Ranges
+            @oc_js path *.js *.mjs
+            header @oc_js Content-Type "text/javascript; charset=utf-8"
+            @oc_css path *.css
+            header @oc_css Content-Type "text/css; charset=utf-8"
+            @oc_txt path *.txt
+            header @oc_txt Content-Type "text/plain; charset=utf-8"
+            file_server
+        }
+        # SPA: любой другой адрес — index.html
+        handle {
+            rewrite * /w/index.html
+            header Cache-Control "no-cache"
+            header Content-Type "text/html; charset=utf-8"
+            header Vary "Origin"
+            header Samesite "Strict"
+            header X-Web-Version "8.2.2"
+            header -Etag
+            header -Accept-Ranges
+            file_server
+        }
     }

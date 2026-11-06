@@ -1,0 +1,307 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Private Seafile</title>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<meta name="keywords" content="File, Collaboration, Team, Organization" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+
+<meta http-equiv="x-ua-compatible" content="ie=edge" />
+<link rel="icon" href="/media/favicons/favicon.png" type="image/x-icon">
+<link rel="apple-touch-icon" href="/media/favicons/favicon.png">
+
+<link rel="stylesheet" type="text/css" href="/media//css/seafile-ui.css" />
+
+<link rel="stylesheet" type="text/css" href="/media/css/seahub.css?t=1398068110" />
+<link rel="stylesheet" type="text/css" href="/media/css/sf_font3/iconfont.css" />
+
+<style type="text/css">
+.side-nav-con .first-hd {
+    margin-top: 0;
+}
+.seafile-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1001;
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    outline: 0;
+    background-color: #000;
+}
+.seafile-mask__shown {
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: block;
+    opacity: 0.5;
+}
+</style>
+
+ 
+
+</head>
+<body>
+    <div id="wrapper" class="en d-flex fd-col h100">
+        
+        
+        
+
+        <div id="header" class="d-flex">
+            <a href="/" id="logo">
+                <img src="/media/img/seafile-logo.png" title="Private Seafile" alt="logo" width="" height="32" />
+            </a>
+            
+<span class="sf2-icon-menu side-nav-toggle d-block d-md-none" title="Side Nav Menu" id="js-toggle-side-nav" aria-label="Side Nav Menu"></span>
+
+
+            
+
+
+        </div>
+
+        <div id="main" class="container-fluid w100 flex-auto d-flex ovhd">
+            
+<div class="row flex-1 d-flex">
+    <div class="side-textnav col-md-3 side-nav help-side-nav">
+        <div class="d-block d-md-none logo-container">
+            <a href="/">
+                <img src="/media/img/seafile-logo.png" title="Private Seafile" alt="logo" width="" height="32" />
+            </a>
+        </div>
+        <div class="side-nav-con">
+
+            <h3 class="hd first-hd">Introduction</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/introduction/">Introduction</a></li>
+            </ul>
+
+            <h3 class="hd">Managing files and folders</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/libraries_managing/">Managing files with libraries</a></li>
+                <li class="tab"><a href="/help/restoring_deleted_files/">Restoring deleted files</a></li>
+                <li class="tab"><a href="/help/finding_older_version_files/">Finding old file versions</a></li>
+                <li class="tab"><a href="/help/library_history_and_snapshots/">Library history and snapshots</a></li>
+                <li class="tab"><a href="/help/setting_library_history/">Setting history retention period</a></li>
+                <li class="tab"><a href="/help/deleting_a_library/">Deleting a library</a></li>
+                <li class="tab"><a href="/help/viewing_files_within_web_app/">Viewing files within Web App</a></li>
+                <li class="tab"><a href="/help/full_text_file_search/">Full text file search</a></li>
+            </ul>
+
+            <h3 class="hd">Sharing and collaboration</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/sharing_files_and_folders/">Sharing files and folders</a></li>
+                <li class="tab"><a href="/help/groups_managing/">Managing groups</a></li>
+                <li class="tab"><a href="/help/file_locking/">Locking files</a></li>
+                <li class="tab"><a href="/help/folder_permission/">Folder permission</a></li>
+                <li class="tab"><a href="/help/departments/">Departments sharing</a></li>
+            </ul>
+
+            <h3 class="hd">Wiki and knowledge management</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/manage_library_as_wiki/">Managing a library as Wiki</a></li>
+            </ul>
+            
+            <h3 class="hd">Desktop client and syncing</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/install_sync/">Install and sync files</a></li>
+                <li class="tab"><a href="/help/syncing_existing_folders/">Syncing existing folders</a></li>
+                <li class="tab"><a href="/help/selective_sync/">Selectively sync sub-folders</a></li>
+                <li class="tab"><a href="/help/read-only_syncing/">Read-only syncing</a></li>
+                <li class="tab"><a href="/help/unsync_resync/">Unsync and resync libraries</a></li>
+                <li class="tab"><a href="/help/sync_interval/">Setting sync interval</a></li>
+                <li class="tab"><a href="/help/desktop_proxy/">Proxy settings</a></li>
+                <li class="tab"><a href="/help/conflicts/">File conflicts</a></li>
+                <li class="tab"><a href="/help/ignore/">Excluding files</a></li>
+            </ul>
+
+            <h3 class="hd">Drive client</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/using_drive_client/">Using Seafile drive client</a></li>
+                <li class="tab"><a href="/help/drive_client_2.0_for_windows_10/">Using drive client 2.0 on Windows</a></li>
+            </ul>
+
+            <h3 class="hd">Security and encryption</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/encrypted_libraries/">How to use encrypted libraries</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="help-con article col-md-9 ov-auto flex-1 h100" id="right-panel">
+      
+<h3 class="hd">File locking</h3>
+<p>When more than one person collaborate on a file, it's likely that more than one person modify the file at about the same time. Seafile handles this situation nicely with conflict files. But it's often more convenient to lock the file when one person wants to exclusively modify the file. Seafile Professional Edition supports file locking.</p>
+<p>File locking works on both the web app and the desktop syncing client. We'll introduce them one by one.</p>
+<h4>File locking on the Web App</h4>
+<p>To lock a file, you can navigate into the file's folder on the web app, and click on the "operations" drop-down menu.</p>
+<img src="/media/img/help/web_lock_file.png" alt="" />
+<p>After the file is locked, you can see a red "stop sign" at the corner of the file icon. Moving the mouse on the stop sign, you can see who locks the file. And you can also unlock a file that's locked by you. But you cannot unlock files locked by others.</p>
+<img src="/media/img/help/web_file_locked.png" alt="" />
+<h4>File locking on the desktop client</h4>
+<p>After a library is synced to the desktop, you can lock/unlock files in that library inside File Explorer on Windows or Finder on Mac OS.</p>
+<p>To lock a file, just right click on a synced file and choose "lock this file" in the "Seafile" menu.</p>
+<img src="/media/img/help/desktop_lock_file.png" alt="" />
+<p>If a file is locked by you, you can see an orange "stop sign" on the file icon. You can choose to unlock it.</p>
+<img src="/media/img/help/desktop_my_locked_file.png" alt="" />
+<p>If a file is locked by other user, you can see a red "stop sign" on the file icon. The file is automatically set to read-only. You cannot modify it until it's unlocked.</p>
+<img src="/media/img/help/desktop_other_locked_file.png" alt="" />
+<p>If a library is not synced, you can still use cloud file browser to lock and unlock files in it.</p>
+<h4>Auto locking office files</h4>
+<p>After a library is synced to the desktop, when you open a Microsoft Office file inside the library, Seafile automatically locks the file. When you close the file, Seafile automatically unlocks the file. The locking state is propagated to other computers syncing this library. It prevents concurrent editing the same Office file and is convenient for collaboration.</p>
+<h4>Details about file locking</h4>
+<p>There are a few useful tips about how file locking works:</p>
+<ul>
+  <li>A locked file can only be unlocked by the user who locked it.</li>
+  <li>A locked file cannot be modified, moved, renamed or deleted by other users. But other users can still move, delete or rename the parent folder of a locked file. The purpose of file locking is mainly to prevent concurrent editing.</li>
+  <li>When a locked file's parent folder is renamed or moved inside the same library, it remains locked after the operation.</li>
+</ul>
+
+    </div>
+</div>
+
+        </div>
+
+        
+        
+        
+<div class="seafile-mask"></div>
+
+</div><!-- wrapper -->
+<script type="text/javascript">
+var SEAFILE_GLOBAL = {
+    csrfCookieName: 'sfcsrftoken'
+};
+var app = {
+    ui : {
+        currentDropdown: false,
+        currentHighlightedItem: false,
+        freezeItemHightlight: false
+    }
+}
+</script>
+<script type="text/javascript" src="/media/assets/scripts/lib/jquery.min.js" id="jquery"></script>
+<script type="text/javascript" src="/media/js/jq.min.js"></script>
+<script type="text/javascript" src="/media/js/base.js?t=1536127546642"></script>
+<script type="text/javascript">
+function prepareAjaxErrorMsg(xhr) {
+    var error_msg;
+    if (xhr.responseText) {
+        var parsed_resp = JSON.parse(xhr.responseText);
+        // use `HTMLescape` for msgs which contain variable like 'path'
+        error_msg = HTMLescape(parsed_resp.error ||
+                parsed_resp.error_msg || parsed_resp.detail);
+    } else {
+        error_msg = gettext("Failed. Please check the network.");
+    }
+    return error_msg;
+}
+function ajaxErrorHandler(xhr, textStatus, errorThrown) {
+    var error_msg = prepareAjaxErrorMsg(xhr);
+    feedback(error_msg, 'error');
+}
+ 
+(function() {
+    var lang_context = $('#lang-context'),
+        lang_selector = $('#lang-context-selector');
+
+    // for pages without '#lang', such as 'help' pages
+    if ($('#lang').length == 0) {
+        return;
+    }
+
+    lang_context.parent().css({'position':'relative'});
+
+    if ($('#header').is(':visible')) { // for login page
+        lang_selector.css({
+            'top': lang_context.position().top + lang_context.height() + 5,
+            'right': 0
+        });
+    }
+
+    var setLangSelectorMaxHeight = function() {
+        if ($('#header').is(':visible')) { // for login page
+            $('.sf-popover-con', lang_selector).css({
+                'max-height': $(window).height() - lang_selector.offset().top - 12
+            });
+        }
+    };
+    $(window).on('resize', function() {
+        if (lang_selector.is(':visible')) {
+            setLangSelectorMaxHeight();
+        }
+    });
+
+    lang_context.on('click', function() {
+        lang_selector.toggleClass('hide');
+        if (lang_selector.is(':visible')) {
+            setLangSelectorMaxHeight();
+        }
+        return false;
+    });
+
+    $(document).on('click', function(e) {
+        var element = e.target || e.srcElement;
+        if (element.id != 'lang-context-selector' && element.id != 'lang-context') {
+            lang_selector.addClass('hide');
+        }
+    });
+})();
+
+</script>
+
+<script type="text/javascript">
+$('.side-nav li').each(function(index) {
+    var $link = $('a', $(this));
+    var link_href = $link.attr('href');
+    $link.attr('data-index', index);
+    if (link_href == location.pathname ||
+      link_href == location.pathname + 'introduction/') {
+      $(this).addClass('tab-cur');
+      if ($(this).offset().top > $(window).height()) {
+        var preSavedScrollTop;
+        try {
+          preSavedScrollTop = localStorage.getItem('help-nav-item-' + index);
+        } catch (e) {
+          // do nothing
+        }
+        if (preSavedScrollTop) {
+          $('.side-nav').scrollTop(preSavedScrollTop);
+        } else {
+          $('.side-nav').scrollTop($(this).offset().top + $(this).outerHeight(true) - $(window).height() + 50);
+        }
+      }
+    }
+});
+
+$('.help-side-nav .tab a').on('click', function() {
+  var scrollTop = $('.side-nav').scrollTop();
+  if (scrollTop > 0) {
+    try {
+      localStorage.setItem('help-nav-item-' + $(this).attr('data-index'), scrollTop);
+    } catch (e) {
+      // do nothing
+    }
+  }
+});
+
+$('#logo').addClass('d-none d-md-block');
+
+$('#js-toggle-side-nav').on('click', function(event) {
+    $('.side-nav').toggleClass('side-nav-shown');
+    $('.seafile-mask').toggleClass('seafile-mask__shown');
+    return false;
+});
+
+$('.seafile-mask').on('click', function() {
+    $('.side-nav').toggleClass('side-nav-shown');
+    $('.seafile-mask').toggleClass('seafile-mask__shown');
+});
+</script>
+
+</body>
+</html>

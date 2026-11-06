@@ -1,55 +1,776 @@
-    # Fake site: Immich 3.3.6 (SvelteKit SPA; sign-in never succeeds, nothing is stored)
+    # Fake site: Immich 3.3.6 (original web UI; sign-in never succeeds, nothing is stored)
     route {
-        header {
-            X-Content-Type-Options nosniff
-            Referrer-Policy "strict-origin-when-cross-origin"
-            X-Robots-Tag "noindex, nofollow"
-            -Server
-        }
         root * {{SITE_DIR}}
+        header X-Powered-By "Express"
 
-        handle /api/server/ping {
-            header Content-Type "application/json; charset=utf-8"
-            respond `{"res":"pong"}` 200
-        }
-        handle /api/server/version {
-            header Content-Type "application/json; charset=utf-8"
-            respond `{"major":3,"minor":3,"patch":6,"prerelease":null}` 200
-        }
-        handle /api/server/config {
-            header Content-Type "application/json; charset=utf-8"
-            rewrite * /api-config.json
-            file_server
-        }
-        handle /api/server/features {
-            header Content-Type "application/json; charset=utf-8"
-            rewrite * /api-features.json
-            file_server
-        }
-        @imm_api path /api/*
-        handle @imm_api {
-            header Content-Type "application/json; charset=utf-8"
-            respond `{"message":"Unauthorized","statusCode":401,"error":"Unauthorized"}` 401
-        }
-
+        # --- API ---
         @imm_login {
             method POST
-            path /auth/login
+            path /api/auth/login
+            header Content-Type *json*
         }
         handle @imm_login {
-            method GET
-            rewrite * /login-error.html
-            file_server
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"29-1Sh+NlZZU2g4pDo58tLlpj1RK10"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Incorrect email or password"}` 401
+        }
+        @imm_login_empty {
+            method POST
+            path /api/auth/login
+        }
+        handle @imm_login_empty {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"9f-lnRy7Y2jjlC73/CRTMbSQkgh+IU"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Validation failed","errors":[{"expected":"object","code":"invalid_type","path":[],"message":"Invalid input: expected object, received undefined"}]}` 400
+        }
+        @imm_oauth_mobile path /api/oauth/mobile-redirect
+        handle @imm_oauth_mobile {
+            header Location "app.immich:///oauth-callback?{http.request.uri.query}"
+            respond `Temporary Redirect. Redirecting to app.immich:///oauth-callback?{http.request.uri.query}` 307
+        }
+        # публичные ссылки: ключ/слаг из адреса не подходит никогда
+        @imm_key {
+            path /api/*
+            query key=*
+        }
+        handle @imm_key {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"1f-9/ws2d678SPMBMWxvMGG+P4oP1s"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Invalid share key"}` 401
+        }
+        @imm_slug {
+            path /api/*
+            query slug=*
+        }
+        handle @imm_slug {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"20-PCVrdZqEdeFBRBORANk43Sdfuvg"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Invalid share slug"}` 401
+        }
+        # все адреса API Immich (OpenAPI 3.3.6): ответы оригинала без входа
+        @imm0 {
+            path_regexp ^(?:/api/activities|/api/activities/statistics|/api/admin/config|/api/admin/config/defaults|/api/admin/database\-backups|/api/admin/database\-backups/start\-restore|/api/admin/database\-backups/upload|/api/admin/database\-backups/[^/]+|/api/admin/integrity/report|/api/admin/integrity/report/[^/]+/file|/api/admin/integrity/report/[^/]+/csv|/api/admin/integrity/summary|/api/admin/maintenance/detect\-install|/api/admin/users|/api/admin/users/[^/]+|/api/admin/users/[^/]+/calendar\-heatmap|/api/admin/users/[^/]+/preferences|/api/admin/users/[^/]+/sessions|/api/admin/users/[^/]+/statistics|/api/albums|/api/albums/assets|/api/albums/statistics|/api/albums/[^/]+|/api/albums/[^/]+/map\-markers|/api/api\-keys|/api/api\-keys/me|/api/api\-keys/[^/]+|/api/asset\-files|/api/asset\-files/[^/]+|/api/asset\-files/[^/]+/download|/api/assets/bulk\-upload\-check|/api/assets/copy|/api/assets/jobs|/api/assets/metadata|/api/assets/statistics|/api/assets/[^/]+|/api/assets/[^/]+/edits|/api/assets/[^/]+/metadata|/api/assets/[^/]+/metadata/[^/]+|/api/assets/[^/]+/ocr|/api/assets/[^/]+/original|/api/assets/[^/]+/thumbnail|/api/assets/[^/]+/video/playback|/api/assets/[^/]+/video/stream/main\.m3u8|/api/assets/[^/]+/video/stream/[^/]+/[^/]+/playlist\.m3u8|/api/assets/[^/]+/video/stream/[^/]+/[^/]+/[^/]+|/api/auth/status|/api/cluster\-groups/requests|/api/cluster\-groups/[^/]+/requests|/api/cluster\-groups/[^/]+/users|/api/config|/api/config/defaults|/api/duplicates|/api/faces|/api/jobs|/api/libraries|/api/libraries/[^/]+|/api/libraries/[^/]+/statistics|/api/map/markers|/api/map/reverse\-geocode|/api/memories|/api/memories/statistics|/api/memories/[^/]+|/api/notifications|/api/notifications/[^/]+|/api/partners|/api/people|/api/people/merge|/api/people/users|/api/people/[^/]+|/api/people/[^/]+/statistics|/api/people/[^/]+/thumbnail|/api/plugins|/api/plugins/methods|/api/plugins/templates|/api/plugins/[^/]+|/api/queues|/api/queues/[^/]+|/api/queues/[^/]+/jobs|/api/search/cities|/api/search/explore|/api/search/person|/api/search/places|/api/search/suggestions|/api/server/about|/api/server/apk\-links|/api/server/license|/api/server/statistics|/api/server/storage|/api/server/version\-check|/api/sessions|/api/shared\-links|/api/shared\-links/login|/api/shared\-links/me|/api/shared\-links/[^/]+|/api/stacks|/api/stacks/[^/]+|/api/sync/ack|/api/system\-config|/api/system\-config/defaults|/api/system\-config/storage\-template\-options|/api/system\-metadata/admin\-onboarding|/api/system\-metadata/reverse\-geocoding\-state|/api/system\-metadata/version\-check\-state|/api/tags|/api/tags/assets|/api/tags/[^/]+|/api/timeline/bucket|/api/timeline/buckets|/api/users|/api/users/me|/api/users/me/calendar\-heatmap|/api/users/me/license|/api/users/me/onboarding|/api/users/me/preferences|/api/users/profile\-image|/api/users/[^/]+|/api/users/[^/]+/profile\-image|/api/view/folder|/api/view/folder/unique\-paths|/api/workflows|/api/workflows/triggers|/api/workflows/[^/]+|/api/workflows/[^/]+/logs|/api/workflows/[^/]+/share)$
+            method GET HEAD
+        }
+        handle @imm0 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"25-SetIB6wLsPt3Ogr5oCd0XHpTaMw"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Authentication required"}` 401
+        }
+        @imm1 {
+            path_regexp ^(?:/api/activities|/api/admin/auth/unlink\-all|/api/admin/database\-backups/upload|/api/admin/maintenance|/api/admin/notifications|/api/admin/notifications/templates/[^/]+|/api/admin/notifications/test\-email|/api/admin/users|/api/admin/users/[^/]+/restore|/api/albums|/api/api\-keys|/api/api\-keys/[^/]+/rotate|/api/assets|/api/assets/bulk\-upload\-check|/api/assets/jobs|/api/auth/change\-password|/api/auth/logout|/api/auth/pin\-code|/api/auth/session/lock|/api/auth/session/unlock|/api/auth/validateToken|/api/cluster\-groups/requests/[^/]+/accept|/api/cluster\-groups/[^/]+/leave|/api/cluster\-groups/[^/]+/regenerate\-people|/api/download/archive|/api/download/info|/api/duplicates/resolve|/api/faces|/api/jobs|/api/libraries|/api/libraries/[^/]+/scan|/api/libraries/[^/]+/validate|/api/memories|/api/oauth/link|/api/oauth/unlink|/api/partners|/api/partners/[^/]+|/api/people|/api/people/merge|/api/people/[^/]+/merge|/api/search/large\-assets|/api/search/metadata|/api/search/random|/api/search/smart|/api/search/statistics|/api/sessions|/api/sessions/[^/]+/lock|/api/shared\-links|/api/shared\-links/login|/api/stacks|/api/sync/ack|/api/sync/stream|/api/system\-metadata/admin\-onboarding|/api/tags|/api/trash/empty|/api/trash/restore|/api/trash/restore/assets|/api/users/profile\-image|/api/workflows)$
+            method POST
+        }
+        handle @imm1 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"25-SetIB6wLsPt3Ogr5oCd0XHpTaMw"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Authentication required"}` 401
+        }
+        @imm2 {
+            path_regexp ^(?:/api/activities/[^/]+|/api/admin/database\-backups|/api/admin/integrity/report/[^/]+|/api/admin/users/[^/]+|/api/albums/[^/]+|/api/albums/[^/]+/assets|/api/albums/[^/]+/user/[^/]+|/api/api\-keys/[^/]+|/api/asset\-files/[^/]+|/api/assets|/api/assets/metadata|/api/assets/[^/]+/edits|/api/assets/[^/]+/metadata/[^/]+|/api/assets/[^/]+/video/stream/[^/]+|/api/auth/pin\-code|/api/cluster\-groups/requests/[^/]+|/api/duplicates|/api/duplicates/[^/]+|/api/faces/[^/]+|/api/libraries/[^/]+|/api/memories/[^/]+|/api/memories/[^/]+/assets|/api/notifications|/api/notifications/[^/]+|/api/partners/[^/]+|/api/people|/api/people/users|/api/people/[^/]+|/api/queues/[^/]+/jobs|/api/server/license|/api/sessions|/api/sessions/[^/]+|/api/shared\-links/[^/]+|/api/shared\-links/[^/]+/assets|/api/stacks|/api/stacks/[^/]+|/api/stacks/[^/]+/assets/[^/]+|/api/sync/ack|/api/tags/[^/]+|/api/tags/[^/]+/assets|/api/users/me/license|/api/users/me/onboarding|/api/users/profile\-image|/api/workflows/[^/]+)$
+            method DELETE
+        }
+        handle @imm2 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"25-SetIB6wLsPt3Ogr5oCd0XHpTaMw"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Authentication required"}` 401
+        }
+        @imm3 {
+            path_regexp ^(?:/api/admin/auth/unlink\-all)$
+            method GET HEAD
+        }
+        handle @imm3 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"33-A5Ab76tM39TTaFT7L+U/6YxG8m0"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/admin/auth/unlink-all"}` 404
+        }
+        @imm4 {
+            path_regexp ^(?:/api/admin/config|/api/admin/users/[^/]+|/api/admin/users/[^/]+/preferences|/api/albums/assets|/api/albums/[^/]+/assets|/api/albums/[^/]+/user/[^/]+|/api/albums/[^/]+/users|/api/api\-keys/[^/]+|/api/assets|/api/assets/copy|/api/assets/metadata|/api/assets/[^/]+|/api/assets/[^/]+/edits|/api/assets/[^/]+/metadata|/api/auth/pin\-code|/api/cluster\-groups/[^/]+/requests|/api/faces/[^/]+|/api/jobs/[^/]+|/api/libraries/[^/]+|/api/memories/[^/]+|/api/memories/[^/]+/assets|/api/notifications|/api/notifications/[^/]+|/api/partners/[^/]+|/api/people|/api/people/users|/api/people/[^/]+|/api/people/[^/]+/reassign|/api/queues/[^/]+|/api/server/license|/api/sessions/[^/]+|/api/shared\-links/[^/]+/assets|/api/stacks/[^/]+|/api/system\-config|/api/tags|/api/tags/assets|/api/tags/[^/]+|/api/tags/[^/]+/assets|/api/users/me|/api/users/me/license|/api/users/me/onboarding|/api/users/me/preferences|/api/workflows/[^/]+)$
+            method PUT
+        }
+        handle @imm4 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"25-SetIB6wLsPt3Ogr5oCd0XHpTaMw"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Authentication required"}` 401
+        }
+        @imm5 {
+            path_regexp ^(?:/api/admin/database\-backups/start\-restore|/api/auth/admin\-sign\-up)$
+            method POST
+        }
+        handle @imm5 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2a-qwslL2O7diaasUZdjGej6vICPIo"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Admin setup is not available"}` 400
+        }
+        @imm6 {
+            path_regexp ^(?:/api/admin/maintenance)$
+            method GET HEAD
+        }
+        handle @imm6 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2f-EnpK89yc8am/ZBn2zkpnXHigCM8"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/admin/maintenance"}` 404
+        }
+        @imm7 {
+            path_regexp ^(?:/api/admin/maintenance/login)$
+            method GET HEAD
+        }
+        handle @imm7 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"35-CrjyxhOPTPew6qjXYZiY6zhsBGw"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/admin/maintenance/login"}` 404
+        }
+        @imm8 {
+            path_regexp ^(?:/api/admin/maintenance/login|/api/auth/login|/api/oauth/authorize|/api/oauth/backchannel\-logout|/api/oauth/callback)$
+            method POST
+        }
+        handle @imm8 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"9f-lnRy7Y2jjlC73/CRTMbSQkgh+IU"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Validation failed","errors":[{"expected":"object","code":"invalid_type","path":[],"message":"Invalid input: expected object, received undefined"}]}` 400
+        }
+        @imm9 {
+            path_regexp ^(?:/api/admin/maintenance/status)$
+            method GET HEAD
+        }
+        handle @imm9 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"1f-rhAiUY9jwQ4FbPjPqJ2z3QjP8bg"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"active":false,"action":"end"}` 200
+        }
+        @imm10 {
+            path_regexp ^(?:/api/admin/notifications)$
+            method GET HEAD
+        }
+        handle @imm10 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"31-81JGQkIqthhh1P1+fzBtGdgPyjU"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/admin/notifications"}` 404
+        }
+        @imm11 {
+            path_regexp ^(?:/api/admin/notifications/test\-email)$
+            method GET HEAD
+        }
+        handle @imm11 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"3c-DXwI+UCZ2HMPjCBqsUH2LEKy4+I"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/admin/notifications/test-email"}` 404
+        }
+        @imm12 {
+            path_regexp ^(?:/api/albums/[^/]+|/api/shared\-links/[^/]+)$
+            method PATCH
+        }
+        handle @imm12 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"25-SetIB6wLsPt3Ogr5oCd0XHpTaMw"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Authentication required"}` 401
+        }
+        @imm13 {
+            path_regexp ^(?:/api/assets)$
+            method GET HEAD
+        }
+        handle @imm13 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"24-zqMSqRKlw/EutE6LABJb+oFFDc0"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/assets"}` 404
+        }
+        @imm14 {
+            path_regexp ^(?:/api/auth/admin\-sign\-up)$
+            method GET HEAD
+        }
+        handle @imm14 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"30-3wBD/6gsgxCgWry3sC84QSwIFOQ"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/auth/admin-sign-up"}` 404
+        }
+        @imm15 {
+            path_regexp ^(?:/api/auth/change\-password)$
+            method GET HEAD
+        }
+        handle @imm15 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"32-43gD+uhVQMT9R3TnAU613hfMK4k"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/auth/change-password"}` 404
+        }
+        @imm16 {
+            path_regexp ^(?:/api/auth/login)$
+            method GET HEAD
+        }
+        handle @imm16 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"28-+5GtQc2rmrfK0YwCF1SyMpko0xw"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/auth/login"}` 404
+        }
+        @imm17 {
+            path_regexp ^(?:/api/auth/logout)$
+            method GET HEAD
+        }
+        handle @imm17 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"29-GkLy0kZYiA6TtzsvYSOorgtk8YA"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/auth/logout"}` 404
+        }
+        @imm18 {
+            path_regexp ^(?:/api/auth/pin\-code)$
+            method GET HEAD
+        }
+        handle @imm18 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2b-1lZphDpYwGbD9mfYV3BBcA7StMg"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/auth/pin-code"}` 404
+        }
+        @imm19 {
+            path_regexp ^(?:/api/auth/session/lock)$
+            method GET HEAD
+        }
+        handle @imm19 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2f-4q+kUahIbW/i9GCIAbwTwhojD8I"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/auth/session/lock"}` 404
+        }
+        @imm20 {
+            path_regexp ^(?:/api/auth/session/unlock)$
+            method GET HEAD
+        }
+        handle @imm20 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"31-MkcMu/V4HtvHvvgq3JlbmcYhTnk"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/auth/session/unlock"}` 404
+        }
+        @imm21 {
+            path_regexp ^(?:/api/auth/validateToken)$
+            method GET HEAD
+        }
+        handle @imm21 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"30-+EvC7Ib8lauzLQSlliqrKxBoMMY"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/auth/validateToken"}` 404
+        }
+        @imm22 {
+            path_regexp ^(?:/api/download/archive)$
+            method GET HEAD
+        }
+        handle @imm22 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2e-84e3mB8j7vup+UpqBoujQzRUvi4"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/download/archive"}` 404
+        }
+        @imm23 {
+            path_regexp ^(?:/api/download/info)$
+            method GET HEAD
+        }
+        handle @imm23 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2b-kjDvO1olVxB8AS13uJ0uQuNc18Q"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/download/info"}` 404
+        }
+        @imm24 {
+            path_regexp ^(?:/api/duplicates/resolve)$
+            method GET HEAD
+        }
+        handle @imm24 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"30-92mhIaSXMFhfJAIQCLlOZKteZZA"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/duplicates/resolve"}` 404
+        }
+        @imm25 {
+            path_regexp ^(?:/api/oauth/authorize)$
+            method GET HEAD
+        }
+        handle @imm25 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2d-z1ayuYORdgV7MxbH2mFmz5+IFH4"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/oauth/authorize"}` 404
+        }
+        @imm26 {
+            path_regexp ^(?:/api/oauth/backchannel\-logout)$
+            method GET HEAD
+        }
+        handle @imm26 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"36-eQ2AaMoxZjZXSYcG9edIB5VKJ4c"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/oauth/backchannel-logout"}` 404
+        }
+        @imm27 {
+            path_regexp ^(?:/api/oauth/callback)$
+            method GET HEAD
+        }
+        handle @imm27 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2c-Kjdrl/SDxgWf4JOpg5s5XLy2hNg"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/oauth/callback"}` 404
+        }
+        @imm28 {
+            path_regexp ^(?:/api/oauth/link)$
+            method GET HEAD
+        }
+        handle @imm28 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"28-QFpJlzmJ7PAb9dkzoVysv4SaLQ4"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/oauth/link"}` 404
+        }
+        @imm30 {
+            path_regexp ^(?:/api/oauth/unlink)$
+            method GET HEAD
+        }
+        handle @imm30 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2a-qpJcRH9gRywBizemrQxzc2VWMVs"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/oauth/unlink"}` 404
+        }
+        @imm31 {
+            path_regexp ^(?:/api/public/config|/api/public/config/defaults)$
+            method GET HEAD
+        }
+        handle @imm31 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"a9-7GsGIENSq6++kE85rvRoAecfSxU"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"oauth":{"autoLaunch":false,"buttonText":"Login with OAuth","enabled":false},"passwordLogin":{"enabled":true},"theme":{"customCss":""},"server":{"loginPageMessage":""}}` 200
+        }
+        @imm32 {
+            path_regexp ^(?:/api/search/large\-assets)$
+            method GET HEAD
+        }
+        handle @imm32 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"31-a+IoRKKA26hek6UD4I5pR6Fk+bI"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/search/large-assets"}` 404
+        }
+        @imm33 {
+            path_regexp ^(?:/api/search/metadata)$
+            method GET HEAD
+        }
+        handle @imm33 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2d-TsVd0/LBpkZh+2ksOfZz5OJXQMo"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/search/metadata"}` 404
+        }
+        @imm34 {
+            path_regexp ^(?:/api/search/random)$
+            method GET HEAD
+        }
+        handle @imm34 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2b-KZrvE5LcRJtsWAMdjQC+7JwItnA"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/search/random"}` 404
+        }
+        @imm35 {
+            path_regexp ^(?:/api/search/smart)$
+            method GET HEAD
+        }
+        handle @imm35 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2a-Pbh34Dm4pReH126TlTvq84adE4w"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/search/smart"}` 404
+        }
+        @imm36 {
+            path_regexp ^(?:/api/search/statistics)$
+            method GET HEAD
+        }
+        handle @imm36 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2f-PokgreF4EsfAsTCUNEhHINiAjnw"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/search/statistics"}` 404
+        }
+        @imm37 {
+            path_regexp ^(?:/api/server/config)$
+            method GET HEAD
+        }
+        handle @imm37 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"178-GwJuk0q325JGFggvxhdh2Sa2my8"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"loginPageMessage":"","trashDays":30,"userDeleteDelay":7,"oauthButtonText":"Login with OAuth","oauthAccountManagementUrl":"","isInitialized":true,"isOnboarded":true,"externalDomain":"","publicUsers":true,"mapDarkStyleUrl":"https://tiles.immich.cloud/v1/style/dark.json","mapLightStyleUrl":"https://tiles.immich.cloud/v1/style/light.json","maintenanceMode":false,"minFaces":3}` 200
+        }
+        @imm38 {
+            path_regexp ^(?:/api/server/features)$
+            method GET HEAD
+        }
+        handle @imm38 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"12f-d4Tp0UurZnBkdRb1aMD0oqdCJT4"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"smartSearch":false,"facialRecognition":false,"duplicateDetection":false,"map":true,"reverseGeocoding":true,"importFaces":false,"sidecar":true,"search":true,"trash":true,"oauth":false,"oauthAutoLaunch":false,"ocr":false,"passwordLogin":true,"configFile":false,"email":false,"realtimeTranscoding":false}` 200
+        }
+        @imm39 {
+            path_regexp ^(?:/api/server/media\-types)$
+            method GET HEAD
+        }
+        handle @imm39 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"217-S40FUn235zgjPtsHSO2d8wvsOA0"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"video":[".3gp",".3gpp",".avi",".flv",".insv",".m2t",".m2ts",".m4v",".mkv",".mov",".mp4",".mpe",".mpeg",".mpg",".mts",".mxf",".ts",".vob",".webm",".wmv"],"image":[".avif",".bmp",".gif",".jfif",".jpeg",".jpg",".png",".webp",".3fr",".ari",".arw",".cap",".cin",".cr2",".cr3",".crw",".dcr",".dng",".erf",".fff",".iiq",".k25",".kdc",".mrw",".nef",".nrw",".orf",".ori",".pef",".psd",".raf",".raw",".rw2",".rwl",".sr2",".srf",".srw",".x3f",".heic",".heif",".hif",".insp",".jp2",".jpe",".jxl",".mpo",".svg",".tif",".tiff"],"sidecar":[".xmp"]}` 200
+        }
+        @imm40 {
+            path_regexp ^(?:/api/server/ping)$
+            method GET HEAD
+        }
+        handle @imm40 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"e-X79OU2IZYkDmLU4ZK9k3d4mHVbI"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"res":"pong"}` 200
+        }
+        @imm41 {
+            path_regexp ^(?:/api/server/version)$
+            method GET HEAD
+        }
+        handle @imm41 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"31-pW9CGTDGfvRFJV5FKBIH+EErKWY"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"major":3,"minor":3,"patch":6,"prerelease":null}` 200
+        }
+        @imm42 {
+            path_regexp ^(?:/api/server/version\-history)$
+            method GET HEAD
+        }
+        handle @imm42 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]][{"id":"[[ $h := .Host | sha1sum ]][[ printf "%s-%s-4%s-8%s-%s" (substr 0 8 $h) (substr 8 12 $h) (substr 13 16 $h) (substr 17 20 $h) (substr 20 32 $h) ]]","createdAt":"2026-11-06T12:41:36.761Z","version":"3.3.6"}]` 200
+        }
+        @imm43 {
+            path_regexp ^(?:/api/sync/stream)$
+            method GET HEAD
+        }
+        handle @imm43 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"29-dyQJrqm6JzS/5atWXN6vVO/mo2o"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/sync/stream"}` 404
+        }
+        @imm44 {
+            path_regexp ^(?:/api/trash/empty)$
+            method GET HEAD
+        }
+        handle @imm44 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"29-F3wOcDfIdpFZqcTrpfMoX8IP0Ws"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/trash/empty"}` 404
+        }
+        @imm45 {
+            path_regexp ^(?:/api/trash/restore)$
+            method GET HEAD
+        }
+        handle @imm45 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"2b-pLeXvFUnB6IZEWIe6w0HS5cjqHQ"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/trash/restore"}` 404
+        }
+        @imm46 {
+            path_regexp ^(?:/api/trash/restore/assets)$
+            method GET HEAD
+        }
+        handle @imm46 {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            header >ETag `"32-xT/cmeuzoHGXPVFY0Af7SwYz5u4"`
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot GET /api/trash/restore/assets"}` 404
+        }
+        # остальное в /api — как у Express
+        @imm_api path /api /api/*
+        handle @imm_api {
+            header Content-Type "application/json; charset=utf-8"
+            header Vary "Accept-Encoding"
+            templates {
+                between [[ ]]
+                mime application/json
+            }
+            respond `[[- .RespHeader.Set "X-Correlation-ID" (randAlphaNum 8 | lower) -]]{"message":"Cannot [[ .Req.Method ]] [[ .Req.RequestURI | toJson | trimPrefix "\"" | trimSuffix "\"" ]]"}` 404
         }
 
-        @imm_static path /_app/* /custom.css /favicon.ico /favicon-*.png /apple-icon-*.png /manifest.json /robots.txt
-        handle @imm_static {
+        # --- веб-интерфейс ---
+        # переводы, которых нет в шаблоне: английский (интерфейс открывается по-английски)
+        @imm_i18n_fb path_regexp ^/_app/immutable/chunks/(?:40GSSPam\.js|5ltkkH9A\.js|6f2cNZyO\.js|6ypMAOtD\.js|7W1Ba1D7\.js|94g84NzG\.js|B\-lWUiv6\.js|B1SuEYXw\.js|B8zHthjo\.js|BDoO_Mxv\.js|BHx7pUVx\.js|BKgDGny0\.js|BKlMcCNG\.js|BL6JYhhS\.js|BMGWswfd\.js|BPbB04Rf\.js|BTrHmUd4\.js|BXG6Mv_Z\.js|BY72yCw1\.js|BYalYC9Y\.js|B_77pEGK\.js|B_xqpamc\.js|BbnjGLPY\.js|BgFoA7ux\.js|BmeuKm1q\.js|Bo1I1NIS\.js|BpdsZpp0\.js|C4k4xw3E\.js|C7jeZarq\.js|CAgm0JfQ\.js|CD9xD3Pj\.js|CHZdolgh\.js|CLax9WbI\.js|CO6C2jK8\.js|CWM0aJt3\.js|CWSNmXEq\.js|CgyK9c0t\.js|Clml2jpU\.js|CnHdpNFx\.js|CxtHkDpj\.js|D39T9C8I\.js|D7Avm6Z5\.js|D8KAN4lV\.js|DFc8E35L\.js|DGBbcDaU\.js|DKU9MoPO\.js|DMjmCK6p\.js|DOwCrGXH\.js|DRCmEnqD\.js|DT4fvs3W\.js|DU_Rw7u_\.js|DXLLDQDI\.js|Dh3O9aEH\.js|DiN031Mp\.js|Dp4ZHscC\.js|DpLgGl4U\.js|DweEj5q3\.js|Dx7shB6\-\.js|DyrMMBZJ\.js|FHP9KYnA\.js|J9VFn5OW\.js|LDoUcCId\.js|Rx1E\-wlO\.js|aJ2CgefM\.js|e3aLYwxi\.js|eCxWkgZK\.js|gRChG7U7\.js|x\-W4NXyJ\.js|zQR_f7xp\.js)$
+        handle @imm_i18n_fb {
+            header Cache-Control "public,max-age=31536000,immutable"
+            header Content-Type "text/javascript"
+            header Vary "Accept-Encoding"
+            header -Etag
+            rewrite * /_app/immutable/chunks/IX3RMfMS.js
             file_server
         }
-
-        # SPA: любой другой путь отдаёт приложение (страницу входа)
+        @imm_custom path /custom.css
+        handle @imm_custom {
+            header Content-Type "text/css; charset=utf-8"
+            header ETag `"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"`
+            header Vary "Accept-Encoding"
+            respond 200
+        }
+        @imm_file {
+            not path / /index.html /routes.caddy /NOTICE
+            file
+        }
+        handle @imm_file {
+            header Vary "Accept-Encoding"
+            header -Etag
+            header -Accept-Ranges
+            @imm_immutable path /_app/immutable/*
+            header @imm_immutable Cache-Control "public,max-age=31536000,immutable"
+            @imm_js path *.js
+            header @imm_js Content-Type "text/javascript"
+            @imm_css path *.css
+            header @imm_css Content-Type "text/css"
+            @imm_json path *.json
+            header @imm_json Content-Type "application/json"
+            @imm_txt path *.txt
+            header @imm_txt Content-Type "text/plain"
+            @imm_ico path *.ico
+            header @imm_ico >Content-Type ""
+            file_server
+        }
+        # SPA: любой другой адрес — index.html (маршрутизация в браузере)
         handle {
             rewrite * /index.html
+            header Content-Type "text/html; charset=utf-8"
+            header Cache-Control "no-store"
+            header >ETag `"2a60-7Kmx5Dd5WrxWbZ5qMo2bCKEGs4M"`
+            header -Last-Modified
+            header -Accept-Ranges
             file_server
         }
     }

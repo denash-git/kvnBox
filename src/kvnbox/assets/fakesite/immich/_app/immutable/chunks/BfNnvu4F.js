@@ -1,0 +1,1 @@
+import{Pt as e,d as t,pn as n,vn as r,yn as i}from"./Dj3IBJ0W.js";import"./xihTtKlq.js";import{r as a,t as o}from"./C6IVCec6.js";var s=new Set([`$$slots`,`$$events`,`$$legacy`]);function c(c,l){i(l,!0);let u=t(l,s);{let t=n(()=>[a(u)]);o(c,{get providers(){return e(t)}})}r()}export{c as t};

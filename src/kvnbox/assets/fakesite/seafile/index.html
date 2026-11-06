@@ -1,9 +1,11 @@
+
+
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-<title>Вход - Private Seafile</title>
+<title>Private Seafile</title>
 <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-<meta name="keywords" content="Файл, Сотрудничество, Команда, Сообщество" />
+<meta name="keywords" content="File, Collaboration, Team, Organization" />
 
 
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
@@ -12,42 +14,23 @@
 <link rel="icon" href="/media/favicons/favicon.png" type="image/x-icon">
 <link rel="apple-touch-icon" href="/media/favicons/favicon.png">
 
-<link rel="stylesheet" type="text/css" href="/media/fontawesome/css/fontawesome-all.min.css" />
-<link rel="stylesheet" type="text/css" href="/media/css/seafile-ui.css" />
+<link rel="stylesheet" type="text/css" href="/media//css/seafile-ui.css" />
 
 <link rel="stylesheet" type="text/css" href="/media/css/seahub.css?t=1398068110" />
 <link rel="stylesheet" type="text/css" href="/media/css/sf_font3/iconfont.css" />
-
-<style type="text/css">
-html, body, #wrapper { height:100%; }
-#wrapper {
-    background: url('/media/img/login-bg.jpg') center top no-repeat scroll;
-    background-size: cover;
-    padding-top:1px;
-}
-#lang {
-    margin:0;
-}
-#lang-context {
-    font-weight:normal;
-}
-#lang-context-selector {
-    text-align:left;
-}
-</style>
 
  
 
 </head>
 <body>
-    <div id="wrapper" class="ru d-flex fd-col h100">
+    <div id="wrapper" class="en d-flex fd-col h100">
         
         
         
 
-        <div id="header" class="hide">
+        <div id="header" class="d-flex">
             <a href="/" id="logo">
-                <img src="/media/img/seafile-logo.png" title="Private Seafile" alt="logo" width="" height="32">
+                <img src="/media/img/seafile-logo.png" title="Private Seafile" alt="logo" width="" height="32" />
             </a>
             
             
@@ -55,51 +38,8 @@ html, body, #wrapper { height:100%; }
             
             
             
-            
-            
-            
-        </div>
-
-        <div id="main" class="container-fluid w100 flex-auto ov-auto">
-            
-<div class="login-panel-outer-container"><img src="/media/img/seafile-logo.png" title="Private Seafile" alt="logo" width="" height="40" class="login-panel-logo">
-<div class="login-panel" id="log-in-panel">
-    <h1 class="login-panel-hd">Вход</h1>
-    <form action="" method="post" id="login-form"><input type="hidden" name="csrfmiddlewaretoken" value="5xmtTUsXcAkFBbqZO3tmcknRZUw0paX0XXcOak2JqJ4ufa5wLLyZtrZAvOiMop2a">
-        <input type="text" name="login" placeholder="Email или Логин" aria-label="Email или Логин" title="Email или Логин" value="" class="input mb-3">
-        <div class="position-relative">
-          <input id="password-input" type="password" name="password" placeholder="Пароль" aria-label="Пароль" title="Пароль" value="" class="input" autocomplete="off">
-          <i id="toggle-show-password" class="fas fa-eye-slash"></i>
-        </div>
-
-        
-
-        <input type="hidden" name="next" value="/">
-        
-        <p class="error mt-2 hide"></p>
-        
-
-        <label class="checkbox-label mt-3 mb-0 remember-me">
-            <input type="checkbox" name="remember_me" class="vam remember-input">
-            <span class="vam">Запомнить меня на 7 дней</span>
-        </label>
-
-        <button type="submit" class="submit btn btn-primary btn-block h-auto mb-3">Вход</button>
-    </form>
-
-    
-
-    
-
-    
-
-    <div class="login-panel-bottom-container d-flex justify-content-center" id="login-bottom">
-        
-        <a href="/accounts/password/reset/" class="normal px-2 bottom-item">Забыли пароль?</a>
-        
-        
-    <div id="lang" class="px-2" style="position: relative;">
-                <a href="#" id="lang-context" data-lang="ru">Русский <span class="icon-caret-down"></span></a>
+            <div id="lang">
+                <a href="#" id="lang-context" data-lang="en">English <span class="icon-caret-down"></span></a>
                 <div id="lang-context-selector" class="sf-popover hide">
                     <ul class="sf-popover-con">
                         
@@ -165,13 +105,23 @@ html, body, #wrapper { height:100%; }
                         
                     </ul>
                 </div>
-            </div></div>
+            </div>
+            
+            
+        </div>
+
+        <div id="main" class="container-fluid w100 flex-auto ov-auto">
+            
+            <div class="row">
+                <div id="main-panel" class="w100 ovhd">
+                    
+<div class="text-panel">
+  <p>Sorry, but the requested page could not be found.</p>
 </div>
-</div>
 
-
-
-
+                </div>
+            </div>
+            
         </div>
 
         
@@ -179,45 +129,87 @@ html, body, #wrapper { height:100%; }
         
         
 </div><!-- wrapper -->
-
-
-
-
-
-
-
-
-
-
-<script>
-(function () {
-  var toggle = document.getElementById('toggle-show-password');
-  var pwd = document.getElementById('password-input');
-  if (toggle && pwd) {
-    toggle.addEventListener('click', function () {
-      var show = pwd.type === 'password';
-      pwd.type = show ? 'text' : 'password';
-      toggle.classList.toggle('fa-eye-slash', !show);
-      toggle.classList.toggle('fa-eye', show);
-    });
-  }
-  var form = document.getElementById('login-form');
-  var err = form && form.querySelector('p.error');
-  if (form && err) {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var login = form.querySelector('[name="login"]');
-      var pass = form.querySelector('[name="password"]');
-      if (!login.value.trim() || !pass.value) {
-        err.textContent = 'Введите адрес электронной почты и пароль';
-      } else {
-        err.textContent = 'Неправильный email или пароль';
-      }
-      err.classList.remove('hide');
-      pass.value = '';
-    });
-  }
-})();
+<script type="text/javascript">
+var SEAFILE_GLOBAL = {
+    csrfCookieName: 'sfcsrftoken'
+};
+var app = {
+    ui : {
+        currentDropdown: false,
+        currentHighlightedItem: false,
+        freezeItemHightlight: false
+    }
+}
 </script>
+<script type="text/javascript" src="/media/assets/scripts/lib/jquery.min.js" id="jquery"></script>
+<script type="text/javascript" src="/media/js/jq.min.js"></script>
+<script type="text/javascript" src="/media/js/base.js?t=1536127546642"></script>
+<script type="text/javascript">
+function prepareAjaxErrorMsg(xhr) {
+    var error_msg;
+    if (xhr.responseText) {
+        var parsed_resp = JSON.parse(xhr.responseText);
+        // use `HTMLescape` for msgs which contain variable like 'path'
+        error_msg = HTMLescape(parsed_resp.error ||
+                parsed_resp.error_msg || parsed_resp.detail);
+    } else {
+        error_msg = gettext("Failed. Please check the network.");
+    }
+    return error_msg;
+}
+function ajaxErrorHandler(xhr, textStatus, errorThrown) {
+    var error_msg = prepareAjaxErrorMsg(xhr);
+    feedback(error_msg, 'error');
+}
+ 
+(function() {
+    var lang_context = $('#lang-context'),
+        lang_selector = $('#lang-context-selector');
+
+    // for pages without '#lang', such as 'help' pages
+    if ($('#lang').length == 0) {
+        return;
+    }
+
+    lang_context.parent().css({'position':'relative'});
+
+    if ($('#header').is(':visible')) { // for login page
+        lang_selector.css({
+            'top': lang_context.position().top + lang_context.height() + 5,
+            'right': 0
+        });
+    }
+
+    var setLangSelectorMaxHeight = function() {
+        if ($('#header').is(':visible')) { // for login page
+            $('.sf-popover-con', lang_selector).css({
+                'max-height': $(window).height() - lang_selector.offset().top - 12
+            });
+        }
+    };
+    $(window).on('resize', function() {
+        if (lang_selector.is(':visible')) {
+            setLangSelectorMaxHeight();
+        }
+    });
+
+    lang_context.on('click', function() {
+        lang_selector.toggleClass('hide');
+        if (lang_selector.is(':visible')) {
+            setLangSelectorMaxHeight();
+        }
+        return false;
+    });
+
+    $(document).on('click', function(e) {
+        var element = e.target || e.srcElement;
+        if (element.id != 'lang-context-selector' && element.id != 'lang-context') {
+            lang_selector.addClass('hide');
+        }
+    });
+})();
+
+</script>
+
 </body>
 </html>

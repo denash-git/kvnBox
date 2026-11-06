@@ -1,0 +1,1 @@
+import"./Dj3IBJ0W.js";import{ec as e}from"./Dtg6ToX5.js";var t=new e(`pointer:coarse`),n=new e(`max-width: 767px`),r=new e(`min-width: 850px`),i=new e(`prefers-reduced-motion: reduce`),a={get pointerCoarse(){return t.current},get maxMd(){return n.current},get isFullSidebar(){return r.current},get reducedMotion(){return i.current}};export{a as t};

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 
 from kvnbox.core.models import CoreKind, PasswordCredentials, Settings, Transport, User
@@ -180,12 +181,26 @@ def site_routes(template: str, site_dir: str) -> str | None:
     return text.rstrip("\n").replace("{{SITE_DIR}}", site_dir)
 
 
+HIDE_SERVER = "    header -Server\n"
+_SERVER_HINT = re.compile(r"^\s*#! server (\S.*)$", re.MULTILINE)
+
+
+def site_server(routes: str) -> str | None:
+    """Заголовок `Server` продукта из строки `#! server ...` маршрутов шаблона: оригинал
+    за обратным прокси отдаёт свой `Server`, а не пустой."""
+    m = _SERVER_HINT.search(routes)
+    return m.group(1).strip() if m else None
+
+
 def render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) -> str:
     text = _render_caddyfile(settings, users, paths)
     site_dir = (paths.fakesite_dir / settings.site.template).as_posix()
     routes = site_routes(settings.site.template, site_dir)
     if routes is not None:
         text = text.replace(_default_site_block(site_dir), routes, 1)
+        server = site_server(routes)
+        if server:
+            text = text.replace(HIDE_SERVER, f'    header Server "{server}"\n', 1)
     return text
 
 

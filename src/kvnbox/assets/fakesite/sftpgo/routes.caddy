@@ -1,49 +1,276 @@
-    # Fake site: SFTPGo WebAdmin 2.7.6 (sign-in never succeeds, nothing is stored)
+    # Fake site: SFTPGo 2.7.6 (original web UI; sign-in never succeeds, nothing is stored)
+    #! server SFTPGo/2.7.6
     route {
-        header {
-            X-Content-Type-Options nosniff
-            X-Frame-Options DENY
-            Referrer-Policy "strict-origin-when-cross-origin"
-            X-Robots-Tag "noindex, nofollow"
-            -Server
-        }
         root * {{SITE_DIR}}
 
-        @sftp_health path /healthz
-        handle @sftp_health {
+        @sg_health path /healthz
+        handle @sg_health {
             header Content-Type "text/plain; charset=utf-8"
             respond `ok` 200
         }
 
-        @sftp_login_post {
+        @sg_to_client path / /web /web/
+        handle @sg_to_client {
+            header Content-Type "text/html; charset=utf-8"
+            header Location /web/client/login
+            respond `<a href="/web/client/login">Found</a>.
+
+` 302
+        }
+
+        # вход: всегда родная страница «неверные данные»; тело запроса не читается
+        @sg_admin_post {
             method POST
-            path /web/admin/login /web/client/login
+            path /web/admin/login /web/admin/login/
         }
-        handle @sftp_login_post {
+        handle @sg_admin_post {
             method GET
-            rewrite * /login-error.html
+            rewrite * /admin-login-error.html
+            header {
+                -Etag
+                -Last-Modified
+                -Accept-Ranges
+            }
+            templates {
+                between [[ ]]
+            }
+            file_server
+        }
+        @sg_client_post {
+            method POST
+            path /web/client/login /web/client/login/
+        }
+        handle @sg_client_post {
+            method GET
+            rewrite * /client-login-error.html
+            header {
+                -Etag
+                -Last-Modified
+                -Accept-Ranges
+            }
+            templates {
+                between [[ ]]
+            }
             file_server
         }
 
-        @sftp_login path /web/admin/login /web/client/login
-        handle @sftp_login {
-            rewrite * /index.html
+        @sg_admin_login path /web/admin/login /web/admin/login/
+        handle @sg_admin_login {
+            rewrite * /admin-login.html
+            header {
+                -Etag
+                -Last-Modified
+                -Accept-Ranges
+            }
+            templates {
+                between [[ ]]
+            }
+            file_server
+        }
+        @sg_client_login path /web/client/login /web/client/login/
+        handle @sg_client_login {
+            rewrite * /client-login.html
+            header {
+                -Etag
+                -Last-Modified
+                -Accept-Ranges
+            }
+            templates {
+                between [[ ]]
+            }
             file_server
         }
 
-        @sftp_root path / /web /web/ /web/admin /web/admin/ /web/client /web/client/
-        handle @sftp_root {
-            redir * /web/admin/login 302
+        @sg_files_slash path /web/client/files/
+        handle @sg_files_slash {
+            header Content-Type "text/html; charset=utf-8"
+            header Location "/web/client/login?next=%2Fweb%2Fclient%2Ffiles%2F"
+            respond `<a href="/web/client/login?next=%2Fweb%2Fclient%2Ffiles%2F">Found</a>.
+
+` 302
+        }
+        @sg_files path /web/client/files
+        handle @sg_files {
+            header Content-Type "text/html; charset=utf-8"
+            header Location "/web/client/login?next=%2Fweb%2Fclient%2Ffiles"
+            respond `<a href="/web/client/login?next=%2Fweb%2Fclient%2Ffiles">Found</a>.
+
+` 302
         }
 
-        @sftp_static path /static/*
-        handle @sftp_static {
-            file_server
+        @sg_oauth path /web/oauth2/redirect /web/oauth2/redirect/
+        handle @sg_oauth {
+            rewrite * /oauth-400.html
+            header {
+                -Etag
+                -Last-Modified
+                -Accept-Ranges
+            }
+            file_server {
+                status 400
+            }
         }
 
-        # как оригинал: прочее — JSON 404
-        handle {
+        # все прочие адреса, которые знает SFTPGo, — его ответы без входа (снято с оригинала)
+        @sg_known0 path /api/v2/admin/2fa/recoverycodes /api/v2/admin/2fa/recoverycodes/ /api/v2/admin/profile /api/v2/admin/profile/ /api/v2/admin/totp/configs /api/v2/admin/totp/configs/ /api/v2/admins /api/v2/admins/ /api/v2/apikeys /api/v2/apikeys/ /api/v2/connections /api/v2/connections/ /api/v2/defender/hosts /api/v2/defender/hosts/ /api/v2/dumpdata /api/v2/dumpdata/ /api/v2/eventactions /api/v2/eventactions/ /api/v2/eventrules /api/v2/eventrules/ /api/v2/events/fs /api/v2/events/fs/ /api/v2/events/logs /api/v2/events/logs/ /api/v2/events/provider /api/v2/events/provider/ /api/v2/folders /api/v2/folders/ /api/v2/groups /api/v2/groups/ /api/v2/loaddata /api/v2/loaddata/ /api/v2/logout /api/v2/logout/ /api/v2/quotas/folders/scans /api/v2/quotas/folders/scans/ /api/v2/quotas/users/scans /api/v2/quotas/users/scans/ /api/v2/retention/users/checks /api/v2/retention/users/checks/ /api/v2/roles /api/v2/roles/ /api/v2/status /api/v2/status/ /api/v2/user/2fa/recoverycodes /api/v2/user/2fa/recoverycodes/ /api/v2/user/dirs /api/v2/user/dirs/ /api/v2/user/files /api/v2/user/files/ /api/v2/user/logout /api/v2/user/logout/ /api/v2/user/profile /api/v2/user/profile/ /api/v2/user/shares /api/v2/user/shares/ /api/v2/user/totp/configs /api/v2/user/totp/configs/ /api/v2/users /api/v2/users/ /api/v2/version /api/v2/version/
+        handle @sg_known0 {
             header Content-Type "application/json"
-            respond `{"message":"Not Found"}` 404
+            respond `{"error":"no token found","message":"Unauthorized"}
+` 401
+        }
+        @sg_known1 path /api/v2/admin/changepwd /api/v2/admin/changepwd/ /api/v2/user/changepwd /api/v2/user/changepwd/
+        handle @sg_known1 {
+            header Allow "PUT"
+            respond 405
+        }
+        @sg_known2 path /api/v2/admin/totp/generate /api/v2/admin/totp/generate/ /api/v2/admin/totp/save /api/v2/admin/totp/save/ /api/v2/admin/totp/validate /api/v2/admin/totp/validate/ /api/v2/user/file-actions/copy /api/v2/user/file-actions/copy/ /api/v2/user/file-actions/move /api/v2/user/file-actions/move/ /api/v2/user/files/upload /api/v2/user/files/upload/ /api/v2/user/streamzip /api/v2/user/streamzip/ /api/v2/user/totp/generate /api/v2/user/totp/generate/ /api/v2/user/totp/save /api/v2/user/totp/save/ /api/v2/user/totp/validate /api/v2/user/totp/validate/ /web/admin/oauth2/token /web/admin/oauth2/token/ /web/admin/restore /web/admin/restore/ /web/admin/totp/generate /web/admin/totp/generate/ /web/admin/totp/save /web/admin/totp/save/ /web/admin/totp/validate /web/admin/totp/validate/ /web/client/downloadzip /web/client/downloadzip/ /web/client/exist /web/client/exist/ /web/client/totp/generate /web/client/totp/generate/ /web/client/totp/save /web/client/totp/save/ /web/client/totp/validate /web/client/totp/validate/
+        handle @sg_known2 {
+            header Allow "POST"
+            respond 405
+        }
+        @sg_known3 path /api/v2/token /api/v2/token/ /api/v2/user/token /api/v2/user/token/
+        handle @sg_known3 {
+            header Content-Type "application/json"
+            respond `{"message":"Unauthorized"}
+` 401
+        }
+        @sg_known4 path /api/v2/user/files/metadata /api/v2/user/files/metadata/
+        handle @sg_known4 {
+            header Allow "PATCH"
+            respond 405
+        }
+        @sg_known5 path /web/admin /web/admin/ /web/admin/backup /web/admin/backup/ /web/admin/changepwd /web/admin/changepwd/ /web/admin/configs /web/admin/configs/ /web/admin/connections /web/admin/connections/ /web/admin/defender /web/admin/defender/ /web/admin/defender/hosts /web/admin/defender/hosts/ /web/admin/eventaction /web/admin/eventaction/ /web/admin/eventactions /web/admin/eventactions/ /web/admin/eventrule /web/admin/eventrule/ /web/admin/eventrules /web/admin/eventrules/ /web/admin/events /web/admin/events/ /web/admin/events/fs /web/admin/events/fs/ /web/admin/events/logs /web/admin/events/logs/ /web/admin/events/provider /web/admin/events/provider/ /web/admin/folder /web/admin/folder/ /web/admin/folders /web/admin/folders/ /web/admin/group /web/admin/group/ /web/admin/groups /web/admin/groups/ /web/admin/ip-lists /web/admin/ip-lists/ /web/admin/logout /web/admin/logout/ /web/admin/maintenance /web/admin/maintenance/ /web/admin/manager /web/admin/manager/ /web/admin/managers /web/admin/managers/ /web/admin/mfa /web/admin/mfa/ /web/admin/profile /web/admin/profile/ /web/admin/recoverycodes /web/admin/recoverycodes/ /web/admin/role /web/admin/role/ /web/admin/roles /web/admin/roles/ /web/admin/setup /web/admin/setup/ /web/admin/status /web/admin/status/ /web/admin/template/folder /web/admin/template/folder/ /web/admin/template/user /web/admin/template/user/ /web/admin/user /web/admin/user/ /web/admin/users /web/admin/users/
+        handle @sg_known5 {
+            header Content-Type "text/html; charset=utf-8"
+            header Location "/web/admin/login"
+            respond `<a href="/web/admin/login">Found</a>.
+
+` 302
+        }
+        @sg_known6 path /web/client /web/client/ /web/client/changepwd /web/client/changepwd/ /web/client/dirs /web/client/dirs/ /web/client/editfile /web/client/editfile/ /web/client/file /web/client/file/ /web/client/getpdf /web/client/getpdf/ /web/client/logout /web/client/logout/ /web/client/mfa /web/client/mfa/ /web/client/ping /web/client/ping/ /web/client/profile /web/client/profile/ /web/client/recoverycodes /web/client/recoverycodes/ /web/client/share /web/client/share/ /web/client/shares /web/client/shares/ /web/client/viewpdf /web/client/viewpdf/
+        handle @sg_known6 {
+            header Content-Type "text/html; charset=utf-8"
+            header Location "/web/client/login"
+            respond `<a href="/web/client/login">Found</a>.
+
+` 302
+        }
+        @sg_param0 path_regexp ^(?:/api/v2/admins|/api/v2/apikeys|/api/v2/defender/hosts|/api/v2/eventactions|/api/v2/eventrules|/api/v2/folders|/api/v2/groups|/api/v2/roles|/api/v2/user/shares|/api/v2/users)(?:/[^/]+){1}/?$
+        handle @sg_param0 {
+            header Content-Type "application/json"
+            respond `{"error":"no token found","message":"Unauthorized"}
+` 401
+        }
+        @sg_param1 path_regexp ^(?:/api/v2/iplists)(?:/[^/]+){1,2}/?$
+        handle @sg_param1 {
+            header Content-Type "application/json"
+            respond `{"error":"no token found","message":"Unauthorized"}
+` 401
+        }
+        @sg_param2 path_regexp ^(?:/api/v2/connections|/web/admin/connections|/web/admin/defender/hosts)(?:/[^/]+){1}/?$
+        handle @sg_param2 {
+            header Allow "DELETE"
+            respond 405
+        }
+        @sg_param3 path_regexp ^(?:/api/v2/eventrules/run|/web/admin/quotas/scanfolder|/web/admin/quotas/scanuser)(?:/[^/]+){1}/?$
+        handle @sg_param3 {
+            header Allow "POST"
+            respond 405
+        }
+        @sg_param4 path_regexp ^(?:/web/client/pubshares)(?:/[^/]+){2}/?$
+        handle @sg_param4 {
+            header Allow "POST"
+            respond 405
+        }
+        @sg_param5 path_regexp ^(?:/web/admin/eventaction|/web/admin/eventrule|/web/admin/folder|/web/admin/group|/web/admin/ip\-lists|/web/admin/manager|/web/admin/role|/web/admin/user)(?:/[^/]+){1}/?$
+        handle @sg_param5 {
+            header Content-Type "text/html; charset=utf-8"
+            header Location "/web/admin/login"
+            respond `<a href="/web/admin/login">Found</a>.
+
+` 302
+        }
+        @sg_param6 path_regexp ^(?:/web/admin/ip\-list)(?:/[^/]+){1,2}/?$
+        handle @sg_param6 {
+            header Content-Type "text/html; charset=utf-8"
+            header Location "/web/admin/login"
+            respond `<a href="/web/admin/login">Found</a>.
+
+` 302
+        }
+        @sg_param7 path_regexp ^(?:/web/client/share|/web/client/tasks)(?:/[^/]+){1}/?$
+        handle @sg_param7 {
+            header Content-Type "text/html; charset=utf-8"
+            header Location "/web/client/login"
+            respond `<a href="/web/client/login">Found</a>.
+
+` 302
+        }
+        @sg_openapi_dir path /openapi
+        handle @sg_openapi_dir {
+            header Content-Type "text/html; charset=utf-8"
+            header Location /openapi/
+            respond `<a href="/openapi/">Moved Permanently</a>.
+
+` 301
+        }
+        @sg_openapi_index path /openapi/
+        handle @sg_openapi_index {
+            rewrite * /openapi-listing.html
+            header {
+                -Etag
+                -Accept-Ranges
+            }
+            file_server
+        }
+        @sg_files_static {
+            path /static/* /openapi/*
+            file
+        }
+        handle @sg_files_static {
+            header -Etag
+            file_server
+        }
+
+        @sg_api path /api/*
+        handle @sg_api {
+            header Content-Type "application/json"
+            respond `{"message":"Not Found"}
+` 404
+        }
+
+        # родные HTML-страницы 404 SFTPGo
+        @sg_client_404 path /web/client/*
+        handle @sg_client_404 {
+            rewrite * /client-404.html
+            header {
+                -Etag
+                -Last-Modified
+                -Accept-Ranges
+            }
+            file_server {
+                status 404
+            }
+        }
+        @sg_admin_404 path /web/*
+        handle @sg_admin_404 {
+            rewrite * /admin-404.html
+            header {
+                -Etag
+                -Last-Modified
+                -Accept-Ranges
+            }
+            file_server {
+                status 404
+            }
+        }
+
+        # остальное у оригинала — голый JSON/текст 404; человеку — на страницу входа
+        handle {
+            header Content-Type "text/html; charset=utf-8"
+            header Location /web/client/login
+            respond `<a href="/web/client/login">Found</a>.
+
+` 302
         }
     }

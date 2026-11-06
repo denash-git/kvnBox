@@ -1,0 +1,213 @@
+<!DOCTYPE html><html lang="en"><head><base href="/"/>
+    <script>window.WEB_APPS_MAP = {"web-app-epub-reader":"./web-app-epub-reader-BiXVVKr8.mjs","web-app-activities":"./web-app-activities-Dgk8BBu7.mjs","web-app-text-editor":"./web-app-text-editor-Ct2hj1qp.mjs","web-app-pdf-viewer":"./web-app-pdf-viewer-Clz3qc1u.mjs","web-app-webfinger":"./web-app-webfinger-Bklq95AO.mjs","web-app-search":"./web-app-search-BqOOBwU3.mjs","web-app-external":"./web-app-external-DgdTAJg5.mjs","web-app-password-protected-folders":"./web-app-password-protected-folders-tzq37aDa.mjs","web-app-ocm":"./web-app-ocm-uXi1BwW9.mjs","web-app-html-editor":"./web-app-html-editor-BCv7hJ4E.mjs","web-app-preview":"./web-app-preview-CbRdr_Kx.mjs","web-app-admin-settings":"./web-app-admin-settings-D3OSWoaq.mjs","web-app-files":"./web-app-files-BfKEc5-4.mjs","web-app-app-store":"./web-app-app-store-IMtUn-2v.mjs"}</script>
+
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="initial-scale=1.0, minimum-scale=1.0"/>
+    <meta name="theme-color" content="#375f7E"/>
+    <meta http-equiv="x-ua-compatible" content="IE=edge"/>
+
+    <title>ownCloud</title>
+    <link rel="manifest" href="manifest.json" crossorigin="use-credentials"/>
+    
+    <script src="js/require.js?1793946993907"></script>
+    
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      .splash-banner {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 0.5rem;
+        height: 100%;
+      }
+      .splash-hide {
+        display: none;
+      }
+      #loading {
+        display: inline-block;
+        height: 34px;
+        width: 34px;
+        border: 1px solid #4c5f79;
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+        -webkit-animation: spin 1s linear infinite;
+      }
+      #splash-incompatible button {
+        margin: 30px 0;
+      }
+
+      @keyframes spin {
+        to {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+      @-webkit-keyframes spin {
+        to {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+    </style>
+    <script type="module" crossorigin="" src="./js/index.html-DZ7dHQz7.mjs"></script>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/PortalTarget.vue_vue_type_script_setup_true_lang-CaahUOSh.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/_plugin-vue_export-helper-DlAUqK2U.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/modals-CFOUXziR.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/useLoadingService-ChHo8p8V.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/useRouteMeta-DRXCUb6P.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/_baseIteratee-ATKNhHr3.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/_baseEach-D95oKJf3.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/_baseMap-B1z_f6PN.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/_baseOrderBy-CUv7JLBc.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/useClientService-6LBZhvnx.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/messages-75xiYPbM.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/_baseUniq-CAuj24Jk.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/eventTopics-C2FgArV5.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/useScrollTo-CTI3DrXC.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/index-DernFrxS.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/isEmpty-Ct_lIesL.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/locale-DicwRaQd.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/ActionMenuItem.vue_vue_type_script_setup_true_lang-C-FLAL9U.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/SpaceInfo.vue_vue_type_script_setup_true_lang-B8b-3BN_.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/extensionRegistry-CkRztX3i.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/useAbility-CWk0MNFi.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/useWindowOpen-DUVy4Drd.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/errors-Cr5NQ5x0.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/download-DFMly71X.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/ResourceListItem.vue_vue_type_script_setup_true_lang-DxQkRA0e.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/useRouteParam-DUoKF_FM.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/FileSideBar.vue_vue_type_script_setup_true_lang-MQk-QbXv.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/toNumber-CDvtnCnL.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/findIndex-oZReAccp.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/datetime-BWFg45zt.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/usePreviewService-_9L2szYX.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/Pagination.vue_vue_type_script_setup_true_lang-B0h3NGHY.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/debounce-D0S16fm3.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/usePasswordPolicyService-lg5TbLLd.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/_baseFlatten-DmIS0zYH.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/_baseClone-BnF60hNj.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/last-QN3HCDzx.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/omit-DtTXfYEs.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/useGroupingSettings-BLNtUcsY.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/AppLoadingSpinner-DzapZKTb.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/useOpenEmptyEditor-BZb37DhY.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/AppWrapperRoute-DnowD0fn.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/useAppProviderService-b8fDZOh-.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/clone-B_vSTBHG.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/types-BoCZvwvE.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/CompareSaveDialog-DQSYOLnW.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/index-Bycslqk7.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/fuse-_-SlFZUN.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/ItemFilter.vue_vue_type_script_setup_true_lang-zH_AgLwf.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/NoContentMessage.vue_vue_type_script_setup_true_lang-LCZHdYLH.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/SearchBarFilter.vue_vue_type_script_setup_true_lang-wc72fsPA.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/inviteTokensList-y_IbyG2H.mjs"/>
+    <link rel="modulepreload" crossorigin="" href="./js/chunks/throttle-DhXJ9AoO.mjs"/>
+    <link rel="stylesheet" crossorigin="" href="./assets/style-ejH3B8Uk.css"/>
+  </head>
+  <body>
+    <div id="splash-incompatible" class="splash-banner splash-hide">
+      <div class="oc-card oc-border oc-rounded oc-width-large oc-text-center">
+        <div class="oc-card-header">
+          <div class="oc-flex oc-flex-middle oc-flex-center">
+            <span class="oc-mr-s oc-icon oc-icon-m oc-icon-warning">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <g xmlns="http://www.w3.org/2000/svg">
+                  <path fill="none" d="M0 0h24v24H0z"></path>
+                  <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM11 7h2v2h-2V7zm0 4h2v6h-2v-6z"></path>
+                </g>
+              </svg>
+            </span>
+            <h2>Your browser is not supported</h2>
+          </div>
+        </div>
+        <div class="oc-card-body oc-link-resolve-error-message">
+          <p>Your browser version is considered old and might not work correctly.</p>
+          <p>We recommend you update to a newer version.</p>
+        </div>
+      </div>
+      <button class="oc-button oc-button-primary oc-button-primary-filled oc-rounded" onclick="forceOldBrowser()">
+        I want to continue anyway
+      </button>
+      
+    </div>
+    <div id="splash-loading" class="splash-banner splash-hide">
+      <div id="loading"></div>
+    </div>
+    <div id="owncloud"></div>
+    <noscript>
+      <div class="splash-banner"><h3>Please enable JavaScript</h3></div>
+    </noscript>
+    <script>
+      function runtimeLoaded() {}
+
+      var loader = document.getElementById('splash-loading')
+      var browserError = document.getElementById('splash-incompatible')
+
+      var loaderTimer = setTimeout(function () {
+        loader.classList.remove('splash-hide')
+      }, 500);
+
+      function displayError() {
+        loader.classList.remove('splash-hide')
+        loader.innerHTML = "<h3>Oops. Something went wrong.</h3>"
+      }
+
+      function displayBrowserError() {
+        clearTimeout(loaderTimer)
+        removeLoadingSpinner()
+        browserError.classList.remove('splash-hide')
+      }
+
+      function forceOldBrowser() {
+        localStorage.setItem("forceAllowOldBrowser", JSON.stringify({expiry: new Date().getTime() + 30*24*60*60*1000}))
+        browserError.classList.add('splash-hide')
+        init()
+      }
+
+      function removeLoadingSpinner() {
+        if (!loader.classList.contains('splash-hide')) {
+          loader.classList.add('splash-hide')
+        }
+      }
+
+      function init() {
+        if (typeof requirejs === 'undefined') {
+          displayError()
+        } else {
+          window.runtimeLoaded = function(runtime) {
+            clearTimeout(loaderTimer)
+            runtime.bootstrapApp('config.json', removeLoadingSpinner).catch((error) => {
+              removeLoadingSpinner()
+              runtime.bootstrapErrorApp(error)
+            })
+          }
+        }
+      }
+
+      const supportedBrowsers = /Edge?\/(14[3-9]|1[5-9]\d|[2-9]\d{2}|\d{4,})\.\d+(\.\d+|)|Firefox\/(12[1-9]|1[3-9]\d|[2-9]\d{2}|\d{4,})\.\d+(\.\d+|)|Chrom(ium|e)\/(10[3-9]|1[1-9]\d|[2-9]\d{2}|\d{4,})\.\d+(\.\d+|)|(Maci|X1{2}).+ Version\/(18\.([5-9]|\d{2,})|(19|[2-9]\d|\d{3,})\.\d+)([,.]\d+|)( \(\w+\)|)( Mobile\/\w+|) Safari\/|Chrome.+OPR\/(12[4-9]|1[3-9]\d|[2-9]\d{2}|\d{4,})\.\d+\.\d+|(CPU[ +]OS|iPhone[ +]OS|CPU[ +]iPhone|CPU IPhone OS|CPU iPad OS)[ +]+(1{2}[._]\d+|(1[2-9]|[2-9]\d|\d{3,})[._]\d+)([._]\d+|)|Android:?[ /-](15\d|1[6-9]\d|[2-9]\d{2}|\d{4,})(\.\d+|)(\.\d+|)|Android.+Firefox\/(15[2-9]|1[6-9]\d|[2-9]\d{2}|\d{4,})\.\d+(\.\d+|)|Android.+Chrom(ium|e)\/(15\d|1[6-9]\d|[2-9]\d{2}|\d{4,})\.\d+(\.\d+|)|Android.+(UC? ?Browser|UCWEB|U3)[ /]?(15\.([5-9]|\d{2,})|(1[6-9]|[2-9]\d|\d{3,})\.\d+)\.\d+|SamsungBrowser\/([3-9]\d|\d{3,})\.\d+/
+      const forceAllowOldBrowser = localStorage.getItem("forceAllowOldBrowser") || false
+      const validForceAllowOldBrowser = forceAllowOldBrowser && JSON.parse(localStorage.getItem("forceAllowOldBrowser")).expiry > new Date().getTime()
+
+      if (forceAllowOldBrowser && !validForceAllowOldBrowser)
+        localStorage.removeItem("forceAllowOldBrowser")
+
+      if (!validForceAllowOldBrowser && !supportedBrowsers.test(navigator.userAgent)) {
+        displayBrowserError()
+      } else {
+        init()
+      }
+
+      var scriptTags = document.getElementsByTagName('script')
+      for (let i = 0; i < scriptTags.length; i++) {
+        if (scriptTags[i].src) {
+          scriptTags[i].onerror = displayError
+        }
+      }
+    </script>
+  
+
+</body></html>

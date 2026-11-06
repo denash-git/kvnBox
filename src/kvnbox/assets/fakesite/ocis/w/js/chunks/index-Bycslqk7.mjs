@@ -1,0 +1,2 @@
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["./TextEditor--i1a6ABG.mjs","./PortalTarget.vue_vue_type_script_setup_true_lang-CaahUOSh.mjs","./index-ClGk9ofL.mjs"])))=>i.map(i=>d[i]);
+import{as as a,at as e}from"./PortalTarget.vue_vue_type_script_setup_true_lang-CaahUOSh.mjs";const _=a(async()=>(await e(async()=>{const{default:t}=await import("./TextEditor--i1a6ABG.mjs");return{default:t}},__vite__mapDeps([0,1,2]),import.meta.url)).default);export{_ as T};

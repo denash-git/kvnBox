@@ -1,0 +1,1 @@
+import{d as o,r as n}from"./PortalTarget.vue_vue_type_script_setup_true_lang-CaahUOSh.mjs";const u=o("inviteTokensList",()=>{const t=n([]),s=n("");return{addToken:e=>{t.value.push(e)},setTokensList:e=>{t.value=e},getTokensList:()=>t.value,setLastCreatedToken:e=>{s.value=e},getLastCreatedToken:()=>s.value}});export{u};

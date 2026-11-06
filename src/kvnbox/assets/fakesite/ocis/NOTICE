@@ -1,8 +1,8 @@
 Шаблон фейкового сайта kvnBox «ocis».
 
-Страница входа, стили, шрифт, фон и логотип сняты с ownCloud Infinite Scale
-8.2.2 (ocis). Infinite Scale — свободное ПО, лицензия Apache License 2.0:
-https://github.com/owncloud/ocis
+Родной веб-интерфейс ownCloud Web и страница входа IdP (скрипты, стили, шрифты,
+логотипы) сняты с ownCloud Infinite Scale 8.2.2. Infinite Scale и ownCloud Web —
+свободное ПО, лицензия Apache License 2.0: https://github.com/owncloud/ocis
 ownCloud — товарный знак ownCloud GmbH.
 
 Это не ownCloud: вход никогда не выполняется, введённые данные никуда

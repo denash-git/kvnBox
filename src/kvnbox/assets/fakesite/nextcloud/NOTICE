@@ -1,6 +1,6 @@
 Шаблон фейкового сайта kvnBox «nextcloud».
 
-Страницы входа и ошибки, стили и изображения сняты с Nextcloud Server 34.0.5
+Родной веб-интерфейс (страницы входа, сброса пароля, ошибок, скрипты, стили, переводы) снят с Nextcloud Server 34.0.5
 (тема по умолчанию, русский язык). Nextcloud — свободное ПО, лицензия
 GNU AGPL v3 или новее: https://github.com/nextcloud/server
 Nextcloud — товарный знак Nextcloud GmbH.

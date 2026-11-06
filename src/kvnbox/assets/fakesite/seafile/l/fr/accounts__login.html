@@ -1,0 +1,346 @@
+[[- .RespHeader.Set "Expires" (dateInZone "Mon, 02 Jan 2006 15:04:05 GMT" now "UTC") -]][[- .RespHeader.Set "Cache-Control" "max-age=0, no-cache, no-store, must-revalidate, private" -]][[- .RespHeader.Add "Set-Cookie" (printf "sfcsrftoken=%s; expires=%s; Max-Age=31449600; Path=/; SameSite=Lax" (randAlphaNum 32) (dateInZone "Mon, 02 Jan 2006 15:04:05 GMT" (now | dateModify "+8735h") "UTC")) -]][[- .RespHeader.Add "Set-Cookie" (printf "sessionid=%s; expires=%s; HttpOnly; Max-Age=86400; Path=/; SameSite=Lax" (randAlphaNum 32 | lower) (dateInZone "Mon, 02 Jan 2006 15:04:05 GMT" (now | dateModify "+24h") "UTC")) -]][[- "" ]]
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<title>Se connecter - Private Seafile</title>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<meta name="keywords" content="Fichier, Collaboration, Équipe, Organisation" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+
+<meta http-equiv="x-ua-compatible" content="ie=edge" />
+<link rel="icon" href="/media/favicons/favicon.png" type="image/x-icon">
+<link rel="apple-touch-icon" href="/media/favicons/favicon.png">
+
+<link rel="stylesheet" type="text/css" href="/media/fontawesome/css/fontawesome-all.min.css" />
+<link rel="stylesheet" type="text/css" href="/media/css/seafile-ui.css" />
+
+<link rel="stylesheet" type="text/css" href="/media/css/seahub.css?t=1398068110" />
+<link rel="stylesheet" type="text/css" href="/media/css/sf_font3/iconfont.css" />
+
+<style type="text/css">
+html, body, #wrapper { height:100%; }
+#wrapper {
+    background: url('/media/img/login-bg.jpg') center top no-repeat scroll;
+    background-size: cover;
+    padding-top:1px;
+}
+#lang {
+    margin:0;
+}
+#lang-context {
+    font-weight:normal;
+}
+#lang-context-selector {
+    text-align:left;
+}
+</style>
+
+ 
+
+</head>
+<body>
+    <div id="wrapper" class="fr d-flex fd-col h100">
+        
+        
+        
+
+        <div id="header" class="hide">
+            <a href="/" id="logo">
+                <img src="/media/img/seafile-logo.png" title="Private Seafile" alt="logo" width="" height="32" />
+            </a>
+            
+            
+
+            
+            
+            
+            <div id="lang">
+                <a href="#" id="lang-context" data-lang="fr">Français <span class="icon-caret-down"></span></a>
+                <div id="lang-context-selector" class="sf-popover hide">
+                    <ul class="sf-popover-con">
+                        
+                        <li><a href="/i18n/?lang=ca">Català</a></li>
+                        
+                        <li><a href="/i18n/?lang=cs">Čeština</a></li>
+                        
+                        <li><a href="/i18n/?lang=de">Deutsch</a></li>
+                        
+                        <li><a href="/i18n/?lang=en">English</a></li>
+                        
+                        <li><a href="/i18n/?lang=es">Español</a></li>
+                        
+                        <li><a href="/i18n/?lang=es-ar">Español de Argentina</a></li>
+                        
+                        <li><a href="/i18n/?lang=es-mx">Español de México</a></li>
+                        
+                        <li><a href="/i18n/?lang=fr">Français</a></li>
+                        
+                        <li><a href="/i18n/?lang=it">Italiano</a></li>
+                        
+                        <li><a href="/i18n/?lang=is">Íslenska</a></li>
+                        
+                        <li><a href="/i18n/?lang=lv">Latvian</a></li>
+                        
+                        <li><a href="/i18n/?lang=hu">Magyar</a></li>
+                        
+                        <li><a href="/i18n/?lang=nl">Nederlands</a></li>
+                        
+                        <li><a href="/i18n/?lang=pl">Polski</a></li>
+                        
+                        <li><a href="/i18n/?lang=pt-br">Portuguese, Brazil</a></li>
+                        
+                        <li><a href="/i18n/?lang=ru">Русский</a></li>
+                        
+                        <li><a href="/i18n/?lang=sl">Slovenian</a></li>
+                        
+                        <li><a href="/i18n/?lang=fi">Suomi</a></li>
+                        
+                        <li><a href="/i18n/?lang=sv">Svenska</a></li>
+                        
+                        <li><a href="/i18n/?lang=vi">Tiếng Việt</a></li>
+                        
+                        <li><a href="/i18n/?lang=tr">Türkçe</a></li>
+                        
+                        <li><a href="/i18n/?lang=uk">українська мова</a></li>
+                        
+                        <li><a href="/i18n/?lang=he">עברית</a></li>
+                        
+                        <li><a href="/i18n/?lang=ar">العربية</a></li>
+                        
+                        <li><a href="/i18n/?lang=el">ελληνικά</a></li>
+                        
+                        <li><a href="/i18n/?lang=th">ไทย</a></li>
+                        
+                        <li><a href="/i18n/?lang=ko">한국어</a></li>
+                        
+                        <li><a href="/i18n/?lang=ja">日本語</a></li>
+                        
+                        <li><a href="/i18n/?lang=zh-cn">简体中文</a></li>
+                        
+                        <li><a href="/i18n/?lang=zh-tw">繁體中文</a></li>
+                        
+                    </ul>
+                </div>
+            </div>
+            
+            
+        </div>
+
+        <div id="main" class="container-fluid w100 flex-auto ov-auto">
+            
+<div class="login-panel-outer-container vh">
+<div class="login-panel" id="log-in-panel">
+    <h1 class="login-panel-hd">Se connecter</h1>
+    <form action="" method="post" id="login-form"><input type="hidden" name="csrfmiddlewaretoken" value="[[ randAlphaNum 64 ]]">
+        <input type="text" name="login" placeholder="E-mail ou nom d'utilisateur" aria-label="E-mail ou nom d'utilisateur" title="E-mail ou nom d'utilisateur" value="" class="input mb-3" />
+        <div class="position-relative">
+          <input id="password-input" type="password" name="password" placeholder="Mot de passe" aria-label="Mot de passe" title="Mot de passe" value="" class="input" autocomplete="off" />
+          <i id="toggle-show-password" class="fas fa-eye-slash"></i>
+        </div>
+
+        
+
+        <input type="hidden" name="next" value="[[ .Req.URL.Query.Get "next" | default "/" | html ]]" />
+        
+        <p class="error mt-2 hide"></p>
+        
+
+        <label class="checkbox-label mt-3 mb-0 remember-me">
+            <input type="checkbox" name="remember_me" class="vam remember-input" />
+            <span class="vam">Mémoriser pendant 7 jours</span>
+        </label>
+
+        <button type="submit" class="submit btn btn-primary btn-block h-auto mb-3">Se connecter</button>
+    </form>
+
+    
+
+    
+
+    
+
+    <div class="login-panel-bottom-container d-flex justify-content-center" id="login-bottom">
+        
+        <a href="/accounts/password/reset/" class="normal px-2 bottom-item">Mot de passe oublié ?</a>
+        
+        
+    </div>
+</div>
+</div>
+
+
+
+
+        </div>
+
+        
+        
+        
+        
+</div><!-- wrapper -->
+<script type="text/javascript">
+var SEAFILE_GLOBAL = {
+    csrfCookieName: 'sfcsrftoken'
+};
+var app = {
+    ui : {
+        currentDropdown: false,
+        currentHighlightedItem: false,
+        freezeItemHightlight: false
+    }
+}
+</script>
+<script type="text/javascript" src="/media/assets/scripts/lib/jquery.min.js" id="jquery"></script>
+<script type="text/javascript" src="/media/js/jq.min.js"></script>
+<script type="text/javascript" src="/media/js/base.js?t=1536127546642"></script>
+<script type="text/javascript">
+function prepareAjaxErrorMsg(xhr) {
+    var error_msg;
+    if (xhr.responseText) {
+        var parsed_resp = JSON.parse(xhr.responseText);
+        // use `HTMLescape` for msgs which contain variable like 'path'
+        error_msg = HTMLescape(parsed_resp.error ||
+                parsed_resp.error_msg || parsed_resp.detail);
+    } else {
+        error_msg = gettext("Failed. Please check the network.");
+    }
+    return error_msg;
+}
+function ajaxErrorHandler(xhr, textStatus, errorThrown) {
+    var error_msg = prepareAjaxErrorMsg(xhr);
+    feedback(error_msg, 'error');
+}
+ 
+(function() {
+    var lang_context = $('#lang-context'),
+        lang_selector = $('#lang-context-selector');
+
+    // for pages without '#lang', such as 'help' pages
+    if ($('#lang').length == 0) {
+        return;
+    }
+
+    lang_context.parent().css({'position':'relative'});
+
+    if ($('#header').is(':visible')) { // for login page
+        lang_selector.css({
+            'top': lang_context.position().top + lang_context.height() + 5,
+            'right': 0
+        });
+    }
+
+    var setLangSelectorMaxHeight = function() {
+        if ($('#header').is(':visible')) { // for login page
+            $('.sf-popover-con', lang_selector).css({
+                'max-height': $(window).height() - lang_selector.offset().top - 12
+            });
+        }
+    };
+    $(window).on('resize', function() {
+        if (lang_selector.is(':visible')) {
+            setLangSelectorMaxHeight();
+        }
+    });
+
+    lang_context.on('click', function() {
+        lang_selector.toggleClass('hide');
+        if (lang_selector.is(':visible')) {
+            setLangSelectorMaxHeight();
+        }
+        return false;
+    });
+
+    $(document).on('click', function(e) {
+        var element = e.target || e.srcElement;
+        if (element.id != 'lang-context-selector' && element.id != 'lang-context') {
+            lang_selector.addClass('hide');
+        }
+    });
+})();
+
+</script>
+
+<script type="text/javascript">
+$('.login-panel-outer-container').prepend($($('#logo').html()).attr({'height': 40}).addClass('login-panel-logo'));
+$('.login-panel-bottom-container').append($('#lang').removeClass('fright').addClass('px-2'));
+
+var $el = $('.login-panel-outer-container');
+var elHeight = $el.outerHeight();
+var wdHeight = $(window).height();
+if (wdHeight > elHeight) {
+    $el.css({'margin-top': (wdHeight - elHeight)/2});
+}
+$el.removeClass('vh');
+
+$('#lang-context').on('click', function() {
+    var langTop = $('#lang').offset().top;
+    var langSelectorTop;
+    var langSelectorHeight = $('#lang-context-selector .sf-popover-con').outerHeight();
+    if (langSelectorHeight > langTop) {
+        langSelectorTop = '-' + (langTop - 5) + 'px';
+    } else {
+        langSelectorTop = '-' + (langSelectorHeight + 5) + 'px';
+    }
+    $('#lang-context-selector').css({
+        'top': langSelectorTop,
+        'right': 0
+    });
+    $('#lang-context-selector .sf-popover-con').css({
+        'max-height': $('#lang').offset().top - 10
+    });
+});
+
+$('[name="login"]').trigger('focus');
+
+$('#toggle-show-password').click(function() {
+  $(this).toggleClass('fa-eye-slash fa-eye');
+  if ($(this).hasClass('fa-eye-slash')) {
+    $('#password-input').attr('type', 'password');
+  } else {
+    $('#password-input').attr('type', 'text');
+  }
+});
+
+function setCaptchaInputWidth() {
+    $('#id_captcha_1').outerWidth($('.input').outerWidth() - $('.captcha').width() - $('#refresh-captcha').outerWidth(true) - 10);
+}
+$(window).on('load', setCaptchaInputWidth);
+$('.captcha').on('load', setCaptchaInputWidth);
+$('#refresh-captcha').on('click', function() {
+    $.ajax({
+        url: '/captcha/refresh/',
+        dataType:'json',
+        cache:false,
+        success: function(data) {
+            $('.captcha').attr('src', data['image_url']);
+            $('#id_captcha_0').val(data['key']);
+        },
+        error: function() {
+            $('.error').removeClass('hide').html("Impossible de rafraichir le CAPTCHA, veuillez essayer ultérieurement.");
+        }
+    });
+    return false;
+});
+
+$('#login-form').on('submit', function(){
+    if (!$('input[name="login"]').val().trim()) {
+        $('.error').removeClass('hide').html("L'e-mail ou le nom d'utilisateur ne peut être vide");
+        return false;
+    }
+    if (!$('input[name="password"]').val().trim()) {
+        $('.error').removeClass('hide').html("Le mot de passe ne peut pas être vide");
+        return false;
+    }
+});
+
+
+
+
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,330 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Private Seafile</title>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<meta name="keywords" content="File, Collaboration, Team, Organization" />
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+
+<meta http-equiv="x-ua-compatible" content="ie=edge" />
+<link rel="icon" href="/media/favicons/favicon.png" type="image/x-icon">
+<link rel="apple-touch-icon" href="/media/favicons/favicon.png">
+
+<link rel="stylesheet" type="text/css" href="/media//css/seafile-ui.css" />
+
+<link rel="stylesheet" type="text/css" href="/media/css/seahub.css?t=1398068110" />
+<link rel="stylesheet" type="text/css" href="/media/css/sf_font3/iconfont.css" />
+
+<style type="text/css">
+.side-nav-con .first-hd {
+    margin-top: 0;
+}
+.seafile-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1001;
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    outline: 0;
+    background-color: #000;
+}
+.seafile-mask__shown {
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: block;
+    opacity: 0.5;
+}
+</style>
+
+ 
+
+</head>
+<body>
+    <div id="wrapper" class="en d-flex fd-col h100">
+        
+        
+        
+
+        <div id="header" class="d-flex">
+            <a href="/" id="logo">
+                <img src="/media/img/seafile-logo.png" title="Private Seafile" alt="logo" width="" height="32" />
+            </a>
+            
+<span class="sf2-icon-menu side-nav-toggle d-block d-md-none" title="Side Nav Menu" id="js-toggle-side-nav" aria-label="Side Nav Menu"></span>
+
+
+            
+
+
+        </div>
+
+        <div id="main" class="container-fluid w100 flex-auto d-flex ovhd">
+            
+<div class="row flex-1 d-flex">
+    <div class="side-textnav col-md-3 side-nav help-side-nav">
+        <div class="d-block d-md-none logo-container">
+            <a href="/">
+                <img src="/media/img/seafile-logo.png" title="Private Seafile" alt="logo" width="" height="32" />
+            </a>
+        </div>
+        <div class="side-nav-con">
+
+            <h3 class="hd first-hd">Introduction</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/introduction/">Introduction</a></li>
+            </ul>
+
+            <h3 class="hd">Managing files and folders</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/libraries_managing/">Managing files with libraries</a></li>
+                <li class="tab"><a href="/help/restoring_deleted_files/">Restoring deleted files</a></li>
+                <li class="tab"><a href="/help/finding_older_version_files/">Finding old file versions</a></li>
+                <li class="tab"><a href="/help/library_history_and_snapshots/">Library history and snapshots</a></li>
+                <li class="tab"><a href="/help/setting_library_history/">Setting history retention period</a></li>
+                <li class="tab"><a href="/help/deleting_a_library/">Deleting a library</a></li>
+                <li class="tab"><a href="/help/viewing_files_within_web_app/">Viewing files within Web App</a></li>
+                <li class="tab"><a href="/help/full_text_file_search/">Full text file search</a></li>
+            </ul>
+
+            <h3 class="hd">Sharing and collaboration</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/sharing_files_and_folders/">Sharing files and folders</a></li>
+                <li class="tab"><a href="/help/groups_managing/">Managing groups</a></li>
+                <li class="tab"><a href="/help/file_locking/">Locking files</a></li>
+                <li class="tab"><a href="/help/folder_permission/">Folder permission</a></li>
+                <li class="tab"><a href="/help/departments/">Departments sharing</a></li>
+            </ul>
+
+            <h3 class="hd">Wiki and knowledge management</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/manage_library_as_wiki/">Managing a library as Wiki</a></li>
+            </ul>
+            
+            <h3 class="hd">Desktop client and syncing</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/install_sync/">Install and sync files</a></li>
+                <li class="tab"><a href="/help/syncing_existing_folders/">Syncing existing folders</a></li>
+                <li class="tab"><a href="/help/selective_sync/">Selectively sync sub-folders</a></li>
+                <li class="tab"><a href="/help/read-only_syncing/">Read-only syncing</a></li>
+                <li class="tab"><a href="/help/unsync_resync/">Unsync and resync libraries</a></li>
+                <li class="tab"><a href="/help/sync_interval/">Setting sync interval</a></li>
+                <li class="tab"><a href="/help/desktop_proxy/">Proxy settings</a></li>
+                <li class="tab"><a href="/help/conflicts/">File conflicts</a></li>
+                <li class="tab"><a href="/help/ignore/">Excluding files</a></li>
+            </ul>
+
+            <h3 class="hd">Drive client</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/using_drive_client/">Using Seafile drive client</a></li>
+                <li class="tab"><a href="/help/drive_client_2.0_for_windows_10/">Using drive client 2.0 on Windows</a></li>
+            </ul>
+
+            <h3 class="hd">Security and encryption</h3>
+            <ul class="side-textnav-tabs">
+                <li class="tab"><a href="/help/encrypted_libraries/">How to use encrypted libraries</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="help-con article col-md-9 ov-auto flex-1 h100" id="right-panel">
+      
+<h3 class="hd">Managing and using departments</h3>
+<p>Some organizations consist of complex department hierarchy. There are usually two common use cases for file management in these organizations:</p>
+<ul>
+  <li>There should be a common file sharing space for the organization. The folder hierarchy should map the department hierarchy. There will be separate folder or space assigned to each department.</li>
+  <li>The sharing space should be owned and managed by the organization, but not individual employees. So that the ownership of files doesn't have to be changed when an employee leaves the organization.</li>
+</ul>
+<p>The "Departments" feature is designed to meet the above two use cases. We'll introduce this feature from 3 different perspectives:</p>
+<ul>
+  <li><a href="#sys-admin">System admin</a></li>
+  <li><a href="#dept-admin">Department admin</a></li>
+  <li><a href="#dept-members">Department members</a></li>
+</ul>
+<h4 id="sys-admin">System admin</h4>
+<p>The system admin can:</p>
+<ul>
+  <li>Manage department hierarchy and members</li>
+  <li>Assign storage quota for departments</li>
+  <li>Create and manage shared libraries in departments</li>
+</ul>
+<h5 id="manage-department-hierarchy-and-members">Manage department hierarchy and members</h5>
+<p>The system admin can set up the department hierarchy in two ways: manual setup or import from Active Directory.</p>
+<p>The system admin can create any number of top level departments and create any levels of sub-departments under each department. And each level of department can be populated with members. The system admin can set the role of each member to 'member' or 'admin'. We'll introduce how a department admin can manage department later.</p>
+<p>The system admin can also import the hierarchy from OUs (Organizational Units) in AD. Each OU will be imported as a department. And the sub-OUs under an OU will be imported as sub-departments. Department libraries can be automatically created in the import process.</p>
+<p>System admin can also delete a department after all the sub-departments and libraries are deleted.</p>
+<h5 id="assign-storage-quota-for-departments">Assign storage quota for departments</h5>
+<p>The libraries created inside a department are owned by the department itself, not by any individual user. So the system admin can assign storage quota to a department. The total size of all the libraries in a department cannot exceed the storage quota. <strong>Please note that the quota of sub-department doesn't depend on the quota of its parent department.</strong></p>
+<h5 id="create-and-manage-shared-libraries-in-departments">Create and manage shared libraries in departments</h5>
+<p>Department libraries can be created by the system admin or department admin. There is also an option to control whether individual users can share libraries to a department.</p>
+<p>All the above operations can be done in the system admin interface. See the below screenshot for information.</p>
+<p><img src="/media/img/help/sys_admin_departments.png" alt=""></p>
+<h4 id="dept-admin">Department admin</h4>
+<p>As noted above, department admin is a special role assigned by the system admin to some members of a department. Department admins can perform the following operations in a department after login to his/her own account.</p>
+<ul>
+  <li>Access to the libraries of the department</li>
+  <li>Manage members in his/her department</li>
+  <li>Manage libraries in his/her department</li>
+</ul>
+<p>If a user is the admin of a department, he/she can add or delete members in the department. Any users registered in the system can be added as member of the department. But if the departments are imported from AD, the changes to membership will be overwritten on the next sync with AD.</p>
+<p><img src="/media/img/help/dept_admin_manage_members.png" alt=""></p>
+<p>Department admin can manage the libraries in the department. The supported operations are:</p>
+<ul>
+  <li>Create or delete library</li>
+  <li>Change library name</li>
+  <li>Share a library to users or groups outside of this department. This is very useful for cross-department collaboration.</li>
+  <li>Set fine-grained permission to folders in the libraries for users or sub-departments in this department. This works like <a href="/help/folder_permission/">the folder permission feature</a>.</li>
+</ul>
+<p><img src="/media/img/help/dept_admin_manage_libs.png" alt=""></p>
+<h4 id="dept-members">Department members</h4>
+<p>A normal member of the department can use the department just like a group. Each department is presented to its members as a group. A user can not only access to the libraries in the department he/she belongs to, but also the libraries in the parent departments of his/her department. For example, if John is in the "EMEA" sub-department under the "Sales" department, and "Sales" is a sub-department under the company "ACME", John can then access to the groups "EMEA", "Sales" and "ACME". The groups for departments are marked with a "building" icon next to its name.</p>
+
+    </div>
+</div>
+
+        </div>
+
+        
+        
+        
+<div class="seafile-mask"></div>
+
+</div><!-- wrapper -->
+<script type="text/javascript">
+var SEAFILE_GLOBAL = {
+    csrfCookieName: 'sfcsrftoken'
+};
+var app = {
+    ui : {
+        currentDropdown: false,
+        currentHighlightedItem: false,
+        freezeItemHightlight: false
+    }
+}
+</script>
+<script type="text/javascript" src="/media/assets/scripts/lib/jquery.min.js" id="jquery"></script>
+<script type="text/javascript" src="/media/js/jq.min.js"></script>
+<script type="text/javascript" src="/media/js/base.js?t=1536127546642"></script>
+<script type="text/javascript">
+function prepareAjaxErrorMsg(xhr) {
+    var error_msg;
+    if (xhr.responseText) {
+        var parsed_resp = JSON.parse(xhr.responseText);
+        // use `HTMLescape` for msgs which contain variable like 'path'
+        error_msg = HTMLescape(parsed_resp.error ||
+                parsed_resp.error_msg || parsed_resp.detail);
+    } else {
+        error_msg = gettext("Failed. Please check the network.");
+    }
+    return error_msg;
+}
+function ajaxErrorHandler(xhr, textStatus, errorThrown) {
+    var error_msg = prepareAjaxErrorMsg(xhr);
+    feedback(error_msg, 'error');
+}
+ 
+(function() {
+    var lang_context = $('#lang-context'),
+        lang_selector = $('#lang-context-selector');
+
+    // for pages without '#lang', such as 'help' pages
+    if ($('#lang').length == 0) {
+        return;
+    }
+
+    lang_context.parent().css({'position':'relative'});
+
+    if ($('#header').is(':visible')) { // for login page
+        lang_selector.css({
+            'top': lang_context.position().top + lang_context.height() + 5,
+            'right': 0
+        });
+    }
+
+    var setLangSelectorMaxHeight = function() {
+        if ($('#header').is(':visible')) { // for login page
+            $('.sf-popover-con', lang_selector).css({
+                'max-height': $(window).height() - lang_selector.offset().top - 12
+            });
+        }
+    };
+    $(window).on('resize', function() {
+        if (lang_selector.is(':visible')) {
+            setLangSelectorMaxHeight();
+        }
+    });
+
+    lang_context.on('click', function() {
+        lang_selector.toggleClass('hide');
+        if (lang_selector.is(':visible')) {
+            setLangSelectorMaxHeight();
+        }
+        return false;
+    });
+
+    $(document).on('click', function(e) {
+        var element = e.target || e.srcElement;
+        if (element.id != 'lang-context-selector' && element.id != 'lang-context') {
+            lang_selector.addClass('hide');
+        }
+    });
+})();
+
+</script>
+
+<script type="text/javascript">
+$('.side-nav li').each(function(index) {
+    var $link = $('a', $(this));
+    var link_href = $link.attr('href');
+    $link.attr('data-index', index);
+    if (link_href == location.pathname ||
+      link_href == location.pathname + 'introduction/') {
+      $(this).addClass('tab-cur');
+      if ($(this).offset().top > $(window).height()) {
+        var preSavedScrollTop;
+        try {
+          preSavedScrollTop = localStorage.getItem('help-nav-item-' + index);
+        } catch (e) {
+          // do nothing
+        }
+        if (preSavedScrollTop) {
+          $('.side-nav').scrollTop(preSavedScrollTop);
+        } else {
+          $('.side-nav').scrollTop($(this).offset().top + $(this).outerHeight(true) - $(window).height() + 50);
+        }
+      }
+    }
+});
+
+$('.help-side-nav .tab a').on('click', function() {
+  var scrollTop = $('.side-nav').scrollTop();
+  if (scrollTop > 0) {
+    try {
+      localStorage.setItem('help-nav-item-' + $(this).attr('data-index'), scrollTop);
+    } catch (e) {
+      // do nothing
+    }
+  }
+});
+
+$('#logo').addClass('d-none d-md-block');
+
+$('#js-toggle-side-nav').on('click', function(event) {
+    $('.side-nav').toggleClass('side-nav-shown');
+    $('.seafile-mask').toggleClass('seafile-mask__shown');
+    return false;
+});
+
+$('.seafile-mask').on('click', function() {
+    $('.side-nav').toggleClass('side-nav-shown');
+    $('.seafile-mask').toggleClass('seafile-mask__shown');
+});
+</script>
+
+</body>
+</html>

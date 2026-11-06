@@ -1,0 +1,1 @@
+import{d as e,o as t,vn as n,yn as r}from"./Dj3IBJ0W.js";import"./xihTtKlq.js";import{t as i}from"./DF3Ox2af.js";var a=new Set([`$$slots`,`$$events`,`$$legacy`]);function o(o,s){r(s,!0);let c=e(s,a);t(()=>{let e={};for(let[t,n]of Object.entries(c)){if(!n)continue;let r=t.slice(2);e[r]=n}return i.on(e)}),n()}export{o as t};

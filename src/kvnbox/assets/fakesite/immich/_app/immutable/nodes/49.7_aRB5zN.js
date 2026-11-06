@@ -1,0 +1,1 @@
+import{n as e}from"../chunks/hePW80VL.js";import"../chunks/Dj3IBJ0W.js";import"../chunks/xihTtKlq.js";import"../chunks/DKk8WAs7.js";import{t}from"../chunks/D-x73nRN.js";import{t as n}from"../chunks/DxhPVHKV.js";var r=e({load:()=>i}),i=(()=>n(307,t.systemSettings()));function a(e){}export{a as component,r as universal};

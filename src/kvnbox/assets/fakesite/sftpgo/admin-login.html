@@ -1,0 +1,824 @@
+[[- $now := now | unixEpoch | atoi -]][[- $hdr := `{"alg":"HS256","typ":"JWT"}` | b64enc | replace "+" "-" | replace "/" "_" | trimSuffix "=" | trimSuffix "=" -]][[- $ref := randAlpha 26 | upper -]][[- $cookie := printf `{"aud":["WebLogin","127.0.0.1"],"exp":%d,"iat":%d,"jti":"%s","nbf":%d}` (add $now 14400) $now $ref (sub $now 10) | b64enc | replace "+" "-" | replace "/" "_" | trimSuffix "=" | trimSuffix "=" -]][[- $csrf := printf `{"aud":["CSRF","127.0.0.1"],"exp":%d,"iat":%d,"jti":"%s","nbf":%d,"ref":"%s"}` (add $now 14400) $now (randAlpha 26 | upper) (sub $now 10) $ref | b64enc | replace "+" "-" | replace "/" "_" | trimSuffix "=" | trimSuffix "=" -]][[- $exp := dateInZone "Mon, 02 Jan 2006 15:04:05 GMT" (now | dateModify "+4h") "UTC" -]][[- .RespHeader.Set "Set-Cookie" (printf "jwt=%s.%s.%s; Path=/web/admin; Expires=%s; Max-Age=14400; HttpOnly; SameSite=Strict" $hdr $cookie (randAlphaNum 43) $exp) ]]
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+		<title></title>
+		<meta charset="utf-8" />
+		<meta name="description" content="" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex">
+		<link rel="icon" type="image/png" href="/static/favicon.png" />
+<style nonce="">
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 300;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2JL7SUc.woff2) format('woff2');
+        unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 300;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa0ZL7SUc.woff2) format('woff2');
+        unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 300;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2ZL7SUc.woff2) format('woff2');
+        unicode-range: U+1F00-1FFF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 300;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1pL7SUc.woff2) format('woff2');
+        unicode-range: U+0370-03FF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 300;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2pL7SUc.woff2) format('woff2');
+        unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 300;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa25L7SUc.woff2) format('woff2');
+        unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 300;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2JL7SUc.woff2) format('woff2');
+        unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa0ZL7SUc.woff2) format('woff2');
+        unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2ZL7SUc.woff2) format('woff2');
+        unicode-range: U+1F00-1FFF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1pL7SUc.woff2) format('woff2');
+        unicode-range: U+0370-03FF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2pL7SUc.woff2) format('woff2');
+        unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa25L7SUc.woff2) format('woff2');
+        unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 400;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 500;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2JL7SUc.woff2) format('woff2');
+        unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 500;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa0ZL7SUc.woff2) format('woff2');
+        unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 500;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2ZL7SUc.woff2) format('woff2');
+        unicode-range: U+1F00-1FFF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 500;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1pL7SUc.woff2) format('woff2');
+        unicode-range: U+0370-03FF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 500;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2pL7SUc.woff2) format('woff2');
+        unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 500;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa25L7SUc.woff2) format('woff2');
+        unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 500;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 600;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2JL7SUc.woff2) format('woff2');
+        unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 600;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa0ZL7SUc.woff2) format('woff2');
+        unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 600;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2ZL7SUc.woff2) format('woff2');
+        unicode-range: U+1F00-1FFF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 600;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1pL7SUc.woff2) format('woff2');
+        unicode-range: U+0370-03FF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 600;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2pL7SUc.woff2) format('woff2');
+        unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 600;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa25L7SUc.woff2) format('woff2');
+        unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 600;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2JL7SUc.woff2) format('woff2');
+        unicode-range: U+0460-052F, U+1C80-1C88, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa0ZL7SUc.woff2) format('woff2');
+        unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2ZL7SUc.woff2) format('woff2');
+        unicode-range: U+1F00-1FFF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1pL7SUc.woff2) format('woff2');
+        unicode-range: U+0370-03FF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa2pL7SUc.woff2) format('woff2');
+        unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa25L7SUc.woff2) format('woff2');
+        unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    }
+
+     
+    @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        src: url(/static/vendor/fonts/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+</style>
+    	<link href="/static/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css">
+    	<link href="/static/assets/css/style.bundle.css" rel="stylesheet" type="text/css">
+<style>
+    .text-sidebar {
+		color: var(--bs-white);
+	}
+
+	[data-bs-theme="dark"] .text-sidebar {
+		color: var(--bs-white);
+    }
+
+    .wrap-word {
+        overflow-wrap: break-word;
+    }
+
+    .line-through {
+        text-decoration: line-through;
+    }
+
+    .section-title {
+        color: var(--bs-text-gray-800);
+        font-weight: 600 !important;
+        font-size: 1.45rem !important;
+    }
+
+    .section-title-inner {
+        color: var(--bs-text-gray-800);
+        font-weight: 600 !important;
+        font-size: 1.3rem !important;
+    }
+
+    .readonly-input {
+        color: var(--bs-text-gray-800);
+        font-weight: 500 !important;
+        font-size: 1.1rem !important;
+    }
+
+    .shortcut {
+        font-family: monospace; color: #666;
+    }
+
+    .overflow-auto {
+        overflow: auto;
+    }
+    .visibility-auto {
+        content-visibility: auto;
+    }
+</style>
+<script type="text/javascript">
+    window.addEventListener("pageshow", function (event) {
+        if (event.persisted) {
+			let loadings = document.querySelectorAll('[data-kt-indicator=on]');
+            if (loadings){
+				[].forEach.call(loadings, function (loading) {
+					loading.removeAttribute('data-kt-indicator');
+					loading.disabled = false;
+				});
+            }
+		}
+	});
+</script>
+	</head>
+
+    <body class="app-blank">
+<script type="text/javascript">
+    var defaultThemeMode = "system";
+    var themeMode;
+	if ( document.documentElement ) {
+		if ( document.documentElement.hasAttribute("data-bs-theme-mode")) {
+			themeMode = document.documentElement.getAttribute("data-bs-theme-mode");
+		} else {
+			if ( localStorage.getItem("data-bs-theme") !== null ) {
+				themeMode = localStorage.getItem("data-bs-theme");
+			} else {
+				themeMode = defaultThemeMode;
+			}
+		}
+		if (themeMode === "system") {
+			themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+		}
+		document.documentElement.setAttribute("data-bs-theme", themeMode);
+	}
+</script>
+		<div id="app_loader" class="align-items-center text-center my-10">
+            <span class="spinner-border w-15px h-15px text-muted align-middle me-2"></span>
+        </div>
+        <div class="d-flex flex-column flex-root d-none" id="app_root">
+			<div class="d-flex flex-column flex-column-fluid bgi-position-y-bottom position-x-center bgi-no-repeat bgi-size-contain bgi-attachment-fixed">
+				<div class="d-flex flex-center flex-column flex-column-fluid p-10 pb-lg-20">
+					<div class="w-lg-500px w-md-450px w-sm-400px bg-body rounded shadow-sm p-10 p-lg-15 mx-auto">
+                        
+						<form class="form w-100" id="sign_in_form" action="/web/admin/login" method="POST">
+							<div class="container mb-10">
+								<div class="row align-items-center">
+									<div class="col-5 align-items-center">
+										<img alt="Logo" src="/static/img/logo.png" class="h-80px h-md-90px h-lg-100px" />
+									</div>
+									<div class="col-7">
+										<h1 class="text-gray-900 mb-3 ms-3">
+											WebAdmin
+										</h1>
+									</div>
+								</div>
+							</div>
+<div id="errorMsg" class="d-none rounded border-warning border border-dashed bg-light-warning d-flex align-items-center p-5 mb-10">
+    <i class="ki-duotone ki-information-5 fs-3x text-warning me-5">
+        <span class="path1"></span>
+        <span class="path2"></span>
+        <span class="path3"></span>
+    </i>
+    <div class="text-gray-800 fw-bold fs-5 d-flex flex-column pe-0 pe-sm-10">
+		<span  id="errorTxt"></span>
+	</div>
+    <button id="id_dismiss_error_msg" type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon btn-sm btn-active-light-primary ms-sm-auto">
+        <i class="ki-solid ki-cross fs-2x text-gray-700"></i>
+    </button>
+</div>
+							<div class="fv-row mb-10">
+								<input data-i18n="[placeholder]login.username" class="form-control form-control-lg form-control-solid" type="text" name="username" placeholder="Username" autocomplete="on" spellcheck="false" required />
+							</div>
+							<div class="fv-row mb-10">
+								<div class="position-relative" data-password-control="container">
+									<input data-i18n="[placeholder]login.password" data-password-control="input" class="form-control form-control-lg form-control-solid" type="password" name="password" placeholder="Password" autocomplete="current-password" spellcheck="false" required />
+									<span class="btn btn-sm btn-icon position-absolute translate-middle top-50 end-0 me-n2" data-password-control="visibility">
+                    					<i class="ki-duotone ki-eye-slash fs-1">
+											<span class="path1"></span>
+											<span class="path2"></span>
+											<span class="path3"></span>
+											<span class="path4"></span>
+										</i>
+                    					<i class="ki-duotone ki-eye d-none fs-1">
+											<span class="path1"></span>
+											<span class="path2"></span>
+											<span class="path3"></span>
+										</i>
+									</span>
+								</div>
+								<div class="d-flex justify-content-end mt-2">
+								</div>
+							</div>
+							<div class="text-center">
+								<input type="hidden" name="_form_token" value="[[ $hdr ]].[[ $csrf ]].[[ randAlphaNum 43 ]]">
+								<button type="submit" id="sign_in_submit" class="btn btn-lg btn-primary w-100 mb-5">
+									<span data-i18n="login.signin" class="indicator-label">Sign in</span>
+									<span data-i18n="general.wait" class="indicator-progress">
+										Please wait...
+										<span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+									</span>
+								</button>
+							</div>
+						</form>
+						<hr>
+						<div class="d-flex flex-stack pt-5 mt-3">
+							<div class="me-10">
+								<select id="languageSwitcher" name="language" class="form-select form-select-solid form-select-sm" data-control="i18n-select2" data-hide-search="true">
+								</select>
+							</div>
+							<div class="d-flex fw-semibold text-primary">
+								<a href="/web/client/login" class="px-2">
+									<span data-i18n="login.link" data-i18n-options='{ "link": "WebClient" }'></span>
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script src="/static/assets/plugins/global/plugins.bundle.js"></script>
+		<script src="/static/assets/js/scripts.bundle.js"></script>
+		<script src="/static/vendor/i18next/i18next.min.js"></script>
+		<script src="/static/vendor/i18next/jquery-i18next.min.js"></script>
+		<script src="/static/vendor/i18next/i18nextBrowserLanguageDetector.min.js"></script>
+		<script src="/static/vendor/i18next/i18nextChainedBackend.min.js"></script>
+        <script src="/static/vendor/i18next/i18nextLocalStorageBackend.min.js"></script>
+		<script src="/static/vendor/i18next/i18nextHttpBackend.min.js"></script>
+<script type="text/javascript">
+    
+    function escapeHTML(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    function fileSizeIEC(bytes){
+        const thresh = 1024;
+        if (bytes < thresh){
+            return bytes + ' Bytes';
+        }
+
+        const units = ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+        let i = Math.floor(Math.log(bytes) / Math.log(thresh));
+        let size = bytes / Math.pow(thresh, i);
+
+        return size.toFixed(1) + ' ' + units[i - 1];
+    }
+
+    function humanizeSpeed(a,b,c,d,e){
+        return (b=Math,c=b.log,d=1024,e=c(a)/c(d)|0,a/b.pow(d,e)).toFixed(1)
+            +' '+(e?'KMGTPEZY'[--e]+'B/s':'Bytes/s')
+    }
+
+    function initRepeaterItems() {
+        let repeaterDeleteButtons = document.querySelectorAll('[data-repeater-delete]');
+        let repeaterCreateButtons = document.querySelectorAll('[data-repeater-create]');
+
+        repeaterDeleteButtons.forEach(d => {
+            d.addEventListener("click", function(e){
+                e.preventDefault();
+            });
+        });
+
+        repeaterCreateButtons.forEach(d => {
+            d.addEventListener("click", function(e){
+                e.preventDefault();
+            });
+        });
+    }
+
+    function initRepeater(selector) {
+        $(selector).repeater({
+            initEmpty: false,
+
+            show: function () {
+                $(this).find('.select-repetear').each(function(){
+                    initializeSelect2El(this);
+                    let el = $(this);
+                    if (el.hasClass('select-first')){
+                        let firstVal = el.find("option:first-child").val();
+                        el.val(firstVal).trigger('change');
+                    }
+                });
+                $(this).localize();
+                $(this).slideDown();
+                $(this).find('[data-repeater-delete]').on("click", function(e){
+                    e.preventDefault();
+                });
+            },
+
+            hide: function (deleteElement) {
+                $(this).slideUp(deleteElement);
+            }
+        });
+
+        $(selector).find('.select-repetear').each(function(){
+            initializeSelect2El(this);
+        });
+    }
+
+    function clearChilds(el) {
+        while (el.firstChild) {
+            el.removeChild(el.firstChild);
+        }
+    }
+
+    function initializeSelect2El(element) {
+        if (element.getAttribute("data-kt-initialized") === "1") {
+            return;
+        }
+        let options = {
+            dir: document.body.getAttribute('direction'),
+            language: {
+                noResults: function () {
+                    return $.t('select2.no_results');
+                },
+                searching: function () {
+                    return $.t('select2.searching');
+                },
+                removeAllItems: function () {
+                    return $.t('select2.removeall');
+                },
+                removeItem: function () {
+                    return $.t('select2.remove');
+                },
+                search: function() {
+                    return $.t('general.search');
+                }
+            }
+        };
+
+        if (element.getAttribute('data-hide-search') == 'true') {
+            options.minimumResultsForSearch = Infinity;
+        }
+
+        $(element).select2(options);
+        element.setAttribute("data-kt-initialized", "1");
+    }
+
+    const lngs = {};
+    
+    
+    lngs.en = { nativeName: 'English' };
+    
+    
+    
+    lngs.de = { nativeName: 'Deutsch' };
+    
+    
+    
+    lngs.fr = { nativeName: 'Français' };
+    
+    
+    
+    lngs.it = { nativeName: 'Italiano' };
+    
+    
+    if (Object.keys(lngs).length == 0){
+        lngs.en = { nativeName: 'English' };
+    }
+
+    const renderI18n = () => {
+        document.documentElement.setAttribute('lang', i18next.resolvedLanguage);
+        $('title').text('SFTPGo WebAdmin - '+$.t('title.login'));
+        $('body').localize();
+        let select2elements = [].slice.call(document.querySelectorAll('[data-control="i18n-select2"]'));
+        select2elements.map(function (element){
+            initializeSelect2El(element);
+        });
+    }
+
+    function initLocalizer() {
+        i18next
+            .use(i18nextChainedBackend)
+            .use(i18nextBrowserLanguageDetector)
+            .init({
+                debug: false,
+                supportedLngs: Object.keys(lngs),
+                fallbackLng: Object.keys(lngs)[0],
+                load: 'languageOnly',
+                backend: {
+                    backends: [
+                        i18nextLocalStorageBackend,
+                        i18nextHttpBackend
+                    ],
+                    backendOptions: [{
+                        expirationTime: 7 * 24 * 60 * 60 * 1000, 
+                        defaultVersion: 'SFTPGo 2.7.6 62ae9ba3'
+                    }, {
+                        loadPath: '\/static/locales/{{lng}}/{{ns}}.json?_='+new Date().getTime().toString()
+                    }
+                    ]
+                }
+            }, (err, t) => {
+                if (err) {
+                    console.error(err);
+                } else {
+                    jqueryI18next.init(i18next, $, { useOptionsAttr: true });
+
+                    var languageSwitcher = $('#languageSwitcher');
+                    if (languageSwitcher.length){
+                        if (Object.keys(lngs).length > 1) {
+                            languageSwitcher.removeClass("d-none");
+                            Object.keys(lngs).map((lng) => {
+                                const opt = new Option(lngs[lng].nativeName, lng);
+                                if (lng === i18next.resolvedLanguage) {
+                                    opt.setAttribute("selected", "selected");
+                                }
+                                languageSwitcher.append(opt);
+                            });
+                            languageSwitcher.on('change', function () {
+                                const chosenLng = $(this).find("option:selected").attr('value');
+                                i18next.changeLanguage(chosenLng, () => {
+                                    renderI18n();
+                                });
+                            });
+                        } else {
+                            languageSwitcher.addClass("d-none");
+                        }
+                    }
+
+                    renderI18n();
+                    $.event.trigger({
+                        type: "i18nload"
+                    });
+                }
+                $('#app_loader').addClass("d-none");
+                $('#app_root').removeClass("d-none");
+                $.event.trigger({
+                    type: "i18nshow"
+                });
+            });
+    }
+
+    function setI18NData(el, value, options) {
+        el.removeAttr("data-i18n-options");
+        el.removeData("i18n-options");
+        el.attr("data-i18n", value);
+        el.localize(options);
+    }
+
+    function handlePasswordInputVisibility(el) {
+		let pwdVisibility = $(el.querySelector('[data-password-control="visibility"]'));
+		let passwordInput = el.querySelector('[data-password-control="input"]');
+        pwdVisibility.off("click");
+		pwdVisibility.on('click', function(){
+			let visibleIcon = this.querySelector(':scope > i:not(.d-none)');
+            let hiddenIcon = this.querySelector(':scope > i.d-none');
+            visibleIcon.classList.add('d-none');
+            hiddenIcon.classList.remove('d-none');
+            if (passwordInput){
+				if (passwordInput.getAttribute('type').toLowerCase() === 'password' ) {
+            		passwordInput.setAttribute('type', 'text');
+        		} else {
+            		passwordInput.setAttribute('type', 'password');
+        		}
+				passwordInput.focus();
+			}
+		});
+	}
+
+    function getCurrentURI(){
+        let port = window.location.port;
+        if (port){
+            return window.location.protocol+"//"+window.location.hostname+":"+port;
+        }
+        return window.location.protocol+"//"+window.location.hostname;
+    }
+
+    function onFilesystemChanged(val){
+        const supportedFs = ["local", "s3", "gcs", "azblob", "crypt", "sftp", "http"];
+        let fsName = "local";
+        switch (val){
+            case '1':
+                fsName = "s3";
+                break;
+            case '2':
+                fsName = "gcs";
+                break;
+            case '3':
+                fsName = "azblob";
+                break;
+            case '4':
+                fsName = "crypt";
+                break;
+            case '5':
+                fsName = "sftp";
+                break;
+            case '6':
+                fsName = "http";
+                break;
+        }
+        for (let i = 0; i < supportedFs.length; i++){
+            if (supportedFs[i] == fsName){
+                $('.form-group.fsconfig-'+fsName).show();
+            } else {
+                $('.form-group.fsconfig-'+supportedFs[i]).hide();
+            }
+        }
+    }
+
+    function clearLoading() {
+        $('#loading_info').text("");
+        $('#loading_message').text("");
+    }
+
+    function setLoadingText(info, message) {
+        $('#loading_info').text(info);
+        $('#loading_message').text(message);
+    }
+
+    KTUtil.onDOMContentLoaded(function () {
+        var dismissErrorBtn = $('#id_dismiss_error_msg');
+        if (dismissErrorBtn.length){
+            dismissErrorBtn.on("click", function(){
+                $('#errorMsg').addClass("d-none");
+            });
+        }
+
+        var logoutBtn = $('#id_logout_link');
+        if (logoutBtn.length){
+            logoutBtn.on("click", function(){
+                doLogout();
+            });
+        }
+
+        document.querySelectorAll('[data-password-control="container"]').forEach(el => {
+			handlePasswordInputVisibility(el);
+		});
+
+        initLocalizer();
+        
+        window.dispatchEvent(new Event('resize'));
+	});
+</script>
+		<script type="text/javascript">
+			KTUtil.onDOMContentLoaded(function () {
+				$('#sign_in_form').submit(function (event) {
+					let next = null;
+					
+					if (!next){
+						let submitButton = document.querySelector('#sign_in_submit');
+						submitButton.setAttribute('data-kt-indicator', 'on');
+						submitButton.disabled = true;
+					}
+				});
+			});
+		</script>
+    </body>
+</html>

@@ -1,0 +1,1 @@
+import{b}from"./_baseEach-D95oKJf3.mjs";import{a4 as f}from"./PortalTarget.vue_vue_type_script_setup_true_lang-CaahUOSh.mjs";function u(r,s){var e=-1,a=f(r)?Array(r.length):[];return b(r,function(t,i,n){a[++e]=s(t,i,n)}),a}export{u as b};

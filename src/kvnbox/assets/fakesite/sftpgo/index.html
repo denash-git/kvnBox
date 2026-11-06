@@ -1,14 +1,15 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
-		<title></title>
-		<meta charset="utf-8" />
-		<meta name="description" content="" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="robots" content="noindex">
-		<link rel="icon" type="image/png" href="/static/favicon.png" />
-<style>
+        <title></title>
+        <meta charset="utf-8" />
+        <meta name="description" content="" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="robots" content="noindex">
+        <link rel="icon" type="image/png" href="/static/favicon.png" />
+<style nonce="">
      
     @font-face {
         font-family: 'Inter';
@@ -324,8 +325,8 @@
         unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
     }
 </style>
-    	<link href="/static/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css">
-    	<link href="/static/assets/css/style.bundle.css" rel="stylesheet" type="text/css">
+        <link href="/static/assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css">
+        <link href="/static/assets/css/style.bundle.css" rel="stylesheet" type="text/css">
 <style>
     .text-sidebar {
 		color: var(--bs-white);
@@ -385,9 +386,9 @@
 		}
 	});
 </script>
-	</head>
+    </head>
 
-    <body class="app-blank">
+    <body data-kt-app-header-fixed="true" data-kt-app-header-fixed-mobile="true" data-kt-app-toolbar-enabled="true" data-kt-app-sidebar-enabled="true" data-kt-app-sidebar-fixed="true" data-kt-app-sidebar-push-header="true" data-kt-app-sidebar-push-toolbar="true" data-kt-app-sidebar-push-footer="true"  class="app-default">
 <script type="text/javascript">
     var defaultThemeMode = "system";
     var themeMode;
@@ -407,131 +408,545 @@
 		document.documentElement.setAttribute("data-bs-theme", themeMode);
 	}
 </script>
-		<div id="app_loader" style="display:none" class="align-items-center text-center my-10">
+        <div id="app_loader" class="align-items-center text-center my-10">
             <span class="spinner-border w-15px h-15px text-muted align-middle me-2"></span>
         </div>
-        <div class="d-flex flex-column flex-root" id="app_root">
-			<div class="d-flex flex-column flex-column-fluid bgi-position-y-bottom position-x-center bgi-no-repeat bgi-size-contain bgi-attachment-fixed">
-				<div class="d-flex flex-center flex-column flex-column-fluid p-10 pb-lg-20">
-					<div class="w-lg-500px w-md-450px w-sm-400px bg-body rounded shadow-sm p-10 p-lg-15 mx-auto">
-                        
-						<form class="form w-100" id="sign_in_form" action="/web/admin/login" method="POST">
-							<div class="container mb-10">
-								<div class="row align-items-center">
-									<div class="col-5 align-items-center">
-										<img alt="Logo" src="/static/img/logo.png" class="h-80px h-md-90px h-lg-100px" />
-									</div>
-									<div class="col-7">
-										<h1 class="text-gray-900 mb-3 ms-3">
-											WebAdmin
-										</h1>
-									</div>
-								</div>
-							</div>
-<div id="errorMsg" class="d-none rounded border-warning border border-dashed bg-light-warning d-flex align-items-center p-5 mb-10">
-    <i class="ki-duotone ki-information-5 fs-3x text-warning me-5">
-        <span class="path1"></span>
-        <span class="path2"></span>
-        <span class="path3"></span>
-    </i>
-    <div class="text-gray-800 fw-bold fs-5 d-flex flex-column pe-0 pe-sm-10">
-		<span  id="errorTxt">Invalid credentials, please retry</span>
-	</div>
-    <button id="id_dismiss_error_msg" type="button" class="position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 btn btn-icon btn-sm btn-active-light-primary ms-sm-auto">
-        <i class="ki-solid ki-cross fs-2x text-gray-700"></i>
-    </button>
+        <div class="d-flex flex-column flex-root app-root d-none" id="app_root">
+            <div class="app-page  flex-column flex-column-fluid " id="kt_app_page">
+                <div class=" flex-column flex-row-fluid " id="kt_app_wrapper">
+                    <div class="app-main flex-column flex-row-fluid " id="kt_app_main">
+                        <div class="d-flex flex-column flex-column-fluid">
+                            <div id="kt_app_content" class="app-content flex-column-fluid">
+                                <div id="kt_app_content_container" class="app-container container-fluid">
+<div class="d-flex flex-center flex-column flex-column-fluid p-10 pb-lg-20">
+    <div class="mb-12">
+        <a href="/web/admin/login">
+            <img alt="Logo" src="/static/img/logo.png" class="h-80px h-md-90px h-lg-100px" />
+        </a>
+        <a href="/web/admin/login" class="text-gray-900 fs-1 fw-bold ms-3 ps-5">
+		    WebAdmin
+        </a>
+    </div>
+    <div class="card shadow-sm w-lg-600px">
+        <div class="card-header bg-light">
+            <h3 data-i18n="title.error404" class="card-title section-title"></h3>
+        </div>
+        <div class="card-body">
+            <div class="notice d-flex align-items-center bg-light-warning rounded border-warning border border-dashed p-6">
+                <i class="ki-duotone ki-information-5 fs-3x text-warning me-4">
+                    <span class="path1"></span>
+                    <span class="path2"></span>
+                    <span class="path3"></span>
+                </i>
+                <div class="d-flex flex-stack flex-grow-1">
+                    <div class="fs-4 fw-semibold text-gray-800 text-break text-wrap">
+                        <span data-i18n="general.error404" ></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-							<div class="fv-row mb-10">
-								<input data-i18n="[placeholder]login.username" class="form-control form-control-lg form-control-solid" type="text" name="username" placeholder="Username" autocomplete="on" spellcheck="false" required />
-							</div>
-							<div class="fv-row mb-10">
-								<div class="position-relative" data-password-control="container">
-									<input data-i18n="[placeholder]login.password" data-password-control="input" class="form-control form-control-lg form-control-solid" type="password" name="password" placeholder="Password" autocomplete="current-password" spellcheck="false" required />
-									<span class="btn btn-sm btn-icon position-absolute translate-middle top-50 end-0 me-n2" data-password-control="visibility">
-                    					<i class="ki-duotone ki-eye-slash fs-1">
-											<span class="path1"></span>
-											<span class="path2"></span>
-											<span class="path3"></span>
-											<span class="path4"></span>
-										</i>
-                    					<i class="ki-duotone ki-eye d-none fs-1">
-											<span class="path1"></span>
-											<span class="path2"></span>
-											<span class="path3"></span>
-										</i>
-									</span>
-								</div>
-								<div class="d-flex justify-content-end mt-2">
-								</div>
-							</div>
-							<div class="text-center">
-								<input type="hidden" name="_form_token" value="">
-								<button type="submit" id="sign_in_submit" class="btn btn-lg btn-primary w-100 mb-5">
-									<span data-i18n="login.signin" class="indicator-label">Sign in</span>
-									<span data-i18n="general.wait" class="indicator-progress">
-										Please wait...
-										<span class="spinner-border spinner-border-sm align-middle ms-2"></span>
-									</span>
-								</button>
-							</div>
-						</form>
-						<hr>
-						<div class="d-flex flex-stack pt-5 mt-3">
-							<div class="me-10">
-								<select id="languageSwitcher" name="language" class="form-select form-select-solid form-select-sm"  data-hide-search="true"><option value="en" selected>English</option><option value="de">Deutsch</option><option value="es">Español</option><option value="fr">Français</option><option value="it">Italiano</option><option value="ru">Русский</option><option value="zh-CN">简体中文</option></select>
-							</div>
-							<div class="d-flex fw-semibold text-primary">
-								<a href="/web/client/login" class="px-2">
-									<span>Go to WebClient</span>
-								</a>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
+            <i class="ki-duotone ki-arrow-up">
+                <span class="path1"></span>
+                <span class="path2"></span>
+            </i>
+        </div>
+        <div class="page-loader flex-column">
+			<span class="spinner-border text-primary" role="status"></span>
+			<span id="loading_info" class="text-muted fs-4 fw-semibold mt-5"></span>
+            <span id="loading_message" class="text-muted fs-4 fw-semibold mt-5"></span>
 		</div>
-		
-		
-		
-		
-		
-		
-        
-		
 
-		
-    <script>
-(function () {
-  // показать/скрыть пароль (как data-password-control в оригинале)
-  var vis = document.querySelector('[data-password-control="visibility"]');
-  if (vis) {
-    var inp = document.querySelector('[data-password-control="input"]');
-    var icons = vis.querySelectorAll('i');
-    vis.addEventListener('click', function () {
-      if (!inp) { return; }
-      var show = inp.type === 'password';
-      inp.type = show ? 'text' : 'password';
-      if (icons[0]) { icons[0].classList.toggle('d-none', show); }
-      if (icons[1]) { icons[1].classList.toggle('d-none', !show); }
-    });
-  }
-  // индикатор отправки — форма уходит POST, сервер возвращает страницу с ошибкой
-  var form = document.getElementById('sign_in_form');
-  if (form) {
-    form.addEventListener('submit', function () {
-      var btn = document.getElementById('sign_in_submit');
-      if (btn) { btn.setAttribute('data-kt-indicator', 'on'); btn.disabled = true; }
-    });
-  }
-  // крестик закрытия ошибки
-  var dismiss = document.getElementById('id_dismiss_error_msg');
-  if (dismiss) {
-    dismiss.addEventListener('click', function () {
-      var box = document.getElementById('errorMsg');
-      if (box) { box.classList.add('d-none'); }
-    });
-  }
-})();
+        <div class="modal fade" tabindex="-1" id="modal_alert">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <div class="d-flex flex-center flex-column">
+                            <span id="modal_alert_icon">
+                            </span>
+                            <div class="mt-10 text-center">
+                                <span id="modal_alert_text" class="fs-6 text-gray-900 fw-semibold"></span>
+                            </div>
+                        </div>
+                        <div id="modal_alert_items" class="d-flex flex-column mt-5 d-none">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center">
+                        <button id="modal_alert_cancel" type="button" class="btn btn-secondary m-2"></button>
+                        <button id="modal_alert_ok" type="button" class="btn btn-primary m-2"></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="toast-container position-fixed top-0 end-0 p-3">
+            <div id="toast_container" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+                <div class="toast-body border-0 d-flex align-items-center">
+                    <span id="toast_icon"></span>
+                    <span id="toast_msg" class="fs-5 fw-semibold text-gray-800 me-auto"></span>
+                    <button data-i18n="[aria-label]general.close" type="button" class="btn btn-icon btn-sm btn-active-light-primary position-absolute position-sm-relative m-2 m-sm-0 top-0 end-0 ms-sm-auto" data-bs-dismiss="toast" aria-label="Close">
+                        <i class="ki-solid ki-cross fs-2x text-gray-700"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+		<script src="/static/assets/plugins/global/plugins.bundle.js"></script>
+		<script src="/static/assets/js/scripts.bundle.js"></script>
+        <script src="/static/vendor/i18next/i18next.min.js"></script>
+		<script src="/static/vendor/i18next/jquery-i18next.min.js"></script>
+		<script src="/static/vendor/i18next/i18nextBrowserLanguageDetector.min.js"></script>
+		<script src="/static/vendor/i18next/i18nextChainedBackend.min.js"></script>
+        <script src="/static/vendor/i18next/i18nextLocalStorageBackend.min.js"></script>
+        <script src="/static/vendor/i18next/i18nextHttpBackend.min.js"></script>
+<script type="text/javascript">
+    
+    function escapeHTML(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    function fileSizeIEC(bytes){
+        const thresh = 1024;
+        if (bytes < thresh){
+            return bytes + ' Bytes';
+        }
+
+        const units = ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+        let i = Math.floor(Math.log(bytes) / Math.log(thresh));
+        let size = bytes / Math.pow(thresh, i);
+
+        return size.toFixed(1) + ' ' + units[i - 1];
+    }
+
+    function humanizeSpeed(a,b,c,d,e){
+        return (b=Math,c=b.log,d=1024,e=c(a)/c(d)|0,a/b.pow(d,e)).toFixed(1)
+            +' '+(e?'KMGTPEZY'[--e]+'B/s':'Bytes/s')
+    }
+
+    function initRepeaterItems() {
+        let repeaterDeleteButtons = document.querySelectorAll('[data-repeater-delete]');
+        let repeaterCreateButtons = document.querySelectorAll('[data-repeater-create]');
+
+        repeaterDeleteButtons.forEach(d => {
+            d.addEventListener("click", function(e){
+                e.preventDefault();
+            });
+        });
+
+        repeaterCreateButtons.forEach(d => {
+            d.addEventListener("click", function(e){
+                e.preventDefault();
+            });
+        });
+    }
+
+    function initRepeater(selector) {
+        $(selector).repeater({
+            initEmpty: false,
+
+            show: function () {
+                $(this).find('.select-repetear').each(function(){
+                    initializeSelect2El(this);
+                    let el = $(this);
+                    if (el.hasClass('select-first')){
+                        let firstVal = el.find("option:first-child").val();
+                        el.val(firstVal).trigger('change');
+                    }
+                });
+                $(this).localize();
+                $(this).slideDown();
+                $(this).find('[data-repeater-delete]').on("click", function(e){
+                    e.preventDefault();
+                });
+            },
+
+            hide: function (deleteElement) {
+                $(this).slideUp(deleteElement);
+            }
+        });
+
+        $(selector).find('.select-repetear').each(function(){
+            initializeSelect2El(this);
+        });
+    }
+
+    function clearChilds(el) {
+        while (el.firstChild) {
+            el.removeChild(el.firstChild);
+        }
+    }
+
+    function initializeSelect2El(element) {
+        if (element.getAttribute("data-kt-initialized") === "1") {
+            return;
+        }
+        let options = {
+            dir: document.body.getAttribute('direction'),
+            language: {
+                noResults: function () {
+                    return $.t('select2.no_results');
+                },
+                searching: function () {
+                    return $.t('select2.searching');
+                },
+                removeAllItems: function () {
+                    return $.t('select2.removeall');
+                },
+                removeItem: function () {
+                    return $.t('select2.remove');
+                },
+                search: function() {
+                    return $.t('general.search');
+                }
+            }
+        };
+
+        if (element.getAttribute('data-hide-search') == 'true') {
+            options.minimumResultsForSearch = Infinity;
+        }
+
+        $(element).select2(options);
+        element.setAttribute("data-kt-initialized", "1");
+    }
+
+    const lngs = {};
+    
+    
+    lngs.en = { nativeName: 'English' };
+    
+    
+    
+    lngs.de = { nativeName: 'Deutsch' };
+    
+    
+    
+    lngs.fr = { nativeName: 'Français' };
+    
+    
+    
+    lngs.it = { nativeName: 'Italiano' };
+    
+    
+    if (Object.keys(lngs).length == 0){
+        lngs.en = { nativeName: 'English' };
+    }
+
+    const renderI18n = () => {
+        document.documentElement.setAttribute('lang', i18next.resolvedLanguage);
+        $('title').text('SFTPGo WebAdmin - '+$.t('title.error404'));
+        $('body').localize();
+        let select2elements = [].slice.call(document.querySelectorAll('[data-control="i18n-select2"]'));
+        select2elements.map(function (element){
+            initializeSelect2El(element);
+        });
+    }
+
+    function initLocalizer() {
+        i18next
+            .use(i18nextChainedBackend)
+            .use(i18nextBrowserLanguageDetector)
+            .init({
+                debug: false,
+                supportedLngs: Object.keys(lngs),
+                fallbackLng: Object.keys(lngs)[0],
+                load: 'languageOnly',
+                backend: {
+                    backends: [
+                        i18nextLocalStorageBackend,
+                        i18nextHttpBackend
+                    ],
+                    backendOptions: [{
+                        expirationTime: 7 * 24 * 60 * 60 * 1000, 
+                        defaultVersion: 'SFTPGo 2.7.6 62ae9ba3'
+                    }, {
+                        loadPath: '\/static/locales/{{lng}}/{{ns}}.json?_='+new Date().getTime().toString()
+                    }
+                    ]
+                }
+            }, (err, t) => {
+                if (err) {
+                    console.error(err);
+                } else {
+                    jqueryI18next.init(i18next, $, { useOptionsAttr: true });
+
+                    var languageSwitcher = $('#languageSwitcher');
+                    if (languageSwitcher.length){
+                        if (Object.keys(lngs).length > 1) {
+                            languageSwitcher.removeClass("d-none");
+                            Object.keys(lngs).map((lng) => {
+                                const opt = new Option(lngs[lng].nativeName, lng);
+                                if (lng === i18next.resolvedLanguage) {
+                                    opt.setAttribute("selected", "selected");
+                                }
+                                languageSwitcher.append(opt);
+                            });
+                            languageSwitcher.on('change', function () {
+                                const chosenLng = $(this).find("option:selected").attr('value');
+                                i18next.changeLanguage(chosenLng, () => {
+                                    renderI18n();
+                                });
+                            });
+                        } else {
+                            languageSwitcher.addClass("d-none");
+                        }
+                    }
+
+                    renderI18n();
+                    $.event.trigger({
+                        type: "i18nload"
+                    });
+                }
+                $('#app_loader').addClass("d-none");
+                $('#app_root').removeClass("d-none");
+                $.event.trigger({
+                    type: "i18nshow"
+                });
+            });
+    }
+
+    function setI18NData(el, value, options) {
+        el.removeAttr("data-i18n-options");
+        el.removeData("i18n-options");
+        el.attr("data-i18n", value);
+        el.localize(options);
+    }
+
+    function handlePasswordInputVisibility(el) {
+		let pwdVisibility = $(el.querySelector('[data-password-control="visibility"]'));
+		let passwordInput = el.querySelector('[data-password-control="input"]');
+        pwdVisibility.off("click");
+		pwdVisibility.on('click', function(){
+			let visibleIcon = this.querySelector(':scope > i:not(.d-none)');
+            let hiddenIcon = this.querySelector(':scope > i.d-none');
+            visibleIcon.classList.add('d-none');
+            hiddenIcon.classList.remove('d-none');
+            if (passwordInput){
+				if (passwordInput.getAttribute('type').toLowerCase() === 'password' ) {
+            		passwordInput.setAttribute('type', 'text');
+        		} else {
+            		passwordInput.setAttribute('type', 'password');
+        		}
+				passwordInput.focus();
+			}
+		});
+	}
+
+    function getCurrentURI(){
+        let port = window.location.port;
+        if (port){
+            return window.location.protocol+"//"+window.location.hostname+":"+port;
+        }
+        return window.location.protocol+"//"+window.location.hostname;
+    }
+
+    function onFilesystemChanged(val){
+        const supportedFs = ["local", "s3", "gcs", "azblob", "crypt", "sftp", "http"];
+        let fsName = "local";
+        switch (val){
+            case '1':
+                fsName = "s3";
+                break;
+            case '2':
+                fsName = "gcs";
+                break;
+            case '3':
+                fsName = "azblob";
+                break;
+            case '4':
+                fsName = "crypt";
+                break;
+            case '5':
+                fsName = "sftp";
+                break;
+            case '6':
+                fsName = "http";
+                break;
+        }
+        for (let i = 0; i < supportedFs.length; i++){
+            if (supportedFs[i] == fsName){
+                $('.form-group.fsconfig-'+fsName).show();
+            } else {
+                $('.form-group.fsconfig-'+supportedFs[i]).hide();
+            }
+        }
+    }
+
+    function clearLoading() {
+        $('#loading_info').text("");
+        $('#loading_message').text("");
+    }
+
+    function setLoadingText(info, message) {
+        $('#loading_info').text(info);
+        $('#loading_message').text(message);
+    }
+
+    KTUtil.onDOMContentLoaded(function () {
+        var dismissErrorBtn = $('#id_dismiss_error_msg');
+        if (dismissErrorBtn.length){
+            dismissErrorBtn.on("click", function(){
+                $('#errorMsg').addClass("d-none");
+            });
+        }
+
+        var logoutBtn = $('#id_logout_link');
+        if (logoutBtn.length){
+            logoutBtn.on("click", function(){
+                doLogout();
+            });
+        }
+
+        document.querySelectorAll('[data-password-control="container"]').forEach(el => {
+			handlePasswordInputVisibility(el);
+		});
+
+        initLocalizer();
+        
+        window.dispatchEvent(new Event('resize'));
+	});
 </script>
-</body>
+        <script type="text/javascript">
+            var ModalAlert = function () {
+                var modal;
+                var promiseResolve;
+                var isResolved;
+
+                function resolvePromise(result) {
+                    if (!isResolved) {
+                        isResolved = true;
+                        promiseResolve({
+                            isConfirmed: result
+                        });
+                    }
+                }
+
+                var cancelFn = function() {
+                    resolvePromise(false);
+                    modal.hide();
+                }
+
+                var okFn = function() {
+                    resolvePromise(true);
+                    modal.hide();
+                }
+
+                var hideFn = function() {
+                    resolvePromise(false);
+                }
+
+                return {
+                    fire: function (params) {
+                        modal = new bootstrap.Modal('#modal_alert');
+                        let modalEl = $('#modal_alert');
+                        let okBtn = $("#modal_alert_ok");
+                        let cancelBtn = $("#modal_alert_cancel");
+                        let itemsList = $('#modal_alert_items');
+
+                        modalEl.off('hide.bs.modal');
+                        modalEl.on('hide.bs.modal', hideFn);
+                        cancelBtn.off("click");
+                        okBtn.off("click");
+                        cancelBtn.on("click", cancelFn);
+                        okBtn.on("click", okFn);
+                        okBtn.removeClass();
+                        okBtn.addClass(params.customClass.confirmButton);
+                        okBtn.addClass("m-2");
+                        okBtn.text(params.confirmButtonText);
+                        if (params.cancelButtonText){
+                            cancelBtn.text(params.cancelButtonText);
+                            cancelBtn.removeClass();
+                            cancelBtn.addClass(params.customClass.cancelButton);
+                            cancelBtn.addClass("m-2");
+                        } else {
+                            cancelBtn.addClass("d-none");
+                        }
+
+                        $("#modal_alert_text").text(params.text);
+                        itemsList.empty();
+                        itemsList.addClass("d-none");
+                        if (params.items && params.items.length > 0){
+                            itemsList.removeClass("d-none");
+                            $.each(params.items, function(key, item) {
+                                itemText = escapeHTML(item);
+                                itemsList.append(`<li class="d-flex align-items-center py-2 fw-bold fs-6 text-gray-800"><span class="bullet bullet-dot bg-primary me-2"></span>${itemText}</li>`);
+                            });
+                        }
+
+                        switch (params.icon){
+                            case "warning":
+                                $("#modal_alert_icon").html(`<i class="ki-duotone ki-information-5 fs-5x text-danger">
+                                                                <span class="path1"></span>
+                                                                <span class="path2"></span>
+                                                                <span class="path3"></span>
+                                                            </i>`);
+                                break;
+                            case "success":
+                                $("#modal_alert_icon").html(`<i class="ki-duotone ki-check-square fs-5x text-success">
+                                                                <span class="path1"></span>
+                                                                <span class="path2"></span>
+                                                            </i>`);
+                                break;
+                            default:
+                                $("#modal_alert_icon").html(`<i class="ki-duotone ki-question-2 fs-5x text-primary">
+                                                                <span class="path1"></span>
+                                                                <span class="path2"></span>
+                                                                <span class="path3"></span>
+                                                            </i>`);
+                        }
+
+                        return new Promise(function(resolve, reject) {
+                            promiseResolve = resolve;
+                            isResolved = false;
+                            modal.show();
+                        });
+                    }
+                }
+            }();
+
+            function showToast(status, msg, options) {
+                const toast = bootstrap.Toast.getOrCreateInstance(document.getElementById('toast_container'));
+                if (status === 1){
+                    $("#toast_icon").html(`<i class="ki-duotone ki-check-square fs-3x text-success me-5">
+                                            <span class="path1"></span>
+                                            <span class="path2"></span>
+                                        </i>`);
+                } else {
+                    $("#toast_icon").html(`<i class="ki-duotone ki-information-5 fs-3x text-warning me-5">
+                                            <span class="path1"></span>
+                                            <span class="path2"></span>
+                                            <span class="path3"></span>
+                                        </i>`);
+                }
+                setI18NData($('#toast_msg'), msg, options)
+                toast.show();
+            }
+
+            function doLogout() {
+                ModalAlert.fire({
+                    text: $.t("general.confirm_logout"),
+                    icon: "question",
+                    confirmButtonText: $.t("login.signout"),
+                    cancelButtonText: $.t("general.cancel"),
+                    customClass: {
+                        confirmButton: "btn btn-primary",
+                        cancelButton: 'btn btn-secondary'
+                    }
+                }).then((result) =>{
+                    if (result.isConfirmed){
+                        window.location.replace('\/web\/admin\/logout');
+                    }
+                });
+            }
+        </script>
+    </body>
 </html>

@@ -1,0 +1,1 @@
+import{b as e}from"./Dj3IBJ0W.js";import"./DkW6RdZ7.js";var t=e({isDragging:!1,files:[]});export{t};
