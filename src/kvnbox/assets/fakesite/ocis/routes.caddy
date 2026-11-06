@@ -1,0 +1,113 @@
+    # Fake site: ownCloud Infinite Scale 8.2.2 (sign-in never succeeds, nothing is stored)
+    @ocis_logon {
+        method POST
+        path /signin/v1/identifier/_/logon /signin/v1/identifier/
+    }
+    handle @ocis_logon {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options DENY
+            Referrer-Policy no-referrer
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag none
+            -Server
+        }
+        header Content-Type "text/plain; charset=utf-8"
+        respond `400 Bad Request` 400
+    }
+
+    @ocis_login path /signin/v1/identifier /signin/v1/identifier/ / /index.html
+    handle @ocis_login {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options DENY
+            Referrer-Policy no-referrer
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag none
+            -Server
+        }
+        root * {{SITE_DIR}}
+        rewrite * /index.html
+        file_server
+    }
+
+    handle /status.php {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options DENY
+            Referrer-Policy no-referrer
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag none
+            -Server
+        }
+        header Content-Type "application/json"
+        root * {{SITE_DIR}}
+        rewrite * /status.json
+        file_server
+    }
+
+    handle /ocs/v1.php/cloud/capabilities {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options DENY
+            Referrer-Policy no-referrer
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag none
+            -Server
+        }
+        header Content-Type "text/xml; charset=utf-8"
+        root * {{SITE_DIR}}
+        rewrite * /signin/v1/ocs-v1.xml
+        file_server
+    }
+    handle /ocs/v2.php/cloud/capabilities {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options DENY
+            Referrer-Policy no-referrer
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag none
+            -Server
+        }
+        header Content-Type "text/xml; charset=utf-8"
+        root * {{SITE_DIR}}
+        rewrite * /signin/v1/ocs-v2.xml
+        file_server
+    }
+
+    @ocis_bearer path /remote.php/dav /remote.php/dav/* /remote.php/webdav /remote.php/webdav/* /dav /dav/* /graph/*
+    handle @ocis_bearer {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options DENY
+            Referrer-Policy no-referrer
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag none
+            -Server
+        }
+        header WWW-Authenticate `Bearer realm="{host}", charset="UTF-8"`
+        respond 401
+    }
+
+    @ocis_static {
+        path /signin/v1/static/* /themes/* /robots.txt /favicon.ico
+    }
+    handle @ocis_static {
+        root * {{SITE_DIR}}
+        file_server
+    }
+
+    # SPA: прочие пути отдают оболочку приложения (вход), как оригинал
+    handle {
+        header {
+            X-Content-Type-Options nosniff
+            X-Frame-Options DENY
+            Referrer-Policy no-referrer
+            X-Permitted-Cross-Domain-Policies none
+            X-Robots-Tag none
+            -Server
+        }
+        root * {{SITE_DIR}}
+        rewrite * /index.html
+        file_server
+    }

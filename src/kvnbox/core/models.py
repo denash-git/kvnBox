@@ -254,6 +254,7 @@ FAKE_SITE_TEMPLATES = (
     "synapse",
     # этап 12: копии страниц входа self-hosted хранилищ
     "nextcloud",
+    "ocis",
 )
 
 

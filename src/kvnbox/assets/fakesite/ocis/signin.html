@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1b223d">
+  <title>Sign in - ownCloud</title>
+  <link rel="icon" href="/signin/v1/static/favicon.ico">
+  <link rel="stylesheet" href="/signin/v1/static/theme.css">
+  </head>
+<body class="oc-login-bg">
+  <main>
+    <div class="oc-login-form" id="login-root">
+      <img class="oc-logo" src="/themes/owncloud/assets/logo.svg" alt="ownCloud">
+      <h1 class="oc-invisible-sr">Login</h1>
+      <form id="login-form" method="post" action="/signin/v1/identifier/" hidden
+        data-msg-required="Username and password are required."
+        data-msg-invalid="Login failed. Invalid username or password."
+        data-msg-failed="Login failed. Invalid username or password."
+        data-msg-default="Login failed. Invalid username or password."
+        data-msg-signing-in="Logging in…"
+        data-msg-sign-in="Log in">
+        <div>
+          <label class="oc-label" for="oc-login-username">Username</label>
+          <input class="oc-input" type="text" id="oc-login-username" name="username" autocomplete="username" placeholder="Username" aria-describedby="oc-login-error-message" required>
+        </div>
+        <div>
+          <label class="oc-label" for="oc-login-password">Password</label>
+          <input class="oc-input" type="password" id="oc-login-password" name="password" autocomplete="current-password" placeholder="Password" aria-describedby="oc-login-error-message" required>
+          <p id="oc-login-error-message" class="oc-error-message" role="alert" aria-live="assertive" hidden></p>
+        </div>
+        <div>
+          <button class="oc-button-primary" type="submit" id="submit-btn">Log in</button>
+        </div>
+      </form>
+      
+    </div>
+  </main>
+  <footer class="oc-footer-message">ownCloud - a safe home for all your data</footer>
+  <script>
+(function () {
+  var form = document.getElementById("login-form");
+  var errorEl = document.getElementById("oc-login-error-message");
+  var btnEl = document.getElementById("submit-btn");
+  var userEl = document.getElementById("oc-login-username");
+  var passEl = document.getElementById("oc-login-password");
+  if (!form) { return; }
+  var MSG_REQUIRED = form.dataset.msgRequired;
+  var MSG_INVALID = form.dataset.msgInvalid;
+  var MSG_SIGNING_IN = form.dataset.msgSigningIn;
+  var MSG_SIGN_IN = form.dataset.msgSignIn;
+  form.hidden = false;
+  function showError(msg) {
+    errorEl.textContent = msg;
+    errorEl.hidden = false;
+    userEl.classList.add("error");
+    passEl.classList.add("error");
+    userEl.setAttribute("aria-invalid", "true");
+    passEl.setAttribute("aria-invalid", "true");
+  }
+  function hideError() {
+    errorEl.hidden = true;
+    userEl.classList.remove("error");
+    passEl.classList.remove("error");
+    userEl.removeAttribute("aria-invalid");
+    passEl.removeAttribute("aria-invalid");
+  }
+  function setLoading(on) {
+    btnEl.disabled = on;
+    btnEl.textContent = on ? MSG_SIGNING_IN : MSG_SIGN_IN;
+  }
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    hideError();
+    if (!userEl.value.trim() || !passEl.value) { showError(MSG_REQUIRED); return; }
+    setLoading(true);
+    setTimeout(function () {
+      setLoading(false);
+      showError(MSG_INVALID);
+      passEl.value = "";
+    }, 700 + Math.random() * 600);
+  });
+})();
+</script>
+</body>
+</html>
