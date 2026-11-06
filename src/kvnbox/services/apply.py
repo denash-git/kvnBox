@@ -128,10 +128,28 @@ class Applier:
         return None
 
     def sync_fakesite(self) -> None:
-        """Развернуть фейковые сайты из ассетов пакета (обновляются вместе с панелью)."""
+        """Развернуть фейковые сайты из ассетов пакета (обновляются вместе с панелью).
+
+        Каждый шаблон пакета — зеркалом: собирается рядом и подменяет прежний целиком,
+        чтобы файлы, убранные из новой версии шаблона, не оставались на диске и не отдавались.
+        Папки, которых в пакете нет, не трогаются."""
         source = resources.files("kvnbox.assets").joinpath("fakesite")
+        dst = self.paths.fakesite_dir
+        dst.mkdir(parents=True, exist_ok=True)
         with resources.as_file(source) as src:
-            shutil.copytree(src, self.paths.fakesite_dir, dirs_exist_ok=True)
+            for item in sorted(src.iterdir()):
+                target = dst / item.name
+                if not item.is_dir():
+                    shutil.copy2(item, target)
+                    continue
+                new, old = dst / f".{item.name}.new", dst / f".{item.name}.old"
+                shutil.rmtree(new, ignore_errors=True)
+                shutil.rmtree(old, ignore_errors=True)
+                shutil.copytree(item, new)
+                if target.exists():
+                    target.rename(old)
+                new.rename(target)
+                shutil.rmtree(old, ignore_errors=True)
 
     # ── внутреннее ───────────────────────────────────────────────────────────
 

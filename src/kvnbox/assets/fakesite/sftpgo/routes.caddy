@@ -206,25 +206,9 @@
 
 ` 302
         }
-        @sg_openapi_dir path /openapi
-        handle @sg_openapi_dir {
-            header Content-Type "text/html; charset=utf-8"
-            header Location /openapi/
-            respond `<a href="/openapi/">Moved Permanently</a>.
-
-` 301
-        }
-        @sg_openapi_index path /openapi/
-        handle @sg_openapi_index {
-            rewrite * /openapi-listing.html
-            header {
-                -Etag
-                -Accept-Ranges
-            }
-            file_server
-        }
+        # документация API (/openapi) не включена ради размера: как прочие адреса — на вход
         @sg_files_static {
-            path /static/* /openapi/*
+            path /static/*
             file
         }
         handle @sg_files_static {

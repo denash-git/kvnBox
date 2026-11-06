@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import time
 
+from kvnbox.core.models import SITE_TEMPLATE_LABELS
 from kvnbox.services import ServiceError
 from kvnbox.services.apply import Applier
 from kvnbox.services.diagnostics import DiagnosticsService
@@ -20,18 +21,7 @@ from kvnbox.tui.widgets import BACK
 
 MENU_BIN = "/usr/local/bin/menu"
 
-TEMPLATES = [
-    ("Aether Resonance (Эфирный Резонанс)", "aether"),
-    ("Quantum Nexus (Квантовый Нексус)", "nexus"),
-    ("Synaptic Dynamics (Синаптическая Динамика)", "synapse"),
-    ("Chronos Temporal (Хроно-Вектор)", "chronos"),
-    ("Stratum Synergy (Стратум Синергия)", "stratum"),
-    ("Облако: Nextcloud", "nextcloud"),
-    ("Облако: ownCloud Infinite Scale", "ocis"),
-    ("Хранилище: SFTPGo", "sftpgo"),
-    ("Облако: Seafile", "seafile"),
-    ("Фотоархив: Immich", "immich"),
-]
+TEMPLATES = list(SITE_TEMPLATE_LABELS)
 
 
 def settings_menu(m: Menu) -> None:

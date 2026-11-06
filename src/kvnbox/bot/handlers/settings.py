@@ -1,4 +1,4 @@
-"""Настройки: SSH, BBR, обновления, бэкапы, защита от сканеров."""
+"""Настройки: SSH, BBR, обновления, бэкапы, шаблон сайта, защита от сканеров."""
 
 from __future__ import annotations
 
@@ -8,22 +8,25 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
 
-from kvnbox.bot.common import edit, run, show
+from kvnbox.bot.common import edit, notify_and_apply, run, show
 from kvnbox.bot.keyboards import (
     security_menu_keyboard,
     settings_back_keyboard,
     settings_backup_keyboard,
     settings_menu_keyboard,
     settings_update_keyboard,
+    site_template_keyboard,
     ssh_back_keyboard,
     ssh_management_keyboard,
 )
+from kvnbox.core.models import FAKE_SITE_TEMPLATES, SITE_TEMPLATE_LABELS
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.backup import BackupService
 from kvnbox.services.jobs import Jobs
 from kvnbox.services.modules import BbrModule
 from kvnbox.services.security import SecurityService
+from kvnbox.services.settings import SettingsService
 from kvnbox.services.ssh import SshService, SshStatus
 from kvnbox.services.update import UpdateService
 from kvnbox.system.fail2ban import SecurityStatus
@@ -320,6 +323,44 @@ async def backup_time_msg(message: Message, app: App, state: FSMContext) -> None
     except Exception as e:
         text = f"❌ <b>Ошибка при изменении расписания cron:</b>\n\n<code>{e}</code>"
     await message.answer(text, reply_markup=settings_backup_keyboard(enabled), parse_mode="HTML")
+
+
+# ─── шаблон сайта ────────────────────────────────────────────────────────────
+
+
+def site_text(current: str) -> str:
+    label = dict((n, lbl) for lbl, n in SITE_TEMPLATE_LABELS).get(current, current)
+    return (
+        "🌐 <b>Шаблон сайта</b>\n\n"
+        "Сайт, который видят посетители и сканеры на домене сервера. "
+        "На работу VPN не влияет.\n\n"
+        f"Сейчас: <b>{label}</b>\n\nВыберите шаблон:"
+    )
+
+
+async def _site_screen(cb: CallbackQuery, app: App) -> None:
+    current = app.settings.load().site.template
+    await edit(cb, site_text(current), site_template_keyboard(current))
+
+
+@router.callback_query(F.data == "settings:site_menu")
+async def site_menu(cb: CallbackQuery, app: App, state: FSMContext) -> None:
+    await state.clear()
+    await _site_screen(cb, app)
+    await cb.answer()
+
+
+@router.callback_query(F.data.startswith("site:set:"))
+async def site_set(cb: CallbackQuery, app: App) -> None:
+    name = (cb.data or "").split(":", 2)[2]
+    if name not in FAKE_SITE_TEMPLATES:
+        await cb.answer("Неизвестный шаблон.", show_alert=True)
+        return
+    if name == app.settings.load().site.template:
+        await cb.answer("Этот шаблон уже выбран.")
+        return
+    await notify_and_apply(cb, "шаблон сайта", lambda: SettingsService(app).set_site_template(name))
+    await _site_screen(cb, app)
 
 
 # ─── защита от сканеров ──────────────────────────────────────────────────────

@@ -8,7 +8,7 @@ from aiogram.types import InlineKeyboardButton as Btn
 from aiogram.types import InlineKeyboardMarkup as Kb
 
 from kvnbox.bot.legacy import proto_label, proto_type
-from kvnbox.core.models import User
+from kvnbox.core.models import SITE_TEMPLATE_LABELS, User
 from kvnbox.services.users import core_suffix
 
 MAIN = Btn(text="« Главное меню", callback_data="menu:main")
@@ -61,10 +61,20 @@ def settings_menu_keyboard(bbr_active: bool) -> Kb:
             [Btn(text=_a(bbr), callback_data="settings:bbr_toggle")],
             [Btn(text=_a("🛡️ Защита от сканеров"), callback_data="settings:security_menu")],
             [Btn(text=_a("💾 Резервные копии"), callback_data="settings:backup_menu")],
+            [Btn(text=_a("🌐 Шаблон сайта"), callback_data="settings:site_menu")],
             [Btn(text=_a("🔄 Проверить обновления"), callback_data="settings:check_updates")],
             [MAIN],
         ]
     )
+
+
+def site_template_keyboard(current: str) -> Kb:
+    """Шаблоны фейкового сайта; текущий отмечен ✅."""
+    rows = [
+        [Btn(text=("✅ " if name == current else "") + label, callback_data=f"site:set:{name}")]
+        for label, name in SITE_TEMPLATE_LABELS
+    ]
+    return Kb(inline_keyboard=[*rows, [TO_SETTINGS], [MAIN]])
 
 
 def ssh_management_keyboard(mode: str = "password") -> Kb:

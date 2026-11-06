@@ -183,7 +183,7 @@
 </html>
 ` 500
         }
-        @sf_r3 path_regexp ^(?:/accounts/password/change/|/ocm\-via\-webdav/|/sso\-to\-thirdpart/|/|/repo/history/revert/(?:[-0-9a-f]{36})/|/repo/upload_check/|/repo/download_dir/(?:[-0-9a-f]{36})/|/repo/file_revisions/(?:[-0-9a-f]{36})/|/repo/sdoc_revision/(?:[-0-9a-f]{36})/|/repo/sdoc_revisions/(?:[-0-9a-f]{36})/|/repo/sdoc_export_to_docx/(?:[-0-9a-f]{36})/|/repo/file-access/(?:[-0-9a-f]{36})/|/repo/text_diff/(?:[-0-9a-f]{36})/|/repo/history/(?:[-0-9a-f]{36})/|/repo/history/view/(?:[-0-9a-f]{36})/|/repo/(?:[-0-9a-f]{36})/snapshot/|/repo/(?:[-0-9a-f]{36})/trash/|/repo/(?:[-0-9a-f]{36})/raw/(?:.*)|/lib/(?:[-0-9a-f]{36})/file(?:.*)|/wiki/lib/(?:[-0-9a-f]{36})/(?:.*)|/dingtalk/connect/|/dingtalk/connect\-callback/|/dingtalk/disconnect/|/convert_cmmt_desc_link/|/dashboard/|/my\-activities/|/starred/|/linked\-devices/|/share\-admin\-libs/|/share\-admin\-folders/|/share\-admin\-share\-links/|/share\-admin\-upload\-links/|/shared\-libs/|/shared\-with\-ocm/|/my\-libs/|/groups/|/library/(?:[-0-9a-f]{36})/|/library/(?:[-0-9a-f]{36})/(?:[^/]+)/(?:.*)|/my\-libs/deleted/|/org/|/invitations/|/avatar/add/|/notice/list/|/options/save/|/options/enable_sub_lib/|/profile/|/profile/[^/]+/get/|/profile/delete/|/profile/default\-repo/|/profile/two_factor_authentication/setup/|/profile/two_factor_authentication/qrcode/|/profile/two_factor_authentication/disable/|/profile/(?:[^/]*)/|/share/link/save/|/share/link/export\-excel/|/published/|/work\-weixin/oauth\-connect/|/work\-weixin/oauth\-connect\-callback/|/work\-weixin/oauth\-disconnect/|/drafts/|/sys/seafadmin/delete/(?:[-0-9a-f]{36})/|/sys/useradmin/export\-excel/|/sys/groupadmin/export\-excel/|/sys/sudo/|/useradmin/remove/[^/]+/|/useradmin/removeadmin/[^/]+/|/useradmin/password/reset/[^/]+/|/useradmin/batchadduser/example/|/sys/info/|/sys/statistics/file/|/sys/statistics/storage/|/sys/statistics/user/|/sys/statistics/traffic/|/sys/statistics/reports/|/sys/desktop\-devices/|/sys/mobile\-devices/|/sys/device\-errors/|/sys/notifications/|/sys/web\-settings/|/sys/all\-libraries/|/sys/search\-libraries/|/sys/system\-library/|/sys/trash\-libraries/|/sys/libraries/(?:[-0-9a-f]{36})/|/sys/libraries/(?:[-0-9a-f]{36})/(?:[^/]+)/(?:.*)|/sys/groups/|/sys/search\-groups/|/sys/departments/|/sys/users/|/sys/search\-users/|/sys/users/admins/|/sys/users/ldap/|/sys/users/ldap\-imported/|/sys/users/[^/]+/|/sys/users/[^/]+/owned\-libraries/|/sys/users/[^/]+/shared\-libraries/|/sys/users/[^/]+/shared\-links/|/sys/users/[^/]+/groups/|/sys/logs/login/|/sys/logs/file\-access/|/sys/logs/file\-update/|/sys/logs/share\-permission/|/sys/admin\-logs/operation/|/sys/admin\-logs/login/|/sys/organizations/|/sys/search\-organizations/|/sys/institutions/|/sys/terms\-and\-conditions/|/sys/share\-links/|/sys/upload\-links/|/sys/work\-weixin/|/sys/work\-weixin/departments/|/sys/dingtalk/|/sys/dingtalk/departments/|/sys/invitations/|/sys/abuse\-reports/|/sys/virus\-files/all/|/sys/virus\-files/unhandled/)$
+        @sf_r3 path_regexp ^(?:/accounts/password/change/|/ocm\-via\-webdav/|/sso\-to\-thirdpart/|/|/repo/history/revert/(?:[-0-9a-f]{36})/|/repo/upload_check/|/repo/download_dir/(?:[-0-9a-f]{36})/|/repo/file_revisions/(?:[-0-9a-f]{36})/|/repo/sdoc_revision/(?:[-0-9a-f]{36})/|/repo/sdoc_revisions/(?:[-0-9a-f]{36})/|/repo/sdoc_export_to_docx/(?:[-0-9a-f]{36})/|/repo/file-access/(?:[-0-9a-f]{36})/|/repo/text_diff/(?:[-0-9a-f]{36})/|/repo/history/(?:[-0-9a-f]{36})/|/repo/history/view/(?:[-0-9a-f]{36})/|/repo/(?:[-0-9a-f]{36})/snapshot/|/repo/(?:[-0-9a-f]{36})/trash/|/repo/(?:[-0-9a-f]{36})/raw/(?:.*)|/lib/(?:[-0-9a-f]{36})/file(?:.*)|/wiki/lib/(?:[-0-9a-f]{36})/(?:.*)|/dingtalk/connect/|/dingtalk/connect\-callback/|/dingtalk/disconnect/|/convert_cmmt_desc_link/|/dashboard/|/my\-activities/|/starred/|/linked\-devices/|/share\-admin\-libs/|/share\-admin\-folders/|/share\-admin\-share\-links/|/share\-admin\-upload\-links/|/shared\-libs/|/shared\-with\-ocm/|/my\-libs/|/groups/|/library/(?:[-0-9a-f]{36})/|/library/(?:[-0-9a-f]{36})/(?:[^/]+)/(?:.*)|/my\-libs/deleted/|/org/|/invitations/|/avatar/add/|/notice/list/|/options/save/|/options/enable_sub_lib/|/profile/|/profile/[^/]+/get/|/profile/delete/|/profile/default\-repo/|/profile/two_factor_authentication/setup/|/profile/two_factor_authentication/qrcode/|/profile/two_factor_authentication/disable/|/profile/(?:[^/]*)/|/share/link/save/|/share/link/export\-excel/|/help/|/help/introduction/|/help/libraries_managing/|/help/restoring_deleted_files/|/help/finding_older_version_files/|/help/library_history_and_snapshots/|/help/setting_library_history/|/help/deleting_a_library/|/help/viewing_files_within_web_app/|/help/full_text_file_search/|/help/sharing_files_and_folders/|/help/groups_managing/|/help/file_locking/|/help/folder_permission/|/help/departments/|/help/manage_library_as_wiki/|/help/install_sync/|/help/syncing_existing_folders/|/help/selective_sync/|/help/read\-only_syncing/|/help/unsync_resync/|/help/sync_interval/|/help/desktop_proxy/|/help/conflicts/|/help/ignore/|/help/using_drive_client/|/help/drive_client_2.0_for_windows_10/|/help/encrypted_libraries/|/published/|/work\-weixin/oauth\-connect/|/work\-weixin/oauth\-connect\-callback/|/work\-weixin/oauth\-disconnect/|/drafts/|/sys/seafadmin/delete/(?:[-0-9a-f]{36})/|/sys/useradmin/export\-excel/|/sys/groupadmin/export\-excel/|/sys/sudo/|/useradmin/remove/[^/]+/|/useradmin/removeadmin/[^/]+/|/useradmin/password/reset/[^/]+/|/useradmin/batchadduser/example/|/sys/info/|/sys/statistics/file/|/sys/statistics/storage/|/sys/statistics/user/|/sys/statistics/traffic/|/sys/statistics/reports/|/sys/desktop\-devices/|/sys/mobile\-devices/|/sys/device\-errors/|/sys/notifications/|/sys/web\-settings/|/sys/all\-libraries/|/sys/search\-libraries/|/sys/system\-library/|/sys/trash\-libraries/|/sys/libraries/(?:[-0-9a-f]{36})/|/sys/libraries/(?:[-0-9a-f]{36})/(?:[^/]+)/(?:.*)|/sys/groups/|/sys/search\-groups/|/sys/departments/|/sys/users/|/sys/search\-users/|/sys/users/admins/|/sys/users/ldap/|/sys/users/ldap\-imported/|/sys/users/[^/]+/|/sys/users/[^/]+/owned\-libraries/|/sys/users/[^/]+/shared\-libraries/|/sys/users/[^/]+/shared\-links/|/sys/users/[^/]+/groups/|/sys/logs/login/|/sys/logs/file\-access/|/sys/logs/file\-update/|/sys/logs/share\-permission/|/sys/admin\-logs/operation/|/sys/admin\-logs/login/|/sys/organizations/|/sys/search\-organizations/|/sys/institutions/|/sys/terms\-and\-conditions/|/sys/share\-links/|/sys/upload\-links/|/sys/work\-weixin/|/sys/work\-weixin/departments/|/sys/dingtalk/|/sys/dingtalk/departments/|/sys/invitations/|/sys/abuse\-reports/|/sys/virus\-files/all/|/sys/virus\-files/unhandled/)$
         handle @sf_r3 {
             header Content-Language {sf_lang}
             header Vary "Accept-Language, Cookie"
@@ -713,310 +713,30 @@ Disallow: /
             header Allow "GET, HEAD, OPTIONS"
             respond `{}` 200
         }
-        @sf_r65 path_regexp ^(?:/help/)$
+        @sf_r65 path_regexp ^(?:/captcha/image/(?:\w+)/|/captcha/image/(?:\w+)@2/)$
         handle @sf_r65 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help.html /l/en/help.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r66 path_regexp ^(?:/help/introduction/)$
-        handle @sf_r66 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__introduction.html /l/en/help__introduction.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r67 path_regexp ^(?:/help/libraries_managing/)$
-        handle @sf_r67 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__libraries_managing.html /l/en/help__libraries_managing.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r68 path_regexp ^(?:/help/restoring_deleted_files/)$
-        handle @sf_r68 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__restoring_deleted_files.html /l/en/help__restoring_deleted_files.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r69 path_regexp ^(?:/help/finding_older_version_files/)$
-        handle @sf_r69 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__finding_older_version_files.html /l/en/help__finding_older_version_files.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r70 path_regexp ^(?:/help/library_history_and_snapshots/)$
-        handle @sf_r70 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__library_history_and_snapshots.html /l/en/help__library_history_and_snapshots.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r71 path_regexp ^(?:/help/setting_library_history/)$
-        handle @sf_r71 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__setting_library_history.html /l/en/help__setting_library_history.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r72 path_regexp ^(?:/help/deleting_a_library/)$
-        handle @sf_r72 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__deleting_a_library.html /l/en/help__deleting_a_library.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r73 path_regexp ^(?:/help/viewing_files_within_web_app/)$
-        handle @sf_r73 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__viewing_files_within_web_app.html /l/en/help__viewing_files_within_web_app.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r74 path_regexp ^(?:/help/full_text_file_search/)$
-        handle @sf_r74 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__full_text_file_search.html /l/en/help__full_text_file_search.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r75 path_regexp ^(?:/help/sharing_files_and_folders/)$
-        handle @sf_r75 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__sharing_files_and_folders.html /l/en/help__sharing_files_and_folders.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r76 path_regexp ^(?:/help/groups_managing/)$
-        handle @sf_r76 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__groups_managing.html /l/en/help__groups_managing.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r77 path_regexp ^(?:/help/file_locking/)$
-        handle @sf_r77 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__file_locking.html /l/en/help__file_locking.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r78 path_regexp ^(?:/help/folder_permission/)$
-        handle @sf_r78 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__folder_permission.html /l/en/help__folder_permission.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r79 path_regexp ^(?:/help/departments/)$
-        handle @sf_r79 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__departments.html /l/en/help__departments.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r80 path_regexp ^(?:/help/manage_library_as_wiki/)$
-        handle @sf_r80 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__manage_library_as_wiki.html /l/en/help__manage_library_as_wiki.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r81 path_regexp ^(?:/help/install_sync/)$
-        handle @sf_r81 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__install_sync.html /l/en/help__install_sync.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r82 path_regexp ^(?:/help/syncing_existing_folders/)$
-        handle @sf_r82 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__syncing_existing_folders.html /l/en/help__syncing_existing_folders.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r83 path_regexp ^(?:/help/selective_sync/)$
-        handle @sf_r83 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__selective_sync.html /l/en/help__selective_sync.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r84 path_regexp ^(?:/help/read\-only_syncing/)$
-        handle @sf_r84 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__read-only_syncing.html /l/en/help__read-only_syncing.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r85 path_regexp ^(?:/help/unsync_resync/)$
-        handle @sf_r85 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__unsync_resync.html /l/en/help__unsync_resync.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r86 path_regexp ^(?:/help/sync_interval/)$
-        handle @sf_r86 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__sync_interval.html /l/en/help__sync_interval.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r87 path_regexp ^(?:/help/desktop_proxy/)$
-        handle @sf_r87 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__desktop_proxy.html /l/en/help__desktop_proxy.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r88 path_regexp ^(?:/help/conflicts/)$
-        handle @sf_r88 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__conflicts.html /l/en/help__conflicts.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r89 path_regexp ^(?:/help/ignore/)$
-        handle @sf_r89 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__ignore.html /l/en/help__ignore.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r90 path_regexp ^(?:/help/using_drive_client/)$
-        handle @sf_r90 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__using_drive_client.html /l/en/help__using_drive_client.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r91 path_regexp ^(?:/help/drive_client_2.0_for_windows_10/)$
-        handle @sf_r91 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__drive_client_2.0_for_windows_10.html /l/en/help__drive_client_2.0_for_windows_10.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r92 path_regexp ^(?:/help/encrypted_libraries/)$
-        handle @sf_r92 {
-            header Content-Language {sf_lang}
-            header Vary "Accept-Language, Cookie"
-            try_files /l/{sf_lang}/help__encrypted_libraries.html /l/en/help__encrypted_libraries.html
-            templates {
-                between [[ ]]
-            }
-            file_server
-        }
-        @sf_r93 path_regexp ^(?:/captcha/image/(?:\w+)/|/captcha/image/(?:\w+)@2/)$
-        handle @sf_r93 {
             header Content-Language {sf_lang}
             header Vary "Accept-Language, Cookie"
             header Content-Type "text/html; charset=utf-8"
             respond 410
         }
-        @sf_r94 path_regexp ^(?:/thumbnail/(?:[a-f0-9]+)/create/)$
-        handle @sf_r94 {
+        @sf_r66 path_regexp ^(?:/thumbnail/(?:[a-f0-9]+)/create/)$
+        handle @sf_r66 {
             header Content-Language {sf_lang}
             header Vary "Accept-Language, Cookie"
             header Content-Type "application/json; charset=utf-8"
             respond `{"error": "Invalid token."}` 400
         }
-        @sf_r95 path_regexp ^(?:/inst/useradmin/remove/[^/]+/)$
-        handle @sf_r95 {
+        @sf_r67 path_regexp ^(?:/inst/useradmin/remove/[^/]+/)$
+        handle @sf_r67 {
             header Content-Language {sf_lang}
             header Vary "Accept-Language, Cookie"
             header Content-Type "text/html; charset=utf-8"
             header Allow "POST"
             respond 405
         }
-        @sf_r96 path_regexp ^(?:/work\-weixin/oauth\-login/)$
-        handle @sf_r96 {
+        @sf_r68 path_regexp ^(?:/work\-weixin/oauth\-login/)$
+        handle @sf_r68 {
             header Content-Language {sf_lang}
             header Vary "Accept-Language, Cookie"
             try_files /l/{sf_lang}/work-weixin__oauth-login.html /l/en/work-weixin__oauth-login.html
@@ -1025,8 +745,8 @@ Disallow: /
             }
             file_server
         }
-        @sf_r97 path_regexp ^(?:/work\-weixin/oauth\-callback/)$
-        handle @sf_r97 {
+        @sf_r69 path_regexp ^(?:/work\-weixin/oauth\-callback/)$
+        handle @sf_r69 {
             header Content-Language {sf_lang}
             header Vary "Accept-Language, Cookie"
             try_files /l/{sf_lang}/work-weixin__oauth-callback.html /l/en/work-weixin__oauth-callback.html
@@ -1035,8 +755,8 @@ Disallow: /
             }
             file_server
         }
-        @sf_r98 path_regexp ^(?:/weixin/oauth\-login/)$
-        handle @sf_r98 {
+        @sf_r70 path_regexp ^(?:/weixin/oauth\-login/)$
+        handle @sf_r70 {
             header Content-Language {sf_lang}
             header Vary "Accept-Language, Cookie"
             try_files /l/{sf_lang}/weixin__oauth-login.html /l/en/weixin__oauth-login.html
@@ -1045,8 +765,8 @@ Disallow: /
             }
             file_server
         }
-        @sf_r99 path_regexp ^(?:/weixin/oauth\-callback/)$
-        handle @sf_r99 {
+        @sf_r71 path_regexp ^(?:/weixin/oauth\-callback/)$
+        handle @sf_r71 {
             header Content-Language {sf_lang}
             header Vary "Accept-Language, Cookie"
             try_files /l/{sf_lang}/weixin__oauth-callback.html /l/en/weixin__oauth-callback.html
@@ -1055,7 +775,7 @@ Disallow: /
             }
             file_server
         }
-        @sf_slash path_regexp ^(?:/accounts/activate/complete|/accounts/activate/(?:\w+)|/choose_register|/api/v2.1/via-repo-token/dir|/api/v2.1/via-repo-token/upload-link|/api/v2.1/via-repo-token/repo-info|/api/v2.1/via-repo-token/file|/profile/two_factor_authentication/setup/complete|/profile/two_factor_authentication/backup/tokens|/share/ajax/get\-link\-audit\-code|/accounts/password/change|/ocm\-via\-webdav|/sso\-to\-thirdpart||/repo/history/revert/(?:[-0-9a-f]{36})|/repo/upload_check|/repo/download_dir/(?:[-0-9a-f]{36})|/repo/file_revisions/(?:[-0-9a-f]{36})|/repo/sdoc_revision/(?:[-0-9a-f]{36})|/repo/sdoc_revisions/(?:[-0-9a-f]{36})|/repo/sdoc_export_to_docx/(?:[-0-9a-f]{36})|/repo/file-access/(?:[-0-9a-f]{36})|/repo/text_diff/(?:[-0-9a-f]{36})|/repo/history/(?:[-0-9a-f]{36})|/repo/history/view/(?:[-0-9a-f]{36})|/repo/(?:[-0-9a-f]{36})/snapshot|/repo/(?:[-0-9a-f]{36})/trash|/dingtalk/connect|/dingtalk/connect\-callback|/dingtalk/disconnect|/convert_cmmt_desc_link|/dashboard|/my\-activities|/starred|/linked\-devices|/share\-admin\-libs|/share\-admin\-folders|/share\-admin\-share\-links|/share\-admin\-upload\-links|/shared\-libs|/shared\-with\-ocm|/my\-libs|/groups|/library/(?:[-0-9a-f]{36})|/my\-libs/deleted|/org|/invitations|/avatar/add|/notice/list|/options/save|/options/enable_sub_lib|/profile|/profile/[^/]+/get|/profile/delete|/profile/default\-repo|/profile/two_factor_authentication/setup|/profile/two_factor_authentication/qrcode|/profile/two_factor_authentication/disable|/profile/(?:[^/]*)|/share/link/save|/share/link/export\-excel|/published|/work\-weixin/oauth\-connect|/work\-weixin/oauth\-connect\-callback|/work\-weixin/oauth\-disconnect|/drafts|/sys/seafadmin/delete/(?:[-0-9a-f]{36})|/sys/useradmin/export\-excel|/sys/groupadmin/export\-excel|/sys/sudo|/useradmin/remove/[^/]+|/useradmin/removeadmin/[^/]+|/useradmin/password/reset/[^/]+|/useradmin/batchadduser/example|/sys/info|/sys/statistics/file|/sys/statistics/storage|/sys/statistics/user|/sys/statistics/traffic|/sys/statistics/reports|/sys/desktop\-devices|/sys/mobile\-devices|/sys/device\-errors|/sys/notifications|/sys/web\-settings|/sys/all\-libraries|/sys/search\-libraries|/sys/system\-library|/sys/trash\-libraries|/sys/libraries/(?:[-0-9a-f]{36})|/sys/groups|/sys/search\-groups|/sys/departments|/sys/users|/sys/search\-users|/sys/users/admins|/sys/users/ldap|/sys/users/ldap\-imported|/sys/users/[^/]+|/sys/users/[^/]+/owned\-libraries|/sys/users/[^/]+/shared\-libraries|/sys/users/[^/]+/shared\-links|/sys/users/[^/]+/groups|/sys/logs/login|/sys/logs/file\-access|/sys/logs/file\-update|/sys/logs/share\-permission|/sys/admin\-logs/operation|/sys/admin\-logs/login|/sys/organizations|/sys/search\-organizations|/sys/institutions|/sys/terms\-and\-conditions|/sys/share\-links|/sys/upload\-links|/sys/work\-weixin|/sys/work\-weixin/departments|/sys/dingtalk|/sys/dingtalk/departments|/sys/invitations|/sys/abuse\-reports|/sys/virus\-files/all|/sys/virus\-files/unhandled|/accounts/password/change/done|/accounts/password/reset|/accounts/password/reset/confirm/(?:[0-9A-Za-z]+)-(?:.+)|/accounts/password/reset/complete|/accounts/password/reset/done|/accounts/login/two\-factor\-auth|/profile/two_factor_authentication/verify|/accounts/login|/accounts/logout|/accounts/register|/ocm\-via\-webdav/received\-shares/[0-9]+|/repo/(?:[-0-9a-f]{36})/history/files|/repo/(?:[-0-9a-f]{36})/trash/files|/repo/(?:[-0-9a-f]{36})/snapshot/files|/repo/(?:[-0-9a-f]{36})/(?:[0-9a-f]{40})/download|/lib/(?:[-0-9a-f]{36})/revisions/(?:\d+)|/group/[0-9]+|/ajax/repo/(?:[-0-9a-f]{36})/history/changes|/ajax/u/d/(?:[-0-9a-f]+)/upload|/ajax/lib/(?:[-0-9a-f]{36})/dir|/api2/two-factor-auth/(?:\S+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)|/api2/accounts/(?:\S+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)|/api2/repos/(?:[-0-9a-f]{36})/files/(?:[0-9a-f]{40})/blks/(?:[0-9a-f]{40})/download-link|/api2/repos/(?:[-0-9-a-f]{36})/file/comments/(?:\d+)|/api2/avatars/user/(?:\S+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/resized/(?:[0-9]+)|/api2/avatars/group/[0-9]+/resized/[0-9]+|/api2/groups/[0-9]+|/api2/groups/[0-9]+/members|/api2/groups/[0-9]+/repos|/api2/groups/(?:\d+)/repos/(?:[-0-9a-f]{36})|/api/v2.1/smart-links/(?:[-0-9a-f]{36})|/api/v2.1/groups/(?:\d+)|/api/v2.1/groups/(?:\d+)/libraries|/api/v2.1/groups/(?:\d+)/libraries/(?:[-0-9a-f]{36})|/api/v2.1/groups/(?:\d+)/group-owned-libraries|/api/v2.1/groups/(?:\d+)/group-owned-libraries/(?:[-0-9a-f]{36})|/api/v2.1/groups/(?:\d+)/members|/api/v2.1/groups/(?:\d+)/search-member|/api/v2.1/groups/(?:\d+)/members/bulk|/api/v2.1/groups/(?:\d+)/members/import|/api/v2.1/group-members-import-example|/api/v2.1/groups/(?:\d+)/members/(?:[^/]+)|/api/v2.1/address-book/groups/(?:\d+)/sub-groups|/api/v2.1/address-book/groups/(?:\d+)/search-member|/api/v2.1/repos/(?:[-0-9a-f]{36})/custom-share-permissions/(?:\d+)|/api/v2.1/share-links/(?:[a-f0-9]+)/tagged-files/(?:\d+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/commits/(?:[0-9a-f]{40})|/api/v2.1/repos/(?:[-0-9a-f]{36})/commits/(?:[0-9a-f]{40})/dir|/api/v2.1/repos/(?:[-0-9a-f]{36})/commits/(?:[0-9a-f]{40})/revert|/api/v2.1/repos/(?:[-0-9a-f]{36})/repo-tags/(?:\d+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/file-tags/(?:\d+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/tagged-files/(?:\d+)|/api/v2.1/related-files/(?:\d+)|/api/v2.1/invitations/(?:[a-f0-9]{32})|/api/v2.1/invitations/(?:[a-f0-9]{32})/revoke|/api/v2.1/drafts/(?:\d+)|/api/v2.1/drafts/(?:\d+)/reviewer|/api/v2.1/ocm/shares-prepare/(?:\d+)|/api/v2.1/ocm/shares-received/(?:\d+)|/api/v2.1/ocm/providers/(?:[-0-9a-f]{36})/repos/(?:[-0-9a-f]{36})/dir|/api/v2.1/ocm/providers/(?:[-0-9a-f]{36})/repos/(?:[-0-9a-f]{36})/download-link|/api/v2.1/ocm/providers/(?:[-0-9a-f]{36})/repos/(?:[-0-9a-f]{36})/upload-link|/api/v2.1/admin/abuse-reports/(?:\d+)|/api/v2.1/admin/users/(?:[^/]+@[^/]+)|/api/v2.1/admin/users/(?:[^/]+@[^/]+)/reset-password|/api/v2.1/admin/users/(?:[^/]+@[^/]+)/groups|/api/v2.1/admin/users/(?:[^/]+@[^/]+)/share-links|/api/v2.1/admin/users/(?:[^/]+@[^/]+)/upload-links|/api/v2.1/admin/users/(?:[^/]+@[^/]+)/beshared-repos|/api/v2.1/admin/groups/(?:\d+)|/api/v2.1/admin/groups/(?:\d+)/libraries|/api/v2.1/admin/groups/(?:\d+)/libraries/(?:[-0-9a-f]{36})|/api/v2.1/admin/groups/(?:\d+)/members|/api/v2.1/admin/groups/(?:\d+)/members/(?:[^/]+)|/api/v2.1/admin/groups/(?:\d+)/group-owned-libraries|/api/v2.1/admin/groups/(?:\d+)/group-owned-libraries/(?:[-0-9a-f]{36})|/api/v2.1/admin/organizations/(?:\d+)|/api/v2.1/admin/organizations/(?:\d+)/users|/api/v2.1/admin/organizations/(?:\d+)/users/(?:[^/]+)|/api/v2.1/admin/organizations/(?:\d+)/groups|/api/v2.1/admin/organizations/(?:\d+)/repos|/api/v2.1/admin/organizations/(?:\d+)/statistics/traffic|/api/v2.1/admin/institutions/(?:\d+)|/api/v2.1/admin/institutions/(?:\d+)/users|/api/v2.1/admin/institutions/(?:\d+)/users/(?:[^/]+)|/api/v2.1/admin/invitations/(?:[a-f0-9]{32})|/avatar/render_primary/(?:[^/]+)/(?:[\d]+)|/group/[0-9]+/remove|/share/ajax/private\-share\-dir|/captcha/refresh|/thumbnail/(?:[-0-9a-f]{36})/create|/inst/info|/inst/useradmin|/inst/useradmin/search|/inst/useradmin/[^/]+|/inst/useradmin/[^/]+/owned\-libraries|/inst/useradmin/[^/]+/groups|/inst/useradmin/info/[^/]+|/inst/useradmin/set_quota/[^/]+|/inst/useradmin/toggle_status/[^/]+|/invite/token/(?:[a-f0-9]{32})|/terms|/terms/accept|/terms/accept/(?:[a-zA-Z0-9_.-]+)/(?:[0-9\.]+)|/published/[^/]+|/drafts/[0-9]+|/api/v2.1/admin/address-book/groups/(?:\d+)|/api/v2.1/admin/virus-files/(?:\d+)|/api/v2.1/admin/sys-notifications/(?:\d+)|/api/v2.1/admin/terms-and-conditions/(?:\d+)|/api/v2.1/admin/work-weixin/departments/(?:\d+)/members|/api/v2.1/admin/dingtalk/departments/(?:\d+)/members|/sys/orgadmin/[0-9]+/set_quota|/sys/orgadmin/[0-9]+/set_member_quota|/sys/check-license|/useradmin/add|/useradmin/toggle_role/[^/]+|/useradmin/[^/]+/set_quota|/useradmin/batchmakeadmin|/sys/groups/[0-9]+/libraries|/sys/groups/[0-9]+/members|/sys/departments/[0-9]+|/sys/departments/[0-9]+/members|/sys/departments/[0-9]+/libraries|/sys/organizations/[0-9]+/info|/sys/organizations/[0-9]+/users|/sys/organizations/[0-9]+/groups|/sys/organizations/[0-9]+/libraries|/sys/institutions/[0-9]+/info|/sys/institutions/[0-9]+/members|/sys/institutions/[0-9]+/admins|/demo|/accounts/register/complete|/mobile\-login|/sso|/i18n|/client\-login|/work\-weixin\-sso|/dingtalk\-sso|/jwt\-sso|/shib-login|/oauth/login|/oauth/callback|/thirdparty\-editor/file\-info|/thirdparty\-editor/file\-content|/api2/auth-token|/api2/device\-wiped|/api/v2.1/share-links/(?:[a-f0-9]+)/upload/done|/api/v2.1/via-repo-token/sync-batch-move-item|/api/v2.1/via-repo-token/sync-batch-copy-item|/api/v2.1/cancel-zip-task|/api/v2.1/ocm/shares|/api/v2.1/ocm/notifications|/api/v2.1/abuse-reports|/ocm\-via\-webdav/received\-shares|/ocm\-via\-webdav/download\-received\-file|/cad/api/file\-content|/api2/auth/ping|/api2/accounts|/api2/search|/api2/search\-user|/api2/repos/(?:[-0-9a-f]{36})/history|/api2/repos/(?:[-0-9a-f]{36})/download-info|/api2/repos/(?:[-0-9a-f]{36})/download-shared-links|/api2/repos/(?:[-0-9a-f]{36})/upload-shared-links|/api2/repos/(?:[-0-9a-f]{36})/upload-link|/api2/repos/(?:[-0-9a-f]{36})/update-link|/api2/repos/(?:[-0-9a-f]{36})/update-blks-link|/api2/repos/(?:[-0-9-a-f]{36})/owa-file|/api2/repos/(?:[-0-9-a-f]{36})/file/metadata|/api2/repos/(?:[-0-9-a-f]{36})/file/comments/counts|/api2/repos/(?:[-0-9-a-f]{36})/file/detail|/api2/repos/(?:[-0-9-a-f]{36})/file/history|/api2/repos/(?:[-0-9-a-f]{36})/file/revision|/api2/repos/(?:[-0-9-a-f]{36})/dir/metadata|/api2/repos/(?:[-0-9-a-f]{36})/dir/sub_repo|/api2/repos/(?:[-0-9-a-f]{36})/thumbnail|/api2/shared\-repos|/api2/beshared\-repos|/api2/shared\-upload\-links|/api2/repo\-tokens|/api2/repo_history_changes/(?:[-0-9a-f]{36})|/api2/unseen_messages|/api/v2.1/smart-link|/api/v2.1/search-file|/api/v2.1/departments|/api/v2.1/all-groups|/api/v2.1/shareable-groups|/api/v2.1/search-group|/api/v2.1/repo-folder-share-info|/api/v2.1/shared-folders|/api/v2.1/shared-repos|/api/v2.1/revision-tags/tag-names|/api/v2.1/repos|/api/v2.1/repos/(?:[-0-9a-f]{36})/file/history|/api/v2.1/repos/(?:[-0-9a-f]{36})/file/new_history|/api/v2.1/repos/(?:[-0-9a-f]{36})/dir/detail|/api/v2.1/repos/(?:[-0-9a-f]{36})/history|/api/v2.1/repos/(?:[-0-9a-f]{36})/related-users|/api/v2.1/repos/(?:[-0-9a-f]{36})/share-links|/api/v2.1/repos/(?:[-0-9a-f]{36})/upload-links|/api/v2.1/repos/(?:[-0-9a-f]{36})/share-info|/api/v2.1/recent-added-files|/api/v2.1/query-copy-move-progress|/api/v2.1/repos/(?:[-0-9a-f]{36})/shared/invitations|/api/v2.1/repo/(?:[-0-9a-f]{36})/drafts|/api/v2.1/repo/(?:[-0-9a-f]{36})/draft-counts|/api/v2.1/activities|/api/v2.1/ocm/shares-received|/api/v2.1/admin/user-activities|/api/v2.1/admin/abuse-reports|/api/v2.1/admin/sysinfo|/api/v2.1/admin/revision-tags/tagged-items|/api/v2.1/admin/statistics/file-operations|/api/v2.1/admin/statistics/total-storage|/api/v2.1/admin/statistics/active-users|/api/v2.1/admin/statistics/system-traffic|/api/v2.1/admin/statistics/system-user-traffic|/api/v2.1/admin/statistics/system-org-traffic|/api/v2.1/admin/statistics/system-user-traffic/excel|/api/v2.1/admin/statistics/system-user-storage/excel|/api/v2.1/admin/ldap-users|/api/v2.1/admin/search-user|/api/v2.1/admin/admin-users|/api/v2.1/admin/search-library|/api/v2.1/admin/system-library|/api/v2.1/admin/system-library/upload-link|/api/v2.1/admin/search-group|/api/v2.1/admin/departments|/api/v2.1/admin/logs/login-logs|/api/v2.1/admin/logs/file-access-logs|/api/v2.1/admin/logs/file-update-logs|/api/v2.1/admin/logs/share-permission-logs|/api/v2.1/admin/admin-logs|/api/v2.1/admin/admin-login-logs|/api/v2.1/admin/share-links|/api/v2.1/admin/share-links/(?:[a-f0-9]+)/download|/api/v2.1/admin/share-links/(?:[a-f0-9]+)/dirents|/api/v2.1/admin/upload-links|/api/v2.1/admin/upload-links/(?:[a-f0-9]+)/upload|/api/v2.1/admin/organizations-basic-info|/api/v2.1/admin/search-organization|/api/v2.1/admin/file-scan-records|/api/v2.1/admin/virus-files|/api/v2.1/admin/notifications|/api/v2.1/admin/work-weixin/departments|/api/v2.1/admin/dingtalk/departments|/f/(?:[a-f0-9]+)|/d/(?:[a-f0-9]+)|/d/(?:[a-f0-9]+)/files|/u/d/(?:[a-f0-9]+)|/view\-image\-via\-share\-link|/view\-image\-via\-public\-wiki|/dingtalk/login|/dingtalk/callback|/custom\-css|/download_client_program|/ajax/upload\-file\-done|/api2/ping|/api2/server\-info|/api2/logout\-device|/api2/client\-login|/api2/regdevice|/api2/send\-share\-link|/api2/send\-upload\-link|/api2/organization|/api2/repos/(?:[-0-9-a-f]{36})/fileops/delete|/api2/repos/(?:[-0-9-a-f]{36})/fileops/copy|/api2/repos/(?:[-0-9-a-f]{36})/fileops/move|/api/v2.1/user/convert-to-team|/api/v2.1/multi-share-links|/api/v2.1/multi-share-links/batch|/api/v2.1/share-links/(?:[a-f0-9]+)/save-file-to-repo|/api/v2.1/share-links/(?:[a-f0-9]+)/save-items-to-repo|/api/v2.1/repos/batch|/api/v2.1/repos/batch-copy-dir|/api/v2.1/repos/batch-create-dir|/api/v2.1/repos/batch-copy-item|/api/v2.1/repos/batch-move-item|/api/v2.1/repos/async-batch-copy-item|/api/v2.1/repos/async-batch-move-item|/api/v2.1/repos/sync-batch-copy-item|/api/v2.1/repos/sync-batch-move-item|/api/v2.1/repos/(?:[-0-9a-f]{36})/trash/revert-dirents|/api/v2.1/repos/(?:[-0-9a-f]{36})/send-new-password|/api/v2.1/repos/(?:[-0-9a-f]{36})/apply-folder-extended-properties|/api/v2.1/markdown-lint|/api/v2.1/move-folder-merge|/api/v2.1/invitations/batch|/api/v2.1/repos/(?:[-0-9a-f]{36})/shared/invitations/batch|/api/v2.1/user-avatar|/api/v2.1/monitored-repos|/api/v2.1/admin/generate-user-auth-token|/api/v2.1/admin/user-list|/api/v2.1/admin/user-convert-to-team|/api/v2.1/admin/admin-users/batch|/api/v2.1/admin/users/batch|/api/v2.1/admin/import-users|/api/v2.1/admin/share-links/(?:[a-f0-9]+)/check-password|/api/v2.1/admin/upload-links/(?:[a-f0-9]+)/check-password|/api/v2.1/admin/logo|/api/v2.1/admin/favicon|/api/v2.1/admin/license|/api/v2.1/admin/login-background-image|/api/v2.1/admin/virus-files/batch|/api/v2.1/admin/work-weixin/users/batch|/api/v2.1/admin/work-weixin/departments/import|/api/v2.1/admin/dingtalk/users/batch|/api/v2.1/admin/dingtalk/departments/import|/api2/account/info|/api2/repos/(?:[-0-9a-f]{36})/history-limit|/api2/repos/(?:[-0-9a-f]{36})/owner|/api/v2.1/user|/api/v2.1/repos/(?:[-0-9a-f]{36})/auto-delete|/api/v2.1/webdav-secret|/api/v2.1/admin/web-settings|/api/v2.1/admin/libraries/(?:[-0-9a-f]{36})/history-limit|/api2/repos|/api2/repos/public|/api2/repos/(?:[-0-9a-f]{36})/upload-blks-link|/api2/repos/(?:[-0-9-a-f]{36})/file/comments|/api2/default\-repo|/api/v2.1/groups|/api/v2.1/repos/(?:[-0-9a-f]{36})/custom-share-permissions|/api/v2.1/upload-links|/api/v2.1/deleted-repos|/api/v2.1/repos/(?:[-0-9a-f]{36})/file-tags|/api/v2.1/repos/(?:[-0-9a-f]{36})/file/participants|/api/v2.1/repos/(?:[-0-9a-f]{36})/repo-api-tokens|/api/v2.1/related-files|/api/v2.1/repos/(?:[-0-9a-f]{36})/zip-task|/api/v2.1/invitations|/api/v2.1/wikis|/api/v2.1/drafts|/api/v2.1/ocm/shares-prepare|/api/v2.1/admin/users|/api/v2.1/admin/libraries|/api/v2.1/admin/libraries/(?:[-0-9a-f]{36})/dirents|/api/v2.1/admin/default-library|/api/v2.1/admin/groups|/api/v2.1/admin/organizations|/api/v2.1/admin/institutions|/api/v2.1/admin/address-book/groups|/api/v2.1/admin/sys-notifications|/api/v2.1/admin/terms-and-conditions|/api2/repos/(?:[-0-9a-f]{36})|/api2/repos/(?:[-0-9-a-f]{36})/dir|/api2/starredfiles|/api/v2.1/auth-token-by-session|/api/v2.1/share-links|/api/v2.1/repos/(?:[-0-9a-f]{36})/dir|/api/v2.1/repos/(?:[-0-9a-f]{36})/trash|/api/v2.1/starred-items|/api/v2.1/admin/device-trusted-ip|/api2/repos/(?:[-0-9a-f]{36})/user-folder-perm|/api2/repos/(?:[-0-9a-f]{36})/group-folder-perm|/api2/repos/(?:[-0-9-a-f]{36})/file|/api2/repos/(?:[-0-9-a-f]{36})/dir/shared_items|/api2/groups|/api/v2.1/group-owned-libraries/(?:[-0-9a-f]{36})/user-folder-permission|/api/v2.1/group-owned-libraries/(?:[-0-9a-f]{36})/group-folder-permission|/api/v2.1/group-owned-libraries/(?:[-0-9a-f]{36})/user-share|/api/v2.1/group-owned-libraries/(?:[-0-9a-f]{36})/group-share|/api/v2.1/repos/(?:[-0-9a-f]{36})/file|/api/v2.1/repos/(?:[-0-9a-f]{36})/extended-properties|/api/v2.1/admin/shares|/api2/repos/(?:[-0-9a-f]{36})/download-shared-links/(?:[a-f0-9]+)|/api2/repos/(?:[-0-9a-f]{36})/upload-shared-links/(?:[a-f0-9]+)|/api2/beshared-repos/(?:[-0-9-a-f]{36})|/api/v2.1/group-owned-libraries/user-share-in-libraries/(?:[-0-9-a-f]{36})|/api/v2.1/share-links/clean-invalid|/api/v2.1/upload-links/clean-invalid|/api/v2.1/repos/batch-delete-item|/api/v2.1/repos/(?:[-0-9a-f]{36})/file/participant|/api/v2.1/repos/(?:[-0-9a-f]{36})/share-links/(?:[a-f0-9]+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/upload-links/(?:[a-f0-9]+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/tags/(?:.*?)|/api/v2.1/monitored-repos/(?:[-0-9a-f]{36})|/api2/repos/(?:[-0-9-a-f]{36})/file/revert|/api2/repos/(?:[-0-9-a-f]{36})/file/shared-link|/api2/repos/(?:[-0-9-a-f]{36})/dir/revert|/api/v2.1/share-links/(?:[a-f0-9]+)/online-office-lock|/api/v2.1/notification|/api/v2.1/admin/update-user-ccnet-email|/api2/devices|/api2/shared\-links|/api/v2.1/repos/(?:[-0-9a-f]{36})|/api/v2.1/admin/devices|/api/v2.1/admin/device-errors|/api/v2.1/admin/trash-libraries|/api/v2.1/admin/share-links/(?:[a-f0-9]+)|/api/v2.1/admin/upload-links/(?:[a-f0-9]+)|/api/v2.1/admin/invitations|/api2/shared-repos/(?:[-0-9-a-f]{36})|/api/v2.1/shared-repos/(?:[-0-9a-f]{36})|/api/v2.1/repos/(?:[-0-9a-f]{36})/repo-api-tokens/(?:.*)|/api/v2.1/repos/(?:[-0-9a-f]{36})/shared/invitation|/api/v2.1/admin/trash-libraries/(?:[-0-9a-f]{36})|/api2/f/(?:[a-f0-9]+)|/api2/f/(?:[a-f0-9]+)/detail|/api2/d/(?:[a-f0-9]+)/dir|/api/v2.1/share-links/(?:[a-f0-9]+)|/api/v2.1/upload-links/(?:[a-f0-9]+)|/api/v2.1/notifications|/api/v2.1/admin/libraries/(?:[-0-9a-f]{36})|/api/v2.1/admin/libraries/(?:[-0-9a-f]{36})/dirent|/api/v2.1/share-links/(?:[a-f0-9]+)/dirents|/api/v2.1/share-links/(?:[a-f0-9]+)/upload|/api/v2.1/share-links/(?:[a-f0-9]+)/repo-tags|/api/v2.1/upload-links/(?:[a-f0-9]+)/upload|/api/v2.1/revision-tags/tagged-items|/api/v2.1/wikis/(?:[^/]+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/set-password|/api/v2.1/repos/(?:[-0-9a-f]{36})/repo-tags|/api/v2.1/repos/(?:[-0-9a-f]{36})/tags|/api/v2.1/admin/admin-role|/api/v2.1/via-repo-token/download-link|/api/v2.1/via-repo-token/batch-delete-item|/api/v2.1/published-repo-search|/api/v2.1/repos/(?:[-0-9a-f]{36})/file-uploaded-bytes|/api/v2.1/share-link-zip-task|/api/v2.1/query-zip-progress|/api/v2.1/copy-move-task|/api/v2.1/wikis/(?:[^/]+)/dir|/api/v2.1/wikis/(?:[^/]+)/content|/ocm\-provider|/help|/help/introduction|/help/libraries_managing|/help/restoring_deleted_files|/help/finding_older_version_files|/help/library_history_and_snapshots|/help/setting_library_history|/help/deleting_a_library|/help/viewing_files_within_web_app|/help/full_text_file_search|/help/sharing_files_and_folders|/help/groups_managing|/help/file_locking|/help/folder_permission|/help/departments|/help/manage_library_as_wiki|/help/install_sync|/help/syncing_existing_folders|/help/selective_sync|/help/read\-only_syncing|/help/unsync_resync|/help/sync_interval|/help/desktop_proxy|/help/conflicts|/help/ignore|/help/using_drive_client|/help/drive_client_2.0_for_windows_10|/help/encrypted_libraries|/captcha/image/(?:\w+)|/captcha/image/(?:\w+)@2|/thumbnail/(?:[a-f0-9]+)/create|/inst/useradmin/remove/[^/]+|/work\-weixin/oauth\-login|/work\-weixin/oauth\-callback|/weixin/oauth\-login|/weixin/oauth\-callback)$
+        @sf_slash path_regexp ^(?:/accounts/activate/complete|/accounts/activate/(?:\w+)|/choose_register|/api/v2.1/via-repo-token/dir|/api/v2.1/via-repo-token/upload-link|/api/v2.1/via-repo-token/repo-info|/api/v2.1/via-repo-token/file|/profile/two_factor_authentication/setup/complete|/profile/two_factor_authentication/backup/tokens|/share/ajax/get\-link\-audit\-code|/accounts/password/change|/ocm\-via\-webdav|/sso\-to\-thirdpart||/repo/history/revert/(?:[-0-9a-f]{36})|/repo/upload_check|/repo/download_dir/(?:[-0-9a-f]{36})|/repo/file_revisions/(?:[-0-9a-f]{36})|/repo/sdoc_revision/(?:[-0-9a-f]{36})|/repo/sdoc_revisions/(?:[-0-9a-f]{36})|/repo/sdoc_export_to_docx/(?:[-0-9a-f]{36})|/repo/file-access/(?:[-0-9a-f]{36})|/repo/text_diff/(?:[-0-9a-f]{36})|/repo/history/(?:[-0-9a-f]{36})|/repo/history/view/(?:[-0-9a-f]{36})|/repo/(?:[-0-9a-f]{36})/snapshot|/repo/(?:[-0-9a-f]{36})/trash|/dingtalk/connect|/dingtalk/connect\-callback|/dingtalk/disconnect|/convert_cmmt_desc_link|/dashboard|/my\-activities|/starred|/linked\-devices|/share\-admin\-libs|/share\-admin\-folders|/share\-admin\-share\-links|/share\-admin\-upload\-links|/shared\-libs|/shared\-with\-ocm|/my\-libs|/groups|/library/(?:[-0-9a-f]{36})|/my\-libs/deleted|/org|/invitations|/avatar/add|/notice/list|/options/save|/options/enable_sub_lib|/profile|/profile/[^/]+/get|/profile/delete|/profile/default\-repo|/profile/two_factor_authentication/setup|/profile/two_factor_authentication/qrcode|/profile/two_factor_authentication/disable|/profile/(?:[^/]*)|/share/link/save|/share/link/export\-excel|/help|/help/introduction|/help/libraries_managing|/help/restoring_deleted_files|/help/finding_older_version_files|/help/library_history_and_snapshots|/help/setting_library_history|/help/deleting_a_library|/help/viewing_files_within_web_app|/help/full_text_file_search|/help/sharing_files_and_folders|/help/groups_managing|/help/file_locking|/help/folder_permission|/help/departments|/help/manage_library_as_wiki|/help/install_sync|/help/syncing_existing_folders|/help/selective_sync|/help/read\-only_syncing|/help/unsync_resync|/help/sync_interval|/help/desktop_proxy|/help/conflicts|/help/ignore|/help/using_drive_client|/help/drive_client_2.0_for_windows_10|/help/encrypted_libraries|/published|/work\-weixin/oauth\-connect|/work\-weixin/oauth\-connect\-callback|/work\-weixin/oauth\-disconnect|/drafts|/sys/seafadmin/delete/(?:[-0-9a-f]{36})|/sys/useradmin/export\-excel|/sys/groupadmin/export\-excel|/sys/sudo|/useradmin/remove/[^/]+|/useradmin/removeadmin/[^/]+|/useradmin/password/reset/[^/]+|/useradmin/batchadduser/example|/sys/info|/sys/statistics/file|/sys/statistics/storage|/sys/statistics/user|/sys/statistics/traffic|/sys/statistics/reports|/sys/desktop\-devices|/sys/mobile\-devices|/sys/device\-errors|/sys/notifications|/sys/web\-settings|/sys/all\-libraries|/sys/search\-libraries|/sys/system\-library|/sys/trash\-libraries|/sys/libraries/(?:[-0-9a-f]{36})|/sys/groups|/sys/search\-groups|/sys/departments|/sys/users|/sys/search\-users|/sys/users/admins|/sys/users/ldap|/sys/users/ldap\-imported|/sys/users/[^/]+|/sys/users/[^/]+/owned\-libraries|/sys/users/[^/]+/shared\-libraries|/sys/users/[^/]+/shared\-links|/sys/users/[^/]+/groups|/sys/logs/login|/sys/logs/file\-access|/sys/logs/file\-update|/sys/logs/share\-permission|/sys/admin\-logs/operation|/sys/admin\-logs/login|/sys/organizations|/sys/search\-organizations|/sys/institutions|/sys/terms\-and\-conditions|/sys/share\-links|/sys/upload\-links|/sys/work\-weixin|/sys/work\-weixin/departments|/sys/dingtalk|/sys/dingtalk/departments|/sys/invitations|/sys/abuse\-reports|/sys/virus\-files/all|/sys/virus\-files/unhandled|/accounts/password/change/done|/accounts/password/reset|/accounts/password/reset/confirm/(?:[0-9A-Za-z]+)-(?:.+)|/accounts/password/reset/complete|/accounts/password/reset/done|/accounts/login/two\-factor\-auth|/profile/two_factor_authentication/verify|/accounts/login|/accounts/logout|/accounts/register|/ocm\-via\-webdav/received\-shares/[0-9]+|/repo/(?:[-0-9a-f]{36})/history/files|/repo/(?:[-0-9a-f]{36})/trash/files|/repo/(?:[-0-9a-f]{36})/snapshot/files|/repo/(?:[-0-9a-f]{36})/(?:[0-9a-f]{40})/download|/lib/(?:[-0-9a-f]{36})/revisions/(?:\d+)|/group/[0-9]+|/ajax/repo/(?:[-0-9a-f]{36})/history/changes|/ajax/u/d/(?:[-0-9a-f]+)/upload|/ajax/lib/(?:[-0-9a-f]{36})/dir|/api2/two-factor-auth/(?:\S+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)|/api2/accounts/(?:\S+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)|/api2/repos/(?:[-0-9a-f]{36})/files/(?:[0-9a-f]{40})/blks/(?:[0-9a-f]{40})/download-link|/api2/repos/(?:[-0-9-a-f]{36})/file/comments/(?:\d+)|/api2/avatars/user/(?:\S+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/resized/(?:[0-9]+)|/api2/avatars/group/[0-9]+/resized/[0-9]+|/api2/groups/[0-9]+|/api2/groups/[0-9]+/members|/api2/groups/[0-9]+/repos|/api2/groups/(?:\d+)/repos/(?:[-0-9a-f]{36})|/api/v2.1/smart-links/(?:[-0-9a-f]{36})|/api/v2.1/groups/(?:\d+)|/api/v2.1/groups/(?:\d+)/libraries|/api/v2.1/groups/(?:\d+)/libraries/(?:[-0-9a-f]{36})|/api/v2.1/groups/(?:\d+)/group-owned-libraries|/api/v2.1/groups/(?:\d+)/group-owned-libraries/(?:[-0-9a-f]{36})|/api/v2.1/groups/(?:\d+)/members|/api/v2.1/groups/(?:\d+)/search-member|/api/v2.1/groups/(?:\d+)/members/bulk|/api/v2.1/groups/(?:\d+)/members/import|/api/v2.1/group-members-import-example|/api/v2.1/groups/(?:\d+)/members/(?:[^/]+)|/api/v2.1/address-book/groups/(?:\d+)/sub-groups|/api/v2.1/address-book/groups/(?:\d+)/search-member|/api/v2.1/repos/(?:[-0-9a-f]{36})/custom-share-permissions/(?:\d+)|/api/v2.1/share-links/(?:[a-f0-9]+)/tagged-files/(?:\d+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/commits/(?:[0-9a-f]{40})|/api/v2.1/repos/(?:[-0-9a-f]{36})/commits/(?:[0-9a-f]{40})/dir|/api/v2.1/repos/(?:[-0-9a-f]{36})/commits/(?:[0-9a-f]{40})/revert|/api/v2.1/repos/(?:[-0-9a-f]{36})/repo-tags/(?:\d+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/file-tags/(?:\d+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/tagged-files/(?:\d+)|/api/v2.1/related-files/(?:\d+)|/api/v2.1/invitations/(?:[a-f0-9]{32})|/api/v2.1/invitations/(?:[a-f0-9]{32})/revoke|/api/v2.1/drafts/(?:\d+)|/api/v2.1/drafts/(?:\d+)/reviewer|/api/v2.1/ocm/shares-prepare/(?:\d+)|/api/v2.1/ocm/shares-received/(?:\d+)|/api/v2.1/ocm/providers/(?:[-0-9a-f]{36})/repos/(?:[-0-9a-f]{36})/dir|/api/v2.1/ocm/providers/(?:[-0-9a-f]{36})/repos/(?:[-0-9a-f]{36})/download-link|/api/v2.1/ocm/providers/(?:[-0-9a-f]{36})/repos/(?:[-0-9a-f]{36})/upload-link|/api/v2.1/admin/abuse-reports/(?:\d+)|/api/v2.1/admin/users/(?:[^/]+@[^/]+)|/api/v2.1/admin/users/(?:[^/]+@[^/]+)/reset-password|/api/v2.1/admin/users/(?:[^/]+@[^/]+)/groups|/api/v2.1/admin/users/(?:[^/]+@[^/]+)/share-links|/api/v2.1/admin/users/(?:[^/]+@[^/]+)/upload-links|/api/v2.1/admin/users/(?:[^/]+@[^/]+)/beshared-repos|/api/v2.1/admin/groups/(?:\d+)|/api/v2.1/admin/groups/(?:\d+)/libraries|/api/v2.1/admin/groups/(?:\d+)/libraries/(?:[-0-9a-f]{36})|/api/v2.1/admin/groups/(?:\d+)/members|/api/v2.1/admin/groups/(?:\d+)/members/(?:[^/]+)|/api/v2.1/admin/groups/(?:\d+)/group-owned-libraries|/api/v2.1/admin/groups/(?:\d+)/group-owned-libraries/(?:[-0-9a-f]{36})|/api/v2.1/admin/organizations/(?:\d+)|/api/v2.1/admin/organizations/(?:\d+)/users|/api/v2.1/admin/organizations/(?:\d+)/users/(?:[^/]+)|/api/v2.1/admin/organizations/(?:\d+)/groups|/api/v2.1/admin/organizations/(?:\d+)/repos|/api/v2.1/admin/organizations/(?:\d+)/statistics/traffic|/api/v2.1/admin/institutions/(?:\d+)|/api/v2.1/admin/institutions/(?:\d+)/users|/api/v2.1/admin/institutions/(?:\d+)/users/(?:[^/]+)|/api/v2.1/admin/invitations/(?:[a-f0-9]{32})|/avatar/render_primary/(?:[^/]+)/(?:[\d]+)|/group/[0-9]+/remove|/share/ajax/private\-share\-dir|/captcha/refresh|/thumbnail/(?:[-0-9a-f]{36})/create|/inst/info|/inst/useradmin|/inst/useradmin/search|/inst/useradmin/[^/]+|/inst/useradmin/[^/]+/owned\-libraries|/inst/useradmin/[^/]+/groups|/inst/useradmin/info/[^/]+|/inst/useradmin/set_quota/[^/]+|/inst/useradmin/toggle_status/[^/]+|/invite/token/(?:[a-f0-9]{32})|/terms|/terms/accept|/terms/accept/(?:[a-zA-Z0-9_.-]+)/(?:[0-9\.]+)|/published/[^/]+|/drafts/[0-9]+|/api/v2.1/admin/address-book/groups/(?:\d+)|/api/v2.1/admin/virus-files/(?:\d+)|/api/v2.1/admin/sys-notifications/(?:\d+)|/api/v2.1/admin/terms-and-conditions/(?:\d+)|/api/v2.1/admin/work-weixin/departments/(?:\d+)/members|/api/v2.1/admin/dingtalk/departments/(?:\d+)/members|/sys/orgadmin/[0-9]+/set_quota|/sys/orgadmin/[0-9]+/set_member_quota|/sys/check-license|/useradmin/add|/useradmin/toggle_role/[^/]+|/useradmin/[^/]+/set_quota|/useradmin/batchmakeadmin|/sys/groups/[0-9]+/libraries|/sys/groups/[0-9]+/members|/sys/departments/[0-9]+|/sys/departments/[0-9]+/members|/sys/departments/[0-9]+/libraries|/sys/organizations/[0-9]+/info|/sys/organizations/[0-9]+/users|/sys/organizations/[0-9]+/groups|/sys/organizations/[0-9]+/libraries|/sys/institutions/[0-9]+/info|/sys/institutions/[0-9]+/members|/sys/institutions/[0-9]+/admins|/demo|/accounts/register/complete|/mobile\-login|/sso|/i18n|/client\-login|/work\-weixin\-sso|/dingtalk\-sso|/jwt\-sso|/shib-login|/oauth/login|/oauth/callback|/thirdparty\-editor/file\-info|/thirdparty\-editor/file\-content|/api2/auth-token|/api2/device\-wiped|/api/v2.1/share-links/(?:[a-f0-9]+)/upload/done|/api/v2.1/via-repo-token/sync-batch-move-item|/api/v2.1/via-repo-token/sync-batch-copy-item|/api/v2.1/cancel-zip-task|/api/v2.1/ocm/shares|/api/v2.1/ocm/notifications|/api/v2.1/abuse-reports|/ocm\-via\-webdav/received\-shares|/ocm\-via\-webdav/download\-received\-file|/cad/api/file\-content|/api2/auth/ping|/api2/accounts|/api2/search|/api2/search\-user|/api2/repos/(?:[-0-9a-f]{36})/history|/api2/repos/(?:[-0-9a-f]{36})/download-info|/api2/repos/(?:[-0-9a-f]{36})/download-shared-links|/api2/repos/(?:[-0-9a-f]{36})/upload-shared-links|/api2/repos/(?:[-0-9a-f]{36})/upload-link|/api2/repos/(?:[-0-9a-f]{36})/update-link|/api2/repos/(?:[-0-9a-f]{36})/update-blks-link|/api2/repos/(?:[-0-9-a-f]{36})/owa-file|/api2/repos/(?:[-0-9-a-f]{36})/file/metadata|/api2/repos/(?:[-0-9-a-f]{36})/file/comments/counts|/api2/repos/(?:[-0-9-a-f]{36})/file/detail|/api2/repos/(?:[-0-9-a-f]{36})/file/history|/api2/repos/(?:[-0-9-a-f]{36})/file/revision|/api2/repos/(?:[-0-9-a-f]{36})/dir/metadata|/api2/repos/(?:[-0-9-a-f]{36})/dir/sub_repo|/api2/repos/(?:[-0-9-a-f]{36})/thumbnail|/api2/shared\-repos|/api2/beshared\-repos|/api2/shared\-upload\-links|/api2/repo\-tokens|/api2/repo_history_changes/(?:[-0-9a-f]{36})|/api2/unseen_messages|/api/v2.1/smart-link|/api/v2.1/search-file|/api/v2.1/departments|/api/v2.1/all-groups|/api/v2.1/shareable-groups|/api/v2.1/search-group|/api/v2.1/repo-folder-share-info|/api/v2.1/shared-folders|/api/v2.1/shared-repos|/api/v2.1/revision-tags/tag-names|/api/v2.1/repos|/api/v2.1/repos/(?:[-0-9a-f]{36})/file/history|/api/v2.1/repos/(?:[-0-9a-f]{36})/file/new_history|/api/v2.1/repos/(?:[-0-9a-f]{36})/dir/detail|/api/v2.1/repos/(?:[-0-9a-f]{36})/history|/api/v2.1/repos/(?:[-0-9a-f]{36})/related-users|/api/v2.1/repos/(?:[-0-9a-f]{36})/share-links|/api/v2.1/repos/(?:[-0-9a-f]{36})/upload-links|/api/v2.1/repos/(?:[-0-9a-f]{36})/share-info|/api/v2.1/recent-added-files|/api/v2.1/query-copy-move-progress|/api/v2.1/repos/(?:[-0-9a-f]{36})/shared/invitations|/api/v2.1/repo/(?:[-0-9a-f]{36})/drafts|/api/v2.1/repo/(?:[-0-9a-f]{36})/draft-counts|/api/v2.1/activities|/api/v2.1/ocm/shares-received|/api/v2.1/admin/user-activities|/api/v2.1/admin/abuse-reports|/api/v2.1/admin/sysinfo|/api/v2.1/admin/revision-tags/tagged-items|/api/v2.1/admin/statistics/file-operations|/api/v2.1/admin/statistics/total-storage|/api/v2.1/admin/statistics/active-users|/api/v2.1/admin/statistics/system-traffic|/api/v2.1/admin/statistics/system-user-traffic|/api/v2.1/admin/statistics/system-org-traffic|/api/v2.1/admin/statistics/system-user-traffic/excel|/api/v2.1/admin/statistics/system-user-storage/excel|/api/v2.1/admin/ldap-users|/api/v2.1/admin/search-user|/api/v2.1/admin/admin-users|/api/v2.1/admin/search-library|/api/v2.1/admin/system-library|/api/v2.1/admin/system-library/upload-link|/api/v2.1/admin/search-group|/api/v2.1/admin/departments|/api/v2.1/admin/logs/login-logs|/api/v2.1/admin/logs/file-access-logs|/api/v2.1/admin/logs/file-update-logs|/api/v2.1/admin/logs/share-permission-logs|/api/v2.1/admin/admin-logs|/api/v2.1/admin/admin-login-logs|/api/v2.1/admin/share-links|/api/v2.1/admin/share-links/(?:[a-f0-9]+)/download|/api/v2.1/admin/share-links/(?:[a-f0-9]+)/dirents|/api/v2.1/admin/upload-links|/api/v2.1/admin/upload-links/(?:[a-f0-9]+)/upload|/api/v2.1/admin/organizations-basic-info|/api/v2.1/admin/search-organization|/api/v2.1/admin/file-scan-records|/api/v2.1/admin/virus-files|/api/v2.1/admin/notifications|/api/v2.1/admin/work-weixin/departments|/api/v2.1/admin/dingtalk/departments|/f/(?:[a-f0-9]+)|/d/(?:[a-f0-9]+)|/d/(?:[a-f0-9]+)/files|/u/d/(?:[a-f0-9]+)|/view\-image\-via\-share\-link|/view\-image\-via\-public\-wiki|/dingtalk/login|/dingtalk/callback|/custom\-css|/download_client_program|/ajax/upload\-file\-done|/api2/ping|/api2/server\-info|/api2/logout\-device|/api2/client\-login|/api2/regdevice|/api2/send\-share\-link|/api2/send\-upload\-link|/api2/organization|/api2/repos/(?:[-0-9-a-f]{36})/fileops/delete|/api2/repos/(?:[-0-9-a-f]{36})/fileops/copy|/api2/repos/(?:[-0-9-a-f]{36})/fileops/move|/api/v2.1/user/convert-to-team|/api/v2.1/multi-share-links|/api/v2.1/multi-share-links/batch|/api/v2.1/share-links/(?:[a-f0-9]+)/save-file-to-repo|/api/v2.1/share-links/(?:[a-f0-9]+)/save-items-to-repo|/api/v2.1/repos/batch|/api/v2.1/repos/batch-copy-dir|/api/v2.1/repos/batch-create-dir|/api/v2.1/repos/batch-copy-item|/api/v2.1/repos/batch-move-item|/api/v2.1/repos/async-batch-copy-item|/api/v2.1/repos/async-batch-move-item|/api/v2.1/repos/sync-batch-copy-item|/api/v2.1/repos/sync-batch-move-item|/api/v2.1/repos/(?:[-0-9a-f]{36})/trash/revert-dirents|/api/v2.1/repos/(?:[-0-9a-f]{36})/send-new-password|/api/v2.1/repos/(?:[-0-9a-f]{36})/apply-folder-extended-properties|/api/v2.1/markdown-lint|/api/v2.1/move-folder-merge|/api/v2.1/invitations/batch|/api/v2.1/repos/(?:[-0-9a-f]{36})/shared/invitations/batch|/api/v2.1/user-avatar|/api/v2.1/monitored-repos|/api/v2.1/admin/generate-user-auth-token|/api/v2.1/admin/user-list|/api/v2.1/admin/user-convert-to-team|/api/v2.1/admin/admin-users/batch|/api/v2.1/admin/users/batch|/api/v2.1/admin/import-users|/api/v2.1/admin/share-links/(?:[a-f0-9]+)/check-password|/api/v2.1/admin/upload-links/(?:[a-f0-9]+)/check-password|/api/v2.1/admin/logo|/api/v2.1/admin/favicon|/api/v2.1/admin/license|/api/v2.1/admin/login-background-image|/api/v2.1/admin/virus-files/batch|/api/v2.1/admin/work-weixin/users/batch|/api/v2.1/admin/work-weixin/departments/import|/api/v2.1/admin/dingtalk/users/batch|/api/v2.1/admin/dingtalk/departments/import|/api2/account/info|/api2/repos/(?:[-0-9a-f]{36})/history-limit|/api2/repos/(?:[-0-9a-f]{36})/owner|/api/v2.1/user|/api/v2.1/repos/(?:[-0-9a-f]{36})/auto-delete|/api/v2.1/webdav-secret|/api/v2.1/admin/web-settings|/api/v2.1/admin/libraries/(?:[-0-9a-f]{36})/history-limit|/api2/repos|/api2/repos/public|/api2/repos/(?:[-0-9a-f]{36})/upload-blks-link|/api2/repos/(?:[-0-9-a-f]{36})/file/comments|/api2/default\-repo|/api/v2.1/groups|/api/v2.1/repos/(?:[-0-9a-f]{36})/custom-share-permissions|/api/v2.1/upload-links|/api/v2.1/deleted-repos|/api/v2.1/repos/(?:[-0-9a-f]{36})/file-tags|/api/v2.1/repos/(?:[-0-9a-f]{36})/file/participants|/api/v2.1/repos/(?:[-0-9a-f]{36})/repo-api-tokens|/api/v2.1/related-files|/api/v2.1/repos/(?:[-0-9a-f]{36})/zip-task|/api/v2.1/invitations|/api/v2.1/wikis|/api/v2.1/drafts|/api/v2.1/ocm/shares-prepare|/api/v2.1/admin/users|/api/v2.1/admin/libraries|/api/v2.1/admin/libraries/(?:[-0-9a-f]{36})/dirents|/api/v2.1/admin/default-library|/api/v2.1/admin/groups|/api/v2.1/admin/organizations|/api/v2.1/admin/institutions|/api/v2.1/admin/address-book/groups|/api/v2.1/admin/sys-notifications|/api/v2.1/admin/terms-and-conditions|/api2/repos/(?:[-0-9a-f]{36})|/api2/repos/(?:[-0-9-a-f]{36})/dir|/api2/starredfiles|/api/v2.1/auth-token-by-session|/api/v2.1/share-links|/api/v2.1/repos/(?:[-0-9a-f]{36})/dir|/api/v2.1/repos/(?:[-0-9a-f]{36})/trash|/api/v2.1/starred-items|/api/v2.1/admin/device-trusted-ip|/api2/repos/(?:[-0-9a-f]{36})/user-folder-perm|/api2/repos/(?:[-0-9a-f]{36})/group-folder-perm|/api2/repos/(?:[-0-9-a-f]{36})/file|/api2/repos/(?:[-0-9-a-f]{36})/dir/shared_items|/api2/groups|/api/v2.1/group-owned-libraries/(?:[-0-9a-f]{36})/user-folder-permission|/api/v2.1/group-owned-libraries/(?:[-0-9a-f]{36})/group-folder-permission|/api/v2.1/group-owned-libraries/(?:[-0-9a-f]{36})/user-share|/api/v2.1/group-owned-libraries/(?:[-0-9a-f]{36})/group-share|/api/v2.1/repos/(?:[-0-9a-f]{36})/file|/api/v2.1/repos/(?:[-0-9a-f]{36})/extended-properties|/api/v2.1/admin/shares|/api2/repos/(?:[-0-9a-f]{36})/download-shared-links/(?:[a-f0-9]+)|/api2/repos/(?:[-0-9a-f]{36})/upload-shared-links/(?:[a-f0-9]+)|/api2/beshared-repos/(?:[-0-9-a-f]{36})|/api/v2.1/group-owned-libraries/user-share-in-libraries/(?:[-0-9-a-f]{36})|/api/v2.1/share-links/clean-invalid|/api/v2.1/upload-links/clean-invalid|/api/v2.1/repos/batch-delete-item|/api/v2.1/repos/(?:[-0-9a-f]{36})/file/participant|/api/v2.1/repos/(?:[-0-9a-f]{36})/share-links/(?:[a-f0-9]+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/upload-links/(?:[a-f0-9]+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/tags/(?:.*?)|/api/v2.1/monitored-repos/(?:[-0-9a-f]{36})|/api2/repos/(?:[-0-9-a-f]{36})/file/revert|/api2/repos/(?:[-0-9-a-f]{36})/file/shared-link|/api2/repos/(?:[-0-9-a-f]{36})/dir/revert|/api/v2.1/share-links/(?:[a-f0-9]+)/online-office-lock|/api/v2.1/notification|/api/v2.1/admin/update-user-ccnet-email|/api2/devices|/api2/shared\-links|/api/v2.1/repos/(?:[-0-9a-f]{36})|/api/v2.1/admin/devices|/api/v2.1/admin/device-errors|/api/v2.1/admin/trash-libraries|/api/v2.1/admin/share-links/(?:[a-f0-9]+)|/api/v2.1/admin/upload-links/(?:[a-f0-9]+)|/api/v2.1/admin/invitations|/api2/shared-repos/(?:[-0-9-a-f]{36})|/api/v2.1/shared-repos/(?:[-0-9a-f]{36})|/api/v2.1/repos/(?:[-0-9a-f]{36})/repo-api-tokens/(?:.*)|/api/v2.1/repos/(?:[-0-9a-f]{36})/shared/invitation|/api/v2.1/admin/trash-libraries/(?:[-0-9a-f]{36})|/api2/f/(?:[a-f0-9]+)|/api2/f/(?:[a-f0-9]+)/detail|/api2/d/(?:[a-f0-9]+)/dir|/api/v2.1/share-links/(?:[a-f0-9]+)|/api/v2.1/upload-links/(?:[a-f0-9]+)|/api/v2.1/notifications|/api/v2.1/admin/libraries/(?:[-0-9a-f]{36})|/api/v2.1/admin/libraries/(?:[-0-9a-f]{36})/dirent|/api/v2.1/share-links/(?:[a-f0-9]+)/dirents|/api/v2.1/share-links/(?:[a-f0-9]+)/upload|/api/v2.1/share-links/(?:[a-f0-9]+)/repo-tags|/api/v2.1/upload-links/(?:[a-f0-9]+)/upload|/api/v2.1/revision-tags/tagged-items|/api/v2.1/wikis/(?:[^/]+)|/api/v2.1/repos/(?:[-0-9a-f]{36})/set-password|/api/v2.1/repos/(?:[-0-9a-f]{36})/repo-tags|/api/v2.1/repos/(?:[-0-9a-f]{36})/tags|/api/v2.1/admin/admin-role|/api/v2.1/via-repo-token/download-link|/api/v2.1/via-repo-token/batch-delete-item|/api/v2.1/published-repo-search|/api/v2.1/repos/(?:[-0-9a-f]{36})/file-uploaded-bytes|/api/v2.1/share-link-zip-task|/api/v2.1/query-zip-progress|/api/v2.1/copy-move-task|/api/v2.1/wikis/(?:[^/]+)/dir|/api/v2.1/wikis/(?:[^/]+)/content|/ocm\-provider|/captcha/image/(?:\w+)|/captcha/image/(?:\w+)@2|/thumbnail/(?:[a-f0-9]+)/create|/inst/useradmin/remove/[^/]+|/work\-weixin/oauth\-login|/work\-weixin/oauth\-callback|/weixin/oauth\-login|/weixin/oauth\-callback)$
         handle @sf_slash {
             header Content-Language {sf_lang}
             header Vary "Accept-Language, Cookie"

@@ -260,6 +260,20 @@ FAKE_SITE_TEMPLATES = (
     "immich",
 )
 
+# подписи шаблонов для меню (TUI и бот), в порядке показа
+SITE_TEMPLATE_LABELS: tuple[tuple[str, str], ...] = (
+    ("Aether Resonance (Эфирный Резонанс)", "aether"),
+    ("Quantum Nexus (Квантовый Нексус)", "nexus"),
+    ("Synaptic Dynamics (Синаптическая Динамика)", "synapse"),
+    ("Chronos Temporal (Хроно-Вектор)", "chronos"),
+    ("Stratum Synergy (Стратум Синергия)", "stratum"),
+    ("Облако: Nextcloud", "nextcloud"),
+    ("Облако: ownCloud Infinite Scale", "ocis"),
+    ("Хранилище: SFTPGo", "sftpgo"),
+    ("Облако: Seafile", "seafile"),
+    ("Фотоархив: Immich", "immich"),
+)
+
 
 _URL_PATH_RE = re.compile(r"/[A-Za-z0-9/._~-]*")
 
