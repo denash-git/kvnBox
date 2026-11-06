@@ -581,8 +581,7 @@ def update_panel_menu(m: Menu) -> None:
             m.fail(str(e))
             m.ui.pause()
             return
-        svc.restart_bot()
-        m.ui.out()
+        m.ui.out()  # бот перезапущен новой версией внутри update()
         m.ok(msg)
         m.ui.center_print("Панель управления будет перезапущена...")
         m.ui.pause()

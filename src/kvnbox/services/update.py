@@ -76,8 +76,12 @@ class UpdateService:
 
     # ── установка ────────────────────────────────────────────────────────────
 
-    def update(self, version: str) -> str:
-        """Поставить версию `version`. Сообщение для пользователя или ServiceError."""
+    def update(self, version: str, restart_bot: bool = True) -> str:
+        """Поставить версию `version`. Сообщение для пользователя или ServiceError.
+
+        `restart_bot` — сразу перезапустить бота новой версией (иначе он продолжит работать
+        старым кодом с новыми данными). Сам бот передаёт False и перезапускается после
+        ответа пользователю."""
         p = self.app.paths
         if not VERSION_RE.fullmatch(version):
             raise ServiceError(f"Неверный номер версии: {version}")
@@ -110,6 +114,8 @@ class UpdateService:
             )
         self._cleanup(keep={new_release, old_release})  # предыдущая — для отката
         (p.root / ".update_cache").unlink(missing_ok=True)
+        if restart_bot:
+            self.restart_bot()
         return f"Обновление до версии {version} успешно завершено!"
 
     def restart_bot(self) -> None:

@@ -196,7 +196,7 @@ async def run_update(cb: CallbackQuery, app: App) -> None:
     svc = UpdateService(app)
     try:
         check = await run(svc.check)
-        msg = await run(svc.update, check.latest)
+        msg = await run(svc.update, check.latest, False)  # перезапуск — после ответа
     except ServiceError as e:
         await edit(
             cb, f"❌ <b>Ошибка обновления:</b>\n\n<code>{e}</code>", settings_update_keyboard(False)
