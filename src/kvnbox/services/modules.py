@@ -588,3 +588,140 @@ class BbrModule:
             raise ServiceError("Ядро вашей системы не поддерживает BBR.")
         self.settings.update(lambda s: setattr(s, "bbr_enabled", True), apply=False)
         return "BBR оптимизация успешно включена!"
+
+
+# ─── AmneziaWG 3.1 (этап 13) ─────────────────────────────────────────────────
+
+AWG_UNIT = "kvnbox-awg"
+AWG_PORT_RANGE = (20000, 59999)
+# порты, которые AmneziaWG не займёт никогда: веб, NetBird (WireGuard и STUN)
+AWG_RESERVED_PORTS = {80, 443, 51820, 3478}
+
+
+class AwgModule:
+    """AmneziaWG: программа `amneziawg-go` собирается установщиком
+    (`install.sh --build-amneziawg`, ~1 мин; на новой установке — вместе с Caddy).
+    Протокол по умолчанию выключен; при первом включении — ключ сервера, случайный
+    высокий UDP-порт и маскировка 3.1."""
+
+    unit = AWG_UNIT
+    name = "AmneziaWG"
+
+    def __init__(self, app: App, applier: Applier | None = None) -> None:
+        self.app = app
+        self.applier = applier or Applier(app)
+        self.settings = SettingsService(app, self.applier)
+
+    # ── состояние ────────────────────────────────────────────────────────────
+
+    def built(self) -> bool:
+        return self.app.paths.awg_bin.exists()
+
+    def version(self) -> str:
+        marker = Path(f"{self.app.paths.awg_bin}.version")
+        try:
+            return marker.read_text(encoding="utf-8").strip()
+        except OSError:
+            return ""
+
+    def info(self) -> ServiceInfo:
+        return ServiceInfo(
+            self.unit,
+            self.built(),
+            self.app.systemd.state(self.unit) if self.built() else "not_installed",
+            self.version(),
+        )
+
+    def target_version(self) -> str:
+        """Версия из versions.env установленной панели (её соберёт установщик)."""
+        env = self.app.paths.app_link / "versions.env"
+        try:
+            for line in env.read_text(encoding="utf-8").splitlines():
+                if line.startswith("AMNEZIAWG_GO_VERSION="):
+                    return line.split("=", 1)[1].strip()
+        except OSError:
+            pass
+        return ""
+
+    def update_available(self) -> bool:
+        target = self.target_version()
+        return bool(target) and self.built() and target != self.version()
+
+    # ── сборка ───────────────────────────────────────────────────────────────
+
+    def build_command(self) -> list[str]:
+        return ["bash", str(self.app.paths.app_link / "install.sh"), "--build-amneziawg"]
+
+    def build(self) -> str:
+        """Сборка без терминала (бот). Сообщение или ServiceError."""
+        res = self.app.runner.run(self.build_command(), timeout=1200)
+        if not res.ok or not self.built():
+            tail = "\n".join(res.output.strip().splitlines()[-5:])
+            raise ServiceError(f"Сборка AmneziaWG не удалась.\n{tail}")
+        return f"AmneziaWG собран ({self.version()})."
+
+    # ── включение и порт ─────────────────────────────────────────────────────
+
+    def _busy_udp_ports(self) -> set[int]:
+        res = self.app.runner.run(["ss", "-Hlun"], timeout=15)
+        ports: set[int] = set()
+        for line in res.stdout.splitlines() if res.ok else []:
+            parts = line.split()
+            if len(parts) >= 4 and ":" in parts[3]:
+                with_port = parts[3].rsplit(":", 1)[1]
+                if with_port.isdigit():
+                    ports.add(int(with_port))
+        return ports
+
+    def _reserved(self, settings: Settings) -> set[int]:
+        return AWG_RESERVED_PORTS | {settings.mieru.port}
+
+    def pick_port(self) -> int:
+        import secrets
+
+        settings = self.app.settings.load()
+        taken = self._busy_udp_ports() | self._reserved(settings)
+        for _ in range(200):
+            port = secrets.randbelow(AWG_PORT_RANGE[1] - AWG_PORT_RANGE[0] + 1) + AWG_PORT_RANGE[0]
+            if port not in taken:
+                return port
+        raise ServiceError("Не найден свободный UDP-порт для AmneziaWG.")
+
+    def set_enabled(self, enabled: bool) -> ApplyResult:
+        from kvnbox.system import awg
+
+        if enabled and not self.built():
+            raise ServiceError("AmneziaWG ещё не собран на этом сервере.")
+        port = self.pick_port() if enabled and not self.app.settings.load().awg.configured else 0
+
+        def change(s: Settings) -> None:
+            if enabled and not s.awg.configured:
+                awg.generate(s.awg, port)
+            s.awg.enabled = enabled
+
+        return self.settings.update(change)
+
+    def set_port(self, port: int) -> ApplyResult:
+        settings = self.app.settings.load()
+        if not 1024 <= port <= 65535:
+            raise ServiceError("Порт: 1024-65535.")
+        if port in self._reserved(settings):
+            raise ServiceError(f"Порт {port} занят другой службой kvnBox.")
+        if port != settings.awg.port and port in self._busy_udp_ports():
+            raise ServiceError(f"UDP-порт {port} уже занят на сервере.")
+
+        def change(s: Settings) -> None:
+            s.awg.port = port
+
+        return self.settings.update(change)
+
+    def regenerate(self) -> ApplyResult:
+        """Новые ключ сервера и маскировка (порт прежний): все конфиги клиентов — заново."""
+        from kvnbox.system import awg
+
+        port = self.app.settings.load().awg.port or self.pick_port()
+
+        def change(s: Settings) -> None:
+            awg.generate(s.awg, port)
+
+        return self.settings.update(change)

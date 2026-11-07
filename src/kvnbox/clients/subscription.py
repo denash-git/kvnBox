@@ -10,11 +10,16 @@ import base64
 from collections.abc import Sequence
 
 from kvnbox.clients.links import build_link
-from kvnbox.core.models import Settings, User
+from kvnbox.core.models import Protocol, Settings, User
 
 
 def subscription_body(user: User, settings: Settings) -> str | None:
-    links = [build_link(user, c, settings) for c in user.connections if c.enabled]
+    # AmneziaWG — не для клиентов подписок (sing-box/Xray его не понимают): у него свой конфиг
+    links = [
+        build_link(user, c, settings)
+        for c in user.connections
+        if c.enabled and c.protocol is not Protocol.AWG
+    ]
     if not links:
         return None
     return base64.b64encode("\n".join(links).encode("utf-8")).decode("ascii")

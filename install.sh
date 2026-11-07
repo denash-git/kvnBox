@@ -16,6 +16,7 @@ ROOT="/opt/kvnbox"
 VENV="${ROOT}/.venv"
 DATA="${ROOT}/data"
 CADDY_BIN="/usr/local/bin/caddy"
+AWG_BIN="/usr/local/bin/amneziawg-go"   # AmneziaWG 3.1 (этап 13)
 LOG="/var/log/kvnbox-install.log"
 ACTION="Установка"   # «Установка» или «Обновление Caddy» — в сообщениях об ошибке
 WORK=""          # временный каталог установки (удаляется при выходе)
@@ -296,8 +297,18 @@ caddy_ready() {
     ! $REBUILD && [[ -x "$CADDY_BIN" ]] && has_naive "$CADDY_BIN"
 }
 
+# amneziawg-go нужной версии уже стоит (версия программы сама себя не сообщает —
+# рядом лежит отметка с тегом, из которого собрано)
+awg_ready() {
+    [[ -x "$AWG_BIN" ]] && [[ "$(cat "${AWG_BIN}.version" 2>/dev/null)" == "${AMNEZIAWG_GO_VERSION:-}" ]]
+}
+
+need_go() {  # временный Go нужен, если собирать есть что
+    ! caddy_ready || ! awg_ready
+}
+
 step_swap() {
-    if caddy_ready; then NOTE="не нужен"; return 0; fi
+    if ! need_go; then NOTE="не нужен"; return 0; fi
     if ((MEM_MB + SWAP_MB >= 2000)); then NOTE="не нужен (${MEM_MB} MB RAM)"; return 0; fi
     SWAPFILE=/root/kvnbox-build.swap
     { fallocate -l 2G "$SWAPFILE" || dd if=/dev/zero of="$SWAPFILE" bs=1M count=2048; } || return 1
@@ -306,7 +317,7 @@ step_swap() {
 }
 
 step_go() {
-    if caddy_ready; then NOTE="не нужен"; return 0; fi
+    if ! need_go; then NOTE="не нужен"; return 0; fi
     local sha="GO_SHA256_${ARCH^^}" tgz="$WORK/go.tar.gz"
     fetch "https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz" "$tgz" \
         || { NOTE="Не удалось скачать Go ${GO_VERSION}."; return 1; }
@@ -336,6 +347,26 @@ step_caddy() {
     install -m 755 "$WORK/caddy" "${CADDY_BIN}.new" && mv -f "${CADDY_BIN}.new" "$CADDY_BIN" || return 1
     setcap cap_net_bind_service=+ep "$CADDY_BIN" || return 1
     NOTE="${CADDY_VERSION}"
+}
+
+step_amneziawg() {
+    if awg_ready; then NOTE="уже собран (${AMNEZIAWG_GO_VERSION})"; return 0; fi
+    (
+        export HOME="$WORK/home" GOTELEMETRY=off
+        export GOROOT="$WORK/go" GOPATH="$WORK/gopath" GOBIN="$WORK/bin"
+        export GOCACHE="$WORK/gocache" GOTMPDIR="$WORK/gotmp" GOFLAGS=-modcacherw CGO_ENABLED=0
+        export PATH="$GOBIN:$GOROOT/bin:$PATH"
+        mkdir -p "$HOME" "$GOPATH" "$GOBIN" "$GOCACHE" "$GOTMPDIR"
+        go telemetry off 2>/dev/null
+        go install -trimpath -ldflags="-s -w"             "github.com/amnezia-vpn/amneziawg-go/v3@${AMNEZIAWG_GO_VERSION}" || exit 1
+    ) || return 1
+    "$WORK/bin/amneziawg-go" --version >/dev/null 2>&1 || return 1
+    install -m 755 "$WORK/bin/amneziawg-go" "${AWG_BIN}.new" && mv -f "${AWG_BIN}.new" "$AWG_BIN"         && echo "$AMNEZIAWG_GO_VERSION" >"${AWG_BIN}.version" || return 1
+    # работающая служба (обновление) — перезапуск новой программой
+    if systemctl is-active --quiet kvnbox-awg; then
+        systemctl restart kvnbox-awg || { NOTE="собран, но служба не перезапустилась"; return 1; }
+    fi
+    NOTE="${AMNEZIAWG_GO_VERSION}"
 }
 
 caddy_healthy() {  # служба активна и сайт отвечает по HTTPS (до 20 с)
@@ -513,6 +544,34 @@ if [[ -n "$SELF_DIR" && -f "$SELF_DIR/src/kvnbox/__init__.py" && -f "$SELF_DIR/v
     LOCAL_SRC="$SELF_DIR"
 fi
 
+# ─── режим: сборка AmneziaWG (меню «Модули → AmneziaWG → Включить / Обновить») ─
+# bash install.sh --build-amneziawg — запускается из установленной панели: на уже
+# работающих серверах обновление панели установщик не запускает, программы нет.
+if [[ "${1:-}" == "--build-amneziawg" ]]; then
+    [[ -n "$LOCAL_SRC" && -f "$DATA/settings.json" ]] || die "Панель kvnBox не установлена."
+    # shellcheck disable=SC1091
+    source "$LOCAL_SRC/versions.env" || die "Не прочитан versions.env."
+    REBUILD=false ACTION="Сборка AmneziaWG" LOG="/var/log/kvnbox-amneziawg-build.log"
+    umask 077
+    : >"$LOG" && chmod 600 "$LOG"
+    echo "kvnBox build-amneziawg ${AMNEZIAWG_GO_VERSION} — $(date '+%F %T')" >>"$LOG"
+    umask 022
+    echo -e "  ${BOLD}Сборка AmneziaWG 3.1 (amneziawg-go ${AMNEZIAWG_GO_VERSION})${RESET}"
+    echo
+    add_step step_system      "Проверка системы"
+    add_step step_swap        "Временный файл подкачки"
+    add_step step_go          "Загрузка Go"
+    add_step step_amneziawg   "Сборка AmneziaWG 3.1 (~1 мин)"
+    add_step step_cleanup     "Очистка временных файлов"
+    START=$EPOCHSECONDS
+    show_list
+    run_steps
+    $TTY && printf '[?25h'
+    echo
+    echo -e "${GREEN}✓ AmneziaWG собран за $(fmt_time $((EPOCHSECONDS - START))).${RESET}"
+    exit 0
+fi
+
 # ─── режим: пересборка Caddy (меню «Модули → Caddy → Обновить Caddy») ────────
 # bash install.sh --rebuild-caddy v2.x.y — запускается из установленной панели.
 if [[ "${1:-}" == "--rebuild-caddy" ]]; then
@@ -588,6 +647,7 @@ add_step step_mita        "Mieru (mita)"
 add_step step_swap        "Временный файл подкачки"
 add_step step_go          "Загрузка Go"
 add_step step_caddy       "Сборка Caddy + NaiveProxy (до 5 мин)"
+add_step step_amneziawg   "Сборка AmneziaWG 3.1 (~1 мин)"
 add_step step_cleanup     "Очистка временных файлов"
 add_step step_files       "Файлы панели"
 add_step step_venv        "Python-окружение"

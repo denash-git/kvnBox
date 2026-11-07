@@ -19,6 +19,8 @@ from kvnbox.cores.xray import xray_running
 from kvnbox.render import RenderPlan, render_all
 from kvnbox.services.app import App
 from kvnbox.services.schedule import write_cron
+from kvnbox.system.awg_unit import UNIT_NAME as AWG_UNIT
+from kvnbox.system.awg_unit import ensure_awg_unit
 from kvnbox.system.caddy_unit import ensure_caddy_unit
 from kvnbox.system.files import read_text, replace_directory, write_file
 from kvnbox.system.xray_unit import ensure_xray_unit
@@ -28,6 +30,7 @@ SINGBOX = "sing-box"
 MITA = "mita"
 XRAY = "xray"
 MIERU_RULE_COMMENTS = ("Mieru TCP", "Mieru UDP")
+AWG_RULE_COMMENTS = ("AmneziaWG UDP", "AmneziaWG forward")
 
 
 @dataclass
@@ -88,6 +91,9 @@ class Applier:
         )
         if mita_note:
             log.append(mita_note)
+        awg_note = self._apply_awg(settings)
+        if awg_note:
+            log.append(awg_note)
 
         self.app.ufw.delete_port("80/tcp")  # порт 80 закрыт для скрытности
         # расписание тоже часть конфигурации: новые задачи приходят с обновлением панели
@@ -216,6 +222,40 @@ class Applier:
         if not res.ok:
             return f"mita не запустился: {res.output}"
         return f"Mieru: порт {port} открыт, mita перезапущен"
+
+    def _apply_awg(self, settings: Settings) -> str | None:
+        """Служба AmneziaWG и её правила фаервола (UDP-порт, пересылка из awg0)."""
+        self.app.ufw.delete_by_comment(*AWG_RULE_COMMENTS)
+        s = settings.awg
+        active = self.app.systemd.is_active(AWG_UNIT)
+        if not (s.enabled and s.configured):
+            if active or self.paths.awg_unit.exists():
+                self.app.systemd.stop(AWG_UNIT)
+                self.app.systemd.disable(AWG_UNIT)
+            return "AmneziaWG выключен" if active else None
+        if not self.paths.awg_bin.exists():
+            return "AmneziaWG включён, но программа не собрана"
+        self.app.ufw.allow(f"{s.port}/udp", "AmneziaWG UDP")
+        self.app.ufw.route_allow_in("awg0", "AmneziaWG forward")
+        unit_changed = ensure_awg_unit(self.paths, self.app.systemd)
+        self.app.systemd.enable(AWG_UNIT)
+        if active and not unit_changed:
+            try:  # клиенты меняются на ходу, остальные не отключаются
+                return _awg_sync(self.app)
+            except Exception as e:
+                note = f" (настройка на ходу не удалась: {e})"
+        else:
+            note = ""
+        res = self.app.systemd.restart_clean(AWG_UNIT)
+        if not res.ok:
+            return f"AmneziaWG не запустился: {res.output}"
+        return f"AmneziaWG: порт {s.port}/udp открыт, служба перезапущена{note}"
+
+
+def _awg_sync(app: App) -> str:
+    from kvnbox.services.awg import AwgService  # без цикла импортов
+
+    return AwgService(app).sync()
 
 
 def _changed(plan: RenderPlan, previous: dict[Path, str | None], paths: set[Path]) -> bool:

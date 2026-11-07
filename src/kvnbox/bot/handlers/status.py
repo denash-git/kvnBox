@@ -77,6 +77,8 @@ def status_text(app: App) -> str:
     uptime += f"{minutes} мин."
     mita = _service(app, "mita") if app.installed("mita") else "⚪ не установлен"
     xray = f"├─ Xray: {_xray(app)}\n" if app.installed("xray") else ""
+    awg_on = app.settings.load().awg.enabled
+    awg = f"├─ AmneziaWG: {_service(app, 'kvnbox-awg')}\n" if awg_on else ""
     return (
         "📈 <b>Мониторинг ресурсов и служб</b>\n\n"
         "⚙️ <b>Состояние служб:</b>\n"
@@ -84,6 +86,7 @@ def status_text(app: App) -> str:
         f"├─ sing-box: {_service(app, 'sing-box')}\n"
         f"{xray}"
         f"├─ Mieru: {mita}\n"
+        f"{awg}"
         f"├─ NetBird: {_netbird(app)}\n"
         f"├─ Защита (Fail2ban): {'🟢 активна' if app.fail2ban.is_active() else '🔴 отключена'}\n"
         f"└─ TCP BBR: {'🟢 активен' if app.bbr.is_active() else '🔴 отключен'}\n"

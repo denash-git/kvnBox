@@ -71,6 +71,10 @@ class Ufw:
     def allow(self, port_proto: str, comment: str | None = None) -> Result:
         return self._ufw("allow", port_proto, *(["comment", comment] if comment else []))
 
+    def route_allow_in(self, interface: str, comment: str) -> Result:
+        """Пересылка трафика, пришедшего с интерфейса (`ufw route allow in on X`)."""
+        return self._ufw("route", "allow", "in", "on", interface, "comment", comment)
+
     def delete_allow(self, port_proto: str) -> Result:
         """`ufw delete allow X` — удаляет и v4, и v6 правило, созданные `ufw allow X`."""
         return self._ufw("delete", "allow", port_proto)

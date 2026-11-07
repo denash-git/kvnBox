@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import time
 
+from kvnbox.clients import awg as awg_client
 from kvnbox.core.models import Connection, CoreKind, Protocol, Transport, User, supported_cores
 from kvnbox.services import ServiceError
 from kvnbox.services.users import MANAGE_LABELS, SHORT_LABELS, UserService, core_suffix
@@ -20,6 +21,7 @@ ADD_OPTIONS: list[tuple[str, Protocol, Transport | None]] = [
     ("VLESS CDN (через CDN, только Xray)", Protocol.VLESS, Transport.CDN),
     ("NaiveProxy", Protocol.NAIVE, None),
     ("Mieru", Protocol.MIERU, None),
+    ("AmneziaWG 3.1", Protocol.AWG, None),
 ]
 NO_QR = "  [qrencode не установлен на сервере]"
 
@@ -169,6 +171,9 @@ def _qr(m: Menu, text: str) -> None:
 
 def _print_connection(m: Menu, user: User, conn: Connection) -> None:
     svc = _svc(m)
+    if conn.protocol is Protocol.AWG:
+        _print_awg(m, user, conn)
+        return
     link = svc.link(user, conn)
     if conn.protocol is Protocol.MIERU:
         singbox_json = svc.mieru_configs(user, conn)["singbox"]
@@ -186,6 +191,30 @@ def _print_connection(m: Menu, user: User, conn: Connection) -> None:
         m.ui.out(f"  {CYAN}{link}{RESET}")
         m.ui.out("\n  QR-код:")
         _qr(m, link)
+
+
+def _print_awg(m: Menu, user: User, conn: Connection) -> None:
+    """AmneziaWG: конфиг (приложения AmneziaWG и AmneziaVPN), его QR-код, файл на сервере,
+    ключ vpn:// для AmneziaVPN."""
+    svc = _svc(m)
+    conf = svc.awg_conf(user, conn)
+    path = m.app.paths.root / "clients" / awg_client.file_name(user)
+    try:
+        path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        path.write_text(conf, encoding="utf-8")
+        path.chmod(0o600)
+        saved = f"  Файл на сервере: {CYAN}{path}{RESET}"
+    except OSError:
+        saved = ""
+    m.ui.out("  1. Конфигурация AmneziaWG 3.1 (приложения AmneziaWG и AmneziaVPN):")
+    m.ui.out(f"{GREEN}{conf}{RESET}")
+    if saved:
+        m.ui.out(saved + "\n")
+    m.ui.out("  QR-код конфигурации:")
+    _qr(m, conf)
+    m.ui.out("\n  " + "─" * 60 + "\n")
+    m.ui.out("  2. Ключ для AmneziaVPN («Вставить ключ»):")
+    m.ui.out(f"  {CYAN}{svc.awg_vpn_key(user, conn)}{RESET}")
 
 
 def _offer_telegram(m: Menu, nick: str) -> None:
@@ -206,12 +235,16 @@ def _offer_telegram(m: Menu, nick: str) -> None:
 
 
 def _available(m: Menu, user: User | None) -> list[tuple[str, Protocol, Transport | None]]:
-    mieru_on = m.app.settings.load().mieru.enabled
+    settings = m.app.settings.load()
+    mieru_on = settings.mieru.enabled
+    awg_on = settings.awg.enabled and settings.awg.configured
     xray_ready = _svc(m).xray_ready()
     cdn_ready = _svc(m).cdn_ready()
     out = []
     for label, protocol, transport in ADD_OPTIONS:
         if protocol is Protocol.MIERU and not mieru_on:
+            continue
+        if protocol is Protocol.AWG and not awg_on:
             continue
         if transport is Transport.XHTTP and not xray_ready:
             continue

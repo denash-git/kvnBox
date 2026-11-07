@@ -22,6 +22,7 @@ LOG_UNITS = [
     ("Xray", "xray", "xray"),
     ("Mieru", "mita", "mita"),
     ("NetBird", "netbird", "netbird"),
+    ("AmneziaWG", "kvnbox-awg", "amneziawg-go"),
 ]
 
 

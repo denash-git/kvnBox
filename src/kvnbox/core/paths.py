@@ -108,6 +108,15 @@ class Paths:
         return self.etc.parent / "usr" / "local" / "bin" / "xray"
 
     @property
+    def awg_bin(self) -> Path:
+        """amneziawg-go — собирается установщиком (`install.sh --build-amneziawg`)."""
+        return self.etc.parent / "usr" / "local" / "bin" / "amneziawg-go"
+
+    @property
+    def awg_unit(self) -> Path:
+        return self.etc / "systemd" / "system" / "kvnbox-awg.service"
+
+    @property
     def mita_config(self) -> Path:
         return self.etc / "mita" / "server.conf.json"
 

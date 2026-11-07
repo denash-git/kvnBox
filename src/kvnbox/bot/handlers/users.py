@@ -10,7 +10,7 @@ from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, FSInputFile, Message
+from aiogram.types import BufferedInputFile, CallbackQuery, FSInputFile, Message
 from aiogram.types import InlineKeyboardButton as Btn
 from aiogram.types import InlineKeyboardMarkup as Kb
 
@@ -24,6 +24,7 @@ from kvnbox.bot.keyboards import (
     users_list_keyboard,
 )
 from kvnbox.bot.legacy import TYPE_BY_TRANSPORT, parse_slot, proto_label, proto_type
+from kvnbox.clients import awg as awg_client
 from kvnbox.core.models import Connection, CoreKind, Protocol, User, supported_cores
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
@@ -65,6 +66,30 @@ async def _send_qr(cb: CallbackQuery, app: App, text: str, caption: str) -> None
             await cb.bot.send_photo(cb.from_user.id, FSInputFile(png), caption=caption)
         except ServiceError:
             pass
+
+
+async def _send_awg(cb: CallbackQuery, app: App, user: User, conn: Connection) -> None:
+    """AmneziaWG: файл .conf, его QR-код, ключ vpn:// для AmneziaVPN и его QR-код."""
+    if cb.bot is None:
+        return
+    svc = UserService(app)
+    conf = svc.awg_conf(user, conn)
+    key = svc.awg_vpn_key(user, conn)
+    chat = cb.from_user.id
+    await cb.bot.send_document(
+        chat,
+        BufferedInputFile(conf.encode(), filename=awg_client.file_name(user)),
+        caption=f"AmneziaWG 3.1 для {user.name}: файл конфигурации",
+    )
+    await _send_qr(
+        cb, app, conf, f"QR-код AmneziaWG для {user.name} (приложения AmneziaWG и AmneziaVPN)"
+    )
+    await cb.bot.send_message(
+        chat,
+        f"🔐 <b>AmneziaVPN, ключ для {user.name}:</b>\n<code>{key}</code>",
+        parse_mode="HTML",
+    )
+    await _send_qr(cb, app, key, f"QR-код ключа AmneziaVPN для {user.name}")
 
 
 # ─── список и карточка ───────────────────────────────────────────────────────
@@ -183,6 +208,9 @@ async def proto_links(cb: CallbackQuery, app: App) -> None:
         return
     user, conn = found
     svc = UserService(app)
+    if conn.protocol is Protocol.AWG:
+        await _send_awg(cb, app, user, conn)
+        return
     link = svc.link(user, conn)
     label = proto_label(proto, "" if utype == "none" else utype)
     await cb.bot.send_message(
@@ -246,7 +274,16 @@ PROTO_BUTTONS = {
     "vless": Btn(text="VLESS", callback_data="user:new:proto:vless"),
     "naive": Btn(text="NaiveProxy", callback_data="user:new:proto:naive"),
     "mieru": Btn(text="Mieru", callback_data="user:new:proto:mieru"),
+    "awg": Btn(text="AmneziaWG 3.1", callback_data="user:new:proto:awg"),
 }
+
+
+def _single_protos(app: App) -> tuple[str, ...]:
+    """Протоколы без выбора транспорта; AmneziaWG — только когда включён (Модули в TUI)."""
+    s = app.settings.load().awg
+    return ("naive", "mieru", "awg") if s.enabled and s.configured else ("naive", "mieru")
+
+
 VLESS_TYPES = [("ws", "WebSocket (ws)"), ("grpc", "gRPC"), ("xhttp", "HTTPUpgrade")]
 # этап 11: настоящий XHTTP — callback «xh» («xhttp» исторически означает HTTPUpgrade)
 XHTTP_TYPE = ("xh", "XHTTP (только Xray)")
@@ -284,7 +321,7 @@ async def proto_add(cb: CallbackQuery, app: App, state: FSMContext) -> None:
     rows = []
     if len(_existing_types(user)) < len(_vless_types(app)):
         rows.append([PROTO_BUTTONS["vless"]])
-    rows += [[PROTO_BUTTONS[p]] for p in ("naive", "mieru") if p not in have]
+    rows += [[PROTO_BUTTONS[p]] for p in _single_protos(app) if p not in have]
     rows.append([Btn(text="❌ Отмена", callback_data=f"user:info:{nick}")])
     await edit(
         cb,
@@ -307,7 +344,7 @@ async def new_step1(cb: CallbackQuery, state: FSMContext) -> None:
 
 
 @router.message(AddUserStates.waiting_nickname)
-async def new_nickname(message: Message, state: FSMContext) -> None:
+async def new_nickname(message: Message, app: App, state: FSMContext) -> None:
     nick = (message.text or "").strip().lower()
     if not re.fullmatch(r"[a-z0-9_-]{1,32}", nick):
         await message.answer(
@@ -320,8 +357,7 @@ async def new_nickname(message: Message, state: FSMContext) -> None:
     kb = Kb(
         inline_keyboard=[
             [PROTO_BUTTONS["vless"]],
-            [PROTO_BUTTONS["naive"]],
-            [PROTO_BUTTONS["mieru"]],
+            *[[PROTO_BUTTONS[p]] for p in _single_protos(app)],
             [Btn(text="❌ Отмена", callback_data="user:list")],
         ]
     )
@@ -333,7 +369,7 @@ async def new_nickname(message: Message, state: FSMContext) -> None:
 @router.callback_query(F.data.startswith("user:new:proto:"))
 async def new_proto(cb: CallbackQuery, app: App, state: FSMContext) -> None:
     proto = (cb.data or "").split(":")[3]
-    if proto not in PROTO_BUTTONS:
+    if proto not in PROTO_BUTTONS or (proto == "awg" and "awg" not in _single_protos(app)):
         await cb.answer()
         return
     await state.update_data(protocol=proto)
@@ -440,7 +476,7 @@ async def new_confirm(cb: CallbackQuery, app: App, state: FSMContext) -> None:
     if ok:
         await edit(
             cb,
-            f"🎉 Конфигурация {proto.upper()} для пользователя <code>{nick}</code> "
+            f"🎉 Конфигурация {proto_label(proto, utype)} для пользователя <code>{nick}</code> "
             "успешно создана!\nСлужбы перезапущены.",
             Kb(
                 inline_keyboard=[

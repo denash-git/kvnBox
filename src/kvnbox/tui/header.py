@@ -23,6 +23,13 @@ def service_status(state: str) -> tuple[str, str]:
     return f"{RED}● не запущен ({state}){RESET}", f"● не запущен ({state})"
 
 
+def _awg_enabled(app: App) -> bool:
+    try:
+        return app.settings.load().awg.enabled
+    except Exception:
+        return False
+
+
 def _on_off(on: bool, yes: str, no: str) -> tuple[str, str]:
     return (f"{GREEN}● {yes}{RESET}", f"● {yes}") if on else (f"{RED}● {no}{RESET}", f"● {no}")
 
@@ -92,6 +99,8 @@ def collect(app: App) -> HeaderStatus:
     if app.installed("xray"):
         text = xray_status(app)
         rows.insert(3, ("Xray:", text, re.sub(r"\x1b\[[0-9;]*m", "", text)))
+    if _awg_enabled(app):
+        rows.append(("AmneziaWG:", *service_status(sd.state("kvnbox-awg"))))
     if app.installed("netbird"):
         text = netbird_status(NetbirdModule(app).connection_state())
         rows.append(("NetBird:", text, re.sub(r"\x1b\[[0-9;]*m", "", text)))

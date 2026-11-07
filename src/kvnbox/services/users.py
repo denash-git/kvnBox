@@ -6,12 +6,14 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TypeVar
 
+from kvnbox.clients import awg as awg_client
 from kvnbox.clients import links
 from kvnbox.core.models import Connection, CoreKind, Protocol, Transport, User
 from kvnbox.core.repo import RepoError
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.apply import Applier, ApplyResult
+from kvnbox.services.notify import Telegram
 
 T = TypeVar("T")
 
@@ -24,6 +26,7 @@ SLOT_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.CDN): "VLESS CDN",
     (Protocol.NAIVE, None): "NaiveProxy",
     (Protocol.MIERU, None): "Mieru",
+    (Protocol.AWG, None): "AmneziaWG",
 }
 
 # Ядра, у которых есть выбор (VLESS); у Naive и Mieru ядро одно — не показываем
@@ -49,6 +52,7 @@ MANAGE_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.CDN): "VLESS CDN",
     (Protocol.NAIVE, None): "NaiveProxy",
     (Protocol.MIERU, None): "Mieru",
+    (Protocol.AWG, None): "AmneziaWG",
 }
 
 # Краткие подписи в списке пользователей
@@ -60,6 +64,7 @@ SHORT_LABELS: dict[tuple[Protocol, Transport | None], str] = {
     (Protocol.VLESS, Transport.CDN): "VLESS CDN",
     (Protocol.NAIVE, None): "Naive",
     (Protocol.MIERU, None): "Mieru",
+    (Protocol.AWG, None): "AmneziaWG",
 }
 
 
@@ -101,6 +106,12 @@ class UserService:
     def subscription_url(self, user: User) -> str:
         return f"https://{self.app.settings.load().domain}/sub/{user.sub_token}"
 
+    def awg_conf(self, user: User, conn: Connection) -> str:
+        return awg_client.client_conf(user, conn, self.app.settings.load())
+
+    def awg_vpn_key(self, user: User, conn: Connection) -> str:
+        return awg_client.vpn_key(user, conn, self.app.settings.load())
+
     def mieru_configs(self, user: User, conn: Connection) -> dict[str, str]:
         settings = self.app.settings.load()
         return {
@@ -126,7 +137,7 @@ class UserService:
         (как send_user_links в TransferBox)."""
         import tempfile
 
-        from kvnbox.services.notify import NotifyError, Telegram
+        from kvnbox.services.notify import NotifyError
 
         telegram = Telegram(self.app.settings.load().telegram)
         user = self.get(name)
@@ -136,7 +147,11 @@ class UserService:
             "🌀 <b>Ссылка подписки:</b>",
             f"<code>{sub}</code>\n",
         ]
-        labeled = [(_telegram_label(c), self.link(user, c)) for c in user.connections]
+        labeled = [
+            (_telegram_label(c), self.link(user, c))
+            for c in user.connections
+            if c.protocol is not Protocol.AWG  # у AmneziaWG — файл, QR и ключ отдельно
+        ]
         for label, link in labeled:
             parts += [f"🌐 <b>{label}:</b>", f"<code>{link}</code>\n"]
         try:
@@ -146,8 +161,27 @@ class UserService:
                 for label, link in labeled:
                     telegram.send_photo(self.qr_png(link, png), f"QR-код для {user.name} ({label})")
                 telegram.send_photo(self.qr_png(sub, png), f"QR-код подписки для {user.name}")
+                awg_conn = user.find(Protocol.AWG)
+                if awg_conn is not None:
+                    self.send_awg(telegram, user, awg_conn, Path(tmp))
         except NotifyError as e:
             raise ServiceError(str(e)) from e
+
+    def send_awg(self, telegram: Telegram, user: User, conn: Connection, tmp: Path) -> None:
+        """AmneziaWG в Telegram: файл .conf, его QR-код, ключ vpn:// и его QR-код."""
+        conf_path = tmp / awg_client.file_name(user)
+        conf = self.awg_conf(user, conn)
+        conf_path.write_text(conf, encoding="utf-8")
+        key = self.awg_vpn_key(user, conn)
+        telegram.send_document(conf_path, f"AmneziaWG 3.1 для {user.name}: файл конфигурации")
+        telegram.send_photo(
+            self.qr_png(conf, tmp / "awg-conf.png"),
+            f"QR-код AmneziaWG для {user.name} (приложения AmneziaWG и AmneziaVPN)",
+        )
+        telegram.send_message(f"🔐 <b>AmneziaVPN, ключ для {user.name}:</b>\n<code>{key}</code>")
+        telegram.send_photo(
+            self.qr_png(key, tmp / "awg-key.png"), f"QR-код ключа AmneziaVPN для {user.name}"
+        )
 
     # ── изменения (каждое — с применением конфигурации) ──────────────────────
 

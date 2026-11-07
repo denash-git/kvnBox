@@ -196,8 +196,9 @@ def iperf_running_keyboard() -> Kb:
     )
 
 
-def services_menu_keyboard(xray: bool = False) -> Kb:
-    """`xray` — кнопка Xray, когда служба должна работать (включён, есть подключения)."""
+def services_menu_keyboard(xray: bool = False, awg: bool = False) -> Kb:
+    """`xray` — кнопка Xray, когда служба должна работать (включён, есть подключения);
+    `awg` — кнопка AmneziaWG, когда протокол включён."""
     return Kb(
         inline_keyboard=[
             [
@@ -205,6 +206,11 @@ def services_menu_keyboard(xray: bool = False) -> Kb:
                 Btn(text="sing-box", callback_data="services:confirm:sing-box"),
             ],
             *([[Btn(text="Xray", callback_data="services:confirm:xray")]] if xray else []),
+            *(
+                [[Btn(text="AmneziaWG", callback_data="services:confirm:kvnbox-awg")]]
+                if awg
+                else []
+            ),
             [
                 Btn(text="Mieru", callback_data="services:confirm:mita"),
                 Btn(text="NetBird", callback_data="services:confirm:netbird"),

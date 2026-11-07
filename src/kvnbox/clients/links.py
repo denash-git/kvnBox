@@ -33,6 +33,7 @@ LINK_SUFFIX = {
     (Protocol.VLESS, Transport.CDN): "cdn",
     (Protocol.NAIVE, None): "naive",
     (Protocol.MIERU, None): "mieru",
+    (Protocol.AWG, None): "awg",
 }
 
 
@@ -61,6 +62,11 @@ def _password_creds(conn: Connection) -> PasswordCredentials:
 def build_link(user: User, conn: Connection, settings: Settings) -> str:
     domain = settings.domain
     name = profile_name(user, conn)
+
+    if conn.protocol is Protocol.AWG:  # ключ приложения AmneziaVPN (в подписки не входит)
+        from kvnbox.clients.awg import vpn_key
+
+        return vpn_key(user, conn, settings)
 
     if conn.protocol is Protocol.NAIVE:
         creds = _password_creds(conn)

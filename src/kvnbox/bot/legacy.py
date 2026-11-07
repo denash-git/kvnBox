@@ -28,6 +28,8 @@ _TYPE_LABEL = {"xhttp": "HTTPUpgrade", "xh": "XHTTP", "cdn": "CDN"}
 
 def proto_label(proto: str, utype: str) -> str:
     """«VLESS WS», «VLESS HTTPUpgrade», «NAIVE»."""
+    if proto == "awg":
+        return "AmneziaWG"
     return f"{proto.upper()} {_TYPE_LABEL.get(utype, utype.upper())}".strip()
 
 

@@ -16,7 +16,7 @@ from kvnbox.cores.xray import xray_running
 from kvnbox.services.app import App
 
 router = Router()
-ALLOWED = {"caddy", "sing-box", "xray", "mita", "netbird", "all"}
+ALLOWED = {"caddy", "sing-box", "xray", "mita", "netbird", "kvnbox-awg", "all"}
 
 
 @router.message(Command("services"))
@@ -25,12 +25,17 @@ async def services_menu(event: Message | CallbackQuery, app: App) -> None:
     await show(
         event,
         "🔄 <b>Управление службами</b>\n\nВыберите службу для перезапуска:",
-        services_menu_keyboard(_xray_needed(app)),
+        services_menu_keyboard(_xray_needed(app), _awg_on(app)),
     )
 
 
 def _xray_needed(app: App) -> bool:
     return xray_running(app.settings.load(), app.users.all())
+
+
+def _awg_on(app: App) -> bool:
+    s = app.settings.load().awg
+    return s.enabled and s.configured
 
 
 @router.callback_query(F.data.startswith("services:confirm:"))
@@ -56,6 +61,7 @@ async def services_run(cb: CallbackQuery, app: App) -> None:
         units += [
             u for u, binary in (("mita", "mita"), ("netbird", "netbird")) if app.installed(binary)
         ]
+        units += ["kvnbox-awg"] if _awg_on(app) else []
     elif service == "xray" and not _xray_needed(app):
         await edit(cb, "⚪ Xray не нужен: отключён или нет подключений.", back_to_main_keyboard())
         await cb.answer()

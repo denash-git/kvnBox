@@ -9,6 +9,7 @@ import subprocess
 from kvnbox.core.models import CoreKind, Transport
 from kvnbox.services import ServiceError
 from kvnbox.services.modules import (
+    AwgModule,
     BbrModule,
     CaddyModule,
     MieruModule,
@@ -38,13 +39,14 @@ def modules_menu(m: Menu) -> None:
             f"sing-box    [{_on(m.app.systemd.is_active('sing-box'))}]",
             f"Caddy       [{_on(m.app.systemd.is_active('caddy'))}]",
             f"Xray        [{_xray_badge(m)}]",
+            f"AmneziaWG   [{_on(settings.awg.enabled)}]",
             "Настроить пути протоколов",
             "Настройки CDN",
             "Отключить BBR оптимизацию" if bbr else "Включить BBR оптимизацию",
             "Назад",
         ]
         choice = m.select("Модули", options)
-        if choice in (BACK, 8):
+        if choice in (BACK, 9):
             return
         [
             mieru_module_menu,
@@ -52,6 +54,7 @@ def modules_menu(m: Menu) -> None:
             singbox_module_menu,
             caddy_module_menu,
             xray_module_menu,
+            awg_module_menu,
             change_vless_paths_menu,
             cdn_settings_menu,
             bbr_optimization_menu,
@@ -679,3 +682,112 @@ def bbr_optimization_menu(m: Menu) -> None:
         m.ui.out()
         m.fail(f"Ошибка: {e}" if not active else str(e))
     m.ui.pause()
+
+
+# ─── AmneziaWG 3.1 (этап 13) ─────────────────────────────────────────────────
+
+
+def _awg_build(m: Menu, mod: AwgModule) -> bool:
+    """Сборка amneziawg-go установщиком на экране (~1 мин). True — программа есть."""
+    m.ui.clear_screen()
+    m.ui.t.cursor(True)
+    with contextlib.suppress(KeyboardInterrupt):
+        subprocess.run(mod.build_command(), check=False)
+    m.ui.pause()
+    return mod.built()
+
+
+def _awg_info(m: Menu, mod: AwgModule) -> list[str]:
+    from kvnbox.services.awg import AwgService
+
+    s = m.app.settings.load().awg
+    if not s.enabled:
+        built = (
+            f"собран ({mod.version()})"
+            if mod.built()
+            else "ещё не собран (соберётся при включении)"
+        )
+        return [f"Протокол выключен. Программа: {built}."]
+    state = _on(m.app.systemd.is_active(mod.unit))
+    peers = AwgService(m.app).peer_states()
+    import time as _time
+
+    online = sum(1 for p in peers if p.last_handshake and _time.time() - p.last_handshake < 180)
+    lines = [
+        f"Служба: {state}   Порт: {BOLD}{s.port}/udp{RESET}   Версия: {mod.version() or '?'}",
+        f"Клиентов: {len(peers)}, на связи (3 мин): {online}",
+    ]
+    if mod.update_available():
+        lines.append(f"{YELLOW}Доступна новая сборка: {mod.target_version()}{RESET}")
+    return lines
+
+
+def awg_module_menu(m: Menu) -> None:
+    mod = AwgModule(m.app)
+    while True:
+        s = m.app.settings.load().awg
+        if not s.enabled:
+            choice = m.select(
+                "Модуль: AmneziaWG 3.1", ["Включить AmneziaWG", "Назад"], _awg_info(m, mod)
+            )
+            if choice in (BACK, 1):
+                return
+            if not mod.built() and not _awg_build(m, mod):
+                m.screen("Модуль: AmneziaWG 3.1")
+                m.ui.out()
+                m.fail("Сборка не удалась — подробности в /var/log/kvnbox-amneziawg-build.log")
+                m.ui.pause()
+                continue
+            m.screen("Модуль: AmneziaWG 3.1")
+            m.progress("Включение AmneziaWG (ключи, порт, маскировка)...")
+            try:
+                res = mod.set_enabled(True)
+                m.show_result(res, f"AmneziaWG включён, порт {m.app.settings.load().awg.port}/udp")
+            except ServiceError as e:
+                m.ui.out()
+                m.fail(str(e))
+            m.ui.pause()
+            continue
+        options = [
+            "Выключить AmneziaWG",
+            "Сменить UDP-порт",
+            "Новая маскировка (все конфиги — заново)",
+            "Обновить AmneziaWG" if mod.update_available() else "Пересобрать AmneziaWG",
+            "Журнал службы",
+            "Назад",
+        ]
+        choice = m.select("Модуль: AmneziaWG 3.1", options, _awg_info(m, mod))
+        if choice in (BACK, 5):
+            return
+        if choice == 0:
+            m.screen("Модуль: AmneziaWG 3.1")
+            m.progress("Выключение...")
+            m.show_result(mod.set_enabled(False), "AmneziaWG выключен")
+            m.ui.pause()
+        elif choice == 1:
+            m.screen("Модуль: AmneziaWG 3.1 → порт")
+            m.ui.out(f"  Текущий порт: {s.port}/udp. После смены клиентам нужны новые конфиги.")
+            value = m.ui.read_prompt("Новый порт (1024-65535, пусто — отмена): ").strip()
+            if value.isdigit():
+                try:
+                    m.show_result(mod.set_port(int(value)), f"Порт изменён на {value}/udp")
+                except ServiceError as e:
+                    m.ui.out()
+                    m.fail(str(e))
+                m.ui.pause()
+        elif choice == 2:
+            m.screen("Модуль: AmneziaWG 3.1 → новая маскировка")
+            m.ui.out("  Будут созданы новый ключ сервера и новые параметры маскировки.")
+            m.ui.out("  Все выданные конфиги AmneziaWG перестанут работать — выдайте их заново.")
+            if m.ui.read_prompt("Продолжить? [y/N]: ") in ("y", "Y", "д", "Д"):
+                m.progress("Применение...")
+                m.show_result(mod.regenerate(), "Готово. Выдайте клиентам новые конфиги.")
+                m.ui.pause()
+        elif choice == 3:
+            # без отметки версии установщик соберёт заново (и обновит, и пересоберёт)
+            marker = m.app.paths.awg_bin
+            with contextlib.suppress(OSError):
+                (marker.parent / f"{marker.name}.version").unlink()
+            _awg_build(m, mod)
+        elif choice == 4:
+            _logs(m, "Журнал AmneziaWG", mod.unit)

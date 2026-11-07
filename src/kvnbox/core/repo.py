@@ -11,6 +11,7 @@ from contextlib import AbstractContextManager
 
 from kvnbox.core.models import (
     USER_NAME_RE,
+    AwgCredentials,
     Connection,
     CoreKind,
     PasswordCredentials,
@@ -143,7 +144,30 @@ class UsersRepo:
         return user
 
 
-def _new_credentials(protocol: Protocol, db: UsersDB) -> UuidCredentials | PasswordCredentials:
+def _new_awg_credentials(db: UsersDB) -> AwgCredentials:
+    """Ключи клиента и первый свободный адрес 10.8.1.2…254."""
+    from kvnbox.system import awg  # ключи X25519 — без внешних зависимостей
+
+    taken = {
+        c.credentials.address
+        for u in db.users
+        for c in u.connections
+        if isinstance(c.credentials, AwgCredentials)
+    }
+    for n in range(2, 255):
+        address = f"10.8.1.{n}"
+        if address not in taken:
+            return AwgCredentials(
+                private_key=awg.private_key(), preshared_key=awg.symmetric_key(), address=address
+            )
+    raise RepoError("Нет свободных адресов AmneziaWG (максимум 253 клиента).")
+
+
+def _new_credentials(
+    protocol: Protocol, db: UsersDB
+) -> UuidCredentials | PasswordCredentials | AwgCredentials:
+    if protocol is Protocol.AWG:
+        return _new_awg_credentials(db)
     if protocol is Protocol.VLESS:
         taken = {
             c.credentials.uuid
@@ -176,5 +200,6 @@ def _slot_label(protocol: Protocol, transport: Transport | None) -> str:
         (Protocol.VLESS, Transport.CDN): "VLESS CDN",
         (Protocol.NAIVE, None): "NaiveProxy",
         (Protocol.MIERU, None): "Mieru",
+        (Protocol.AWG, None): "AmneziaWG",
     }
     return labels.get((protocol, transport), protocol.value)

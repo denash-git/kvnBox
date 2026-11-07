@@ -29,6 +29,7 @@ class Protocol(str, Enum):
     VLESS = "vless"
     NAIVE = "naive"
     MIERU = "mieru"
+    AWG = "awg"  # AmneziaWG 3.1 (этап 13)
 
 
 class Transport(str, Enum):
@@ -47,6 +48,7 @@ class CoreKind(str, Enum):
     XRAY = "xray"
     CADDY = "caddy"
     MITA = "mita"
+    AWG = "awg"  # amneziawg-go
 
 
 # Какие ядра умеют обслуживать протокол/транспорт. Первое — ядро по умолчанию.
@@ -59,6 +61,7 @@ SUPPORTED_CORES: dict[tuple[Protocol, Transport | None], tuple[CoreKind, ...]] =
     (Protocol.VLESS, Transport.CDN): (CoreKind.XRAY,),
     (Protocol.NAIVE, None): (CoreKind.CADDY,),
     (Protocol.MIERU, None): (CoreKind.MITA,),
+    (Protocol.AWG, None): (CoreKind.AWG,),
 }
 
 
@@ -104,8 +107,42 @@ class PasswordCredentials(_Model):
         return v
 
 
+_B64_KEY_RE = re.compile(r"[A-Za-z0-9+/]{43}=")
+
+# Сеть клиентов AmneziaWG: сервер — .1, клиенты — .2…254 (как у Amnezia по умолчанию)
+AWG_SUBNET = "10.8.1.0/24"
+AWG_SERVER_ADDRESS = "10.8.1.1"
+
+
+def _awg_key(v: str) -> str:
+    if not _B64_KEY_RE.fullmatch(v):
+        raise ValueError("ключ AmneziaWG: 32 байта в base64")
+    return v
+
+
+class AwgCredentials(_Model):
+    """Клиент AmneziaWG: свой ключ, общий с сервером PresharedKey, адрес в сети клиентов."""
+
+    kind: Literal["awg"] = "awg"
+    private_key: str
+    preshared_key: str
+    address: str
+
+    @field_validator("private_key", "preshared_key")
+    @classmethod
+    def _key(cls, v: str) -> str:
+        return _awg_key(v)
+
+    @field_validator("address")
+    @classmethod
+    def _address(cls, v: str) -> str:
+        if not re.fullmatch(r"10\.8\.1\.([2-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-4])", v):
+            raise ValueError(f"адрес клиента AmneziaWG вне сети {AWG_SUBNET}: {v}")
+        return v
+
+
 Credentials = Annotated[
-    Union[UuidCredentials, PasswordCredentials],  # noqa: UP007 — дискриминатор pydantic
+    Union[UuidCredentials, PasswordCredentials, AwgCredentials],  # noqa: UP007 — дискриминатор
     Field(discriminator="kind"),
 ]
 
@@ -113,6 +150,7 @@ _CREDENTIALS_KIND = {
     Protocol.VLESS: "uuid",
     Protocol.NAIVE: "password",
     Protocol.MIERU: "password",
+    Protocol.AWG: "awg",
 }
 
 
@@ -213,6 +251,9 @@ class UsersDB(_Model):
             "UUID",
             [c.credentials.uuid for c in conns if isinstance(c.credentials, UuidCredentials)],
         )
+        awg = [c.credentials for c in conns if isinstance(c.credentials, AwgCredentials)]
+        _ensure_unique("адрес AmneziaWG", [a.address for a in awg])
+        _ensure_unique("ключ AmneziaWG", [a.private_key for a in awg])
         for proto in (Protocol.NAIVE, Protocol.MIERU):
             _ensure_unique(
                 f"логин {proto.value}",
@@ -393,6 +434,33 @@ class MieruSettings(_Model):
     port: int = Field(default=21000, ge=1, le=65535)
 
 
+class AwgSettings(_Model):
+    """AmneziaWG 3.1 (этап 13). Ставится вместе с панелью, но выключен. При первом
+    включении создаются ключ сервера, случайный высокий UDP-порт и маскировка (общие
+    для всех клиентов: смена — перевыпуск всех конфигов)."""
+
+    enabled: bool = False
+    port: int = Field(default=0, ge=0, le=65535)  # 0 — ещё не выбран
+    private_key: str = ""
+    jc: int = Field(default=0, ge=0, le=128)
+    jmin: int = Field(default=0, ge=0, le=1280)
+    jmax: int = Field(default=0, ge=0, le=1280)
+    s1: int = Field(default=0, ge=0, le=1132)
+    s2: int = Field(default=0, ge=0, le=1188)
+    s3: int = Field(default=0, ge=0, le=1216)
+    s4: int = Field(default=0, ge=0, le=32)
+    header_protection_key: str = ""
+
+    @field_validator("private_key", "header_protection_key")
+    @classmethod
+    def _key(cls, v: str) -> str:
+        return v if v == "" else _awg_key(v)
+
+    @property
+    def configured(self) -> bool:
+        return bool(self.private_key and self.header_protection_key and self.port)
+
+
 class BackupSettings(_Model):
     enabled: bool = False
     hour: int = Field(default=12, ge=0, le=23)
@@ -431,6 +499,7 @@ class Settings(_Model):
     xray: XraySettings = Field(default_factory=XraySettings)
     cdn: CdnSettings = Field(default_factory=CdnSettings)
     mieru: MieruSettings = Field(default_factory=MieruSettings)
+    awg: AwgSettings = Field(default_factory=AwgSettings)
     backup: BackupSettings = Field(default_factory=BackupSettings)
     telegram: TelegramSettings = Field(default_factory=TelegramSettings)
     security: SecuritySettings = Field(default_factory=SecuritySettings)

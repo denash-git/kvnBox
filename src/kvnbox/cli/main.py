@@ -33,10 +33,12 @@ from kvnbox.core.storage import StorageError
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 from kvnbox.services.apply import Applier, ApplyResult
+from kvnbox.services.awg import AwgService
 from kvnbox.services.backup import BackupService, PasswordRequired
 from kvnbox.services.firewall import FirewallService
 from kvnbox.services.jobs import Jobs
 from kvnbox.services.modules import (
+    AwgModule,
     BbrModule,
     MieruModule,
     SingboxModule,
@@ -60,6 +62,7 @@ SLOTS: dict[str, tuple[Protocol, Transport | None]] = {
     "vless-cdn": (Protocol.VLESS, Transport.CDN),  # XHTTP через CDN, только Xray
     "naive": (Protocol.NAIVE, None),
     "mieru": (Protocol.MIERU, None),
+    "awg": (Protocol.AWG, None),  # AmneziaWG 3.1
 }
 
 Handler = Callable[[App, argparse.Namespace, TextIO], int]
@@ -446,6 +449,41 @@ def build_parser() -> argparse.ArgumentParser:
         "сменить порт",
     )
     sp.add_argument("port", type=int)
+
+    awg = group("awg", "AmneziaWG 3.1")
+    cmd(awg, "sync", _say(lambda app, a: AwgService(app).sync()), "настроить работающую службу")
+    cmd(
+        awg,
+        "down",
+        _say(lambda app, a: AwgService(app).down()),
+        "снять NAT",
+    )
+    cmd(awg, "build", _say(lambda app, a: AwgModule(app).build()), "собрать amneziawg-go")
+    cmd(
+        awg,
+        "enable",
+        lambda app, a, out: _result(AwgModule(app).set_enabled(True), out),
+        "включить (первый раз — ключи, порт, маскировка)",
+    )
+    cmd(
+        awg,
+        "disable",
+        lambda app, a, out: _result(AwgModule(app).set_enabled(False), out),
+        "выключить",
+    )
+    sp = cmd(
+        awg,
+        "port",
+        lambda app, a, out: _result(AwgModule(app).set_port(a.port), out),
+        "сменить UDP-порт",
+    )
+    sp.add_argument("port", type=int)
+    cmd(
+        awg,
+        "regenerate",
+        lambda app, a, out: _result(AwgModule(app).regenerate(), out),
+        "новые ключ сервера и маскировка (конфиги клиентов — заново)",
+    )
 
     xray = group("xray", "ядро Xray")
     cmd(xray, "install", lambda app, a, out: _result(XrayModule(app).install(), out), "установить")

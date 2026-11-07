@@ -16,6 +16,7 @@ LOG_UNITS = {
     "Xray": "xray",
     "Mieru": "mita",
     "NetBird": "netbird",
+    "AmneziaWG": "kvnbox-awg",
 }
 IPERF_PORT = 5201
 IPERF_UNIT = "kvnbox-iperf3"
