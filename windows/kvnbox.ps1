@@ -7,10 +7,11 @@
 # Серверы: ключ SSH создаётся на ПК, добавляется на сервер (пароль root нужен один раз),
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 
-$KvnboxVersion = '2.1.2'
+$KvnboxVersion = '2.2.0'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
+$IconUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ico'
 
 function Get-EnvOr([string]$Name, [string]$Default) {
     $v = [Environment]::GetEnvironmentVariable($Name)
@@ -24,6 +25,7 @@ $SshDir = Get-EnvOr 'KVNBOX_SSH_DIR' (Join-Path $env:USERPROFILE '.ssh')
 $DesktopDir = Get-EnvOr 'KVNBOX_DESKTOP' ([Environment]::GetFolderPath('Desktop'))
 $StartMenuDir = Get-EnvOr 'KVNBOX_STARTMENU' ([Environment]::GetFolderPath('Programs'))
 $AppScript = Join-Path $AppDir 'kvnbox.ps1'
+$AppIcon = Join-Path $AppDir 'kvnbox.ico'
 $ServersFile = Join-Path $AppDir 'servers.json'
 $UpdateFile = Join-Path $AppDir 'update.json'
 $SshConfig = Join-Path $SshDir 'config'
@@ -175,7 +177,7 @@ function New-Shortcut([string]$Path, [string]$Title, [string]$ExtraArgs = '') {
         $lnk.Arguments = $psArgs
     }
     $lnk.WorkingDirectory = $env:USERPROFILE
-    $lnk.IconLocation = "$env:SystemRoot\System32\shell32.dll,15"
+    $lnk.IconLocation = if (Test-Path $AppIcon) { "$AppIcon,0" } else { "$env:SystemRoot\System32\shell32.dll,15" }
     $lnk.Description = $Title
     $lnk.Save()
 }
@@ -223,14 +225,42 @@ function Test-ScriptText([string]$Text) {
     return ($errs.Count -eq 0 -and (Get-ScriptVersion $Text))
 }
 
-function Install-App([string]$Text) {
+function Install-Icon([string]$SourceDir = '') {
+    # значок: рядом со скриптом (файл скачан вручную) или с GitHub; не вышло — системный
+    try {
+        $local = if ($SourceDir) { Join-Path $SourceDir 'kvnbox.ico' } else { '' }
+        if ($local -and (Test-Path $local) -and ([IO.Path]::GetFullPath($local) -ne [IO.Path]::GetFullPath($AppIcon))) {
+            $bytes = [IO.File]::ReadAllBytes($local)
+        } else {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            $bytes = (New-Object Net.WebClient).DownloadData("$IconUrl`?t=" + [DateTime]::UtcNow.Ticks)
+        }
+        # проверка: заголовок файла .ico (00 00 01 00)
+        if ($bytes.Length -gt 6 -and $bytes[0] -eq 0 -and $bytes[1] -eq 0 -and $bytes[2] -eq 1 -and $bytes[3] -eq 0) {
+            New-Item -ItemType Directory -Force -Path $AppDir | Out-Null
+            [IO.File]::WriteAllBytes($AppIcon, $bytes)
+        }
+    } catch { }
+}
+
+function Update-ServerShortcuts {
+    # ярлыки серверов (kvnBox - имя.lnk → -Connect) — с текущим значком
+    foreach ($s in @(Get-Servers)) {
+        $lnk = Get-ServerShortcut $s
+        if (Test-Path -LiteralPath $lnk) { New-Shortcut $lnk "kvnBox - $($s.Name)" "-Connect $($s.Alias)" }
+    }
+}
+
+function Install-App([string]$Text, [string]$SourceDir = '') {
     if (-not (Test-ScriptText $Text)) { throw 'Файл приложения повреждён — установка отменена.' }
     # UTF-8 с BOM: Windows PowerShell 5.1 иначе читает файл в кодировке ANSI
     Write-Utf8 $AppScript $Text $true
+    Install-Icon $SourceDir
     New-Shortcut (Join-Path $DesktopDir 'kvnBox.lnk') 'kvnBox'
     New-Shortcut (Join-Path $StartMenuDir 'kvnBox.lnk') 'kvnBox'
     Import-OldServers
     Remove-OldShortcuts
+    Update-ServerShortcuts
 }
 
 function Get-UpdateInfo([switch]$Force) {
@@ -816,7 +846,8 @@ function Start-Kvnbox([string[]]$CliArgs) {
         Write-Line
         Write-Line "$($Col.Cyan)kvnBox — установка приложения...$Rst"
         $text = if ($self) { [IO.File]::ReadAllText($self, [Text.Encoding]::UTF8) } else { Get-RemoteScript }
-        Install-App $text
+        $srcDir = if ($self) { Split-Path $self } else { '' }
+        Install-App $text $srcDir
         Write-Ok 'Ярлык «kvnBox» — на рабочем столе и в меню Пуск.'
         Start-Sleep -Milliseconds 800
     }
