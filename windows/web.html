@@ -488,7 +488,7 @@ function renderSrv() {
   $('#srvMenu').innerHTML = SERVERS.map(x => { const k = LINK[x.Alias] || {}; const on = k.st ? k.st === 'ok' : x.Online;
     return `<div class="srv-item ${x.Alias === SRV ? 'cur' : ''}" data-a="${esc(x.Alias)}"><span class="dot ${on ? 'ok' : 'bad'}"></span>
       <span class="st"><b>${esc(x.Name)}</b><small>${addrOf(x)}${k.panel ? ` · панель ${esc(k.panel)}` : k.none || CHECK[x.Alias]?.installed === false ? ' · kvnBox не установлен' : ''}</small></span>${x.Alias === SRV ? `<span class="ck">${ic('check')}</span>` : ''}</div>`; }).join('')
-    + `<div class="srv-item" data-home="1"><span class="st"><b style="font-weight:500">${ic('grid')} Главное меню</b><small>добавить, изменить, удалить сервер</small></span></div>`;
+    + `<div class="srv-item" data-home="1"><span class="st"><b style="font-weight:500">${ic('grid')} Главное меню</b></span></div>`;
   $$('.srv-item[data-a]').forEach(el => el.onclick = e => { e.stopPropagation(); $('#srvMenu').classList.remove('open'); if (el.dataset.a !== SRV) switchSrv(el.dataset.a, PAGE === 'home' ? 'overview' : PAGE); else if (PAGE === 'home') go('overview'); });
   $$('.srv-item[data-home]').forEach(el => el.onclick = e => { e.stopPropagation(); $('#srvMenu').classList.remove('open'); go('home'); });
 }
@@ -673,9 +673,7 @@ async function overview() {
     const running = svc.filter(s => s.installed && s.state === 'active').length, inst = svc.filter(s => s.installed).length;
     const memPct = res.memory.exact_percent, diskPct = Math.round(res.disk.used * 100 / Math.max(1, res.disk.used + res.disk.free));
     $('#page').innerHTML = `
-    <div class="strips">${ov.update_available ? `<div class="card strip warn"><span class="kico" style="background:rgba(234,179,8,.15);color:var(--yellow)">${ic('up')}</span>
-      <div class="t"><b>Доступна панель ${esc(ov.latest_version)}</b><span>сейчас ${esc(ov.version)} · около минуты, VPN на это время прервётся</span></div>
-      <button class="btn" id="bUpd">${ic('up')} Обновить панель</button></div>` : ''}<div id="osStrip" style="display:contents"></div></div>
+    <div class="strips">${ov.update_available ? panelStrip(ov.latest_version, ov.version) : ''}<div id="osStrip" style="display:contents"></div></div>
     <div class="grid g4">
       <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(59,130,246,.15);color:var(--blue)">${ic('users')}</span>Пользователи</span><span class="val">${ov.users}<small>${ov.users_active} активных</small></span></div>
       <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(34,197,94,.15);color:var(--green)">${ic('power')}</span>Службы</span><span class="val">${running}<small>из ${inst} работают</small></span></div>
@@ -707,11 +705,20 @@ async function overview() {
       else if (c.newer) { if (await confirmBox('Обновить панель?', `Доступна версия ${c.latest} (сейчас ${c.current}). VPN прервётся примерно на минуту.`, 'Обновить')) return panelUpdate(c.latest); }
       else toast(`Панель: установлена последняя версия ${c.current}` + (os ? (os.count ? ` · ОС Linux: ${os.count} обновл.` : ' · ОС Linux: обновлений нет') : ''));
     });
-    if ($('#bUpd')) $('#bUpd').onclick = async () => { if (await confirmBox('Обновить панель?', `Обновление до ${ov.latest_version}. VPN прервётся примерно на минуту.`, 'Обновить')) panelUpdate(ov.latest_version); };
+    bindPanelStrip();
+    api('panel.check_update').then(c => { if (PAGE !== 'overview' || !c.newer || $('#bUpd')) return;
+      $('.strips').insertAdjacentHTML('afterbegin', panelStrip(c.latest, c.current)); bindPanelStrip(); }, () => {});
     $('#bRec').onclick = async e => { if (await confirmBox('Пересоздать конфигурации?', 'Конфигурации всех служб будут собраны заново и службы перезапущены.', 'Пересоздать')) busy(e.target.closest('button'), async () => msg(await api('config.recreate'))); };
     $('#bReb').onclick = () => reboot();
     api('server.os_updates').then(osStrip, () => {});
   } catch (e) { $('#page').innerHTML = errorCard(e, 'overview()'); }
+}
+const panelStrip = (latest, cur) => `<div class="card strip warn"><span class="kico" style="background:rgba(234,179,8,.15);color:var(--yellow)">${ic('up')}</span>
+      <div class="t"><b>Доступна панель ${esc(latest)}</b><span>сейчас ${esc(cur)} · около минуты, VPN на это время прервётся</span></div>
+      <button class="btn" id="bUpd" data-v="${esc(latest)}">${ic('up')} Обновить панель</button></div>`;
+function bindPanelStrip() {
+  const b = $('#bUpd'); if (!b) return;
+  b.onclick = async () => { if (await confirmBox('Обновить панель?', `Обновление до ${esc(b.dataset.v)}. VPN прервётся примерно на минуту.`, 'Обновить')) panelUpdate(b.dataset.v); };
 }
 async function reboot() {
   if (!await confirmBox('Перезагрузить сервер?', 'VPN и веб-меню будут недоступны 1–2 минуты.', 'Перезагрузить', true)) return;
@@ -964,7 +971,10 @@ async function setPaths() {
   const rows = [['vless', 'ws_path', 'sing-box: WebSocket'], ['vless', 'grpc_service', 'sing-box: gRPC (имя сервиса)'], ['vless', 'httpupgrade_path', 'sing-box: HTTPUpgrade'],
     ['xray', 'ws_path', 'Xray: WebSocket'], ['xray', 'grpc_service', 'Xray: gRPC (имя сервиса)'], ['xray', 'httpupgrade_path', 'Xray: HTTPUpgrade'], ['xray', 'xhttp_path', 'Xray: XHTTP'], ['xray', 'cdn_path', 'Xray: CDN']];
   $('#sbody').innerHTML = `<div class="muted" style="margin-bottom:14px">После смены пути клиентам нужны новые ссылки (подписка обновится сама).</div>
-    <div class="paths">${rows.map(([c, f, l], i) => `<div class="li"><div class="t"><b>${l}</b></div><input class="input" id="p${i}" value="${esc(s[c][f] || '')}" style="max-width:280px"><button class="btn" data-p="${i}">Сохранить</button></div>`).join('')}</div>`;
+    <div class="paths">${rows.map(([c, f, l], i) => { const none = f === 'cdn_path' && !s[c][f];
+      return `<div class="li"><div class="t"><b>${l}</b>${f === 'grpc_service' ? '<small>имя сервиса, без «/»</small>' : ''}</div>${none
+        ? '<span class="muted" style="max-width:280px;flex:1">создастся при настройке CDN (вкладка CDN)</span><button class="btn" disabled>Сохранить</button>'
+        : `<input class="input" id="p${i}" value="${esc(s[c][f] || '')}" style="max-width:280px"><button class="btn" data-p="${i}">Сохранить</button>`}</div>`; }).join('')}</div>`;
   $$('#sbody [data-p]').forEach(b => b.onclick = () => { const [c, f] = rows[+b.dataset.p]; busy(b, async () => msg(await api('settings.set_path', {core: c, field: f, value: $('#p' + b.dataset.p).value.trim()}))); });
 }
 async function setCdn() {

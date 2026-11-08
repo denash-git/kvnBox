@@ -388,9 +388,12 @@ def config_recreate(ctx: Ctx) -> Json:
 
 @action("panel.check_update")
 def panel_check_update(ctx: Ctx) -> Json:
+    from kvnbox.core.storage import atomic_write_text
     from kvnbox.services.update import UpdateService
 
     chk = UpdateService(ctx.app).check()
+    if chk.latest:  # кэш версии — для шапки текстового меню и «Обзора»
+        atomic_write_text(ctx.app.paths.root / ".update_cache", chk.latest + "\n", 0o644)
     return {"current": chk.current, "latest": chk.latest, "newer": chk.newer_available}
 
 
