@@ -46,7 +46,7 @@ async def notify_and_apply(
     cb: CallbackQuery, action: str, change: Callable[[], ApplyResult]
 ) -> bool:
     """«⏳ Применение изменений…» → операция → всплывающее уведомление (как
-    notify_and_restart в TransferBox). При неудаче изменения уже откатаны (D-028)."""
+    notify_and_restart в TransferBox). При неудаче изменения уже откатаны."""
     await edit(cb, f"⏳ Применение изменений: {action}...")
     try:
         res = await run(change)

@@ -24,7 +24,7 @@ from kvnbox.cores.xray import CDN_EXTRA, CDN_XMUX
 
 PORT_HTTPS = 443
 
-# Суффикс имени профиля в ссылке (в TransferBox был «xhttp», D-015 → D-040).
+# Суффикс имени профиля в ссылке (в TransferBox был «xhttp»).
 LINK_SUFFIX = {
     (Protocol.VLESS, Transport.WS): "ws",
     (Protocol.VLESS, Transport.GRPC): "grpc",
@@ -38,7 +38,7 @@ LINK_SUFFIX = {
 
 
 def cdn_link(uuid: str, settings: Settings, name: str) -> str:
-    """Протокол CDN — как в образце владельца: адрес, SNI и host = домен CDN,
+    """Протокол CDN — как в рабочем образце: адрес, SNI и host = домен CDN,
     параметры XHTTP — в `extra` (JSON, URL-кодирован)."""
     cdn = settings.cdn.domain
     extra = quote(json.dumps({**CDN_EXTRA, "xmux": CDN_XMUX}, separators=(",", ":")), safe="")
@@ -100,7 +100,7 @@ def build_link(user: User, conn: Connection, settings: Settings) -> str:
 
 
 # ─── Mieru: готовые клиентские конфиги ───────────────────────────────────────
-# Два формата исправлены относительно TransferBox (D-023, проверено живым трафиком):
+# Два формата исправлены относительно TransferBox (проверено живым трафиком):
 #  * JSON-профиль: домен — в `domainName`; в `ipAddress` официальный клиент
 #    mieru 3.39 принимает только IP («failed to parse IP address»);
 #  * Clash YAML: `transport: TCP` — mihomo 1.19 не принимает `tcp`.

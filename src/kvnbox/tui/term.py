@@ -99,7 +99,7 @@ class _cbreak:
 
         self.saved = termios.tcgetattr(self.fd)
         # TCSANOW: по умолчанию setcbreak использует TCSAFLUSH и выбрасывает
-        # уже пришедшие клавиши — быстрые/зажатые стрелки терялись (приёмка, этап 9)
+        # уже пришедшие клавиши — быстрые/зажатые стрелки терялись
         tty.setcbreak(self.fd, termios.TCSANOW)
 
     def __exit__(self, *exc: object) -> None:

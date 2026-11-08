@@ -35,7 +35,7 @@ class Protocol(str, Enum):
 class Transport(str, Enum):
     WS = "ws"
     GRPC = "grpc"
-    # В TransferBox назывался «XHTTP», но это HTTPUpgrade (D-015, D-040)
+    # В TransferBox назывался «XHTTP», но это HTTPUpgrade
     HTTPUPGRADE = "httpupgrade"
     # Настоящий XHTTP — только в Xray (этап 11)
     XHTTP = "xhttp"
@@ -52,7 +52,7 @@ class CoreKind(str, Enum):
 
 
 # Какие ядра умеют обслуживать протокол/транспорт. Первое — ядро по умолчанию.
-# Ядро выбирается при добавлении подключения и дальше не меняется (Q-010).
+# Ядро выбирается при добавлении подключения и дальше не меняется.
 SUPPORTED_CORES: dict[tuple[Protocol, Transport | None], tuple[CoreKind, ...]] = {
     (Protocol.VLESS, Transport.WS): (CoreKind.SINGBOX, CoreKind.XRAY),
     (Protocol.VLESS, Transport.GRPC): (CoreKind.SINGBOX, CoreKind.XRAY),
@@ -362,7 +362,7 @@ def _grpc_service(v: str) -> str:
 
 
 def random_path() -> str:
-    """Случайный путь для новой установки (Q-012): `/a8f3k2q1`."""
+    """Случайный путь для новой установки: `/a8f3k2q1`."""
     return "/" + random_name(8)
 
 

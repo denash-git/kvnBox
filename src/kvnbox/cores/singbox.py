@@ -11,7 +11,7 @@ from kvnbox.core.paths import Paths
 from kvnbox.cores import ports
 from kvnbox.cores.base import RenderedFile, active_connections
 
-# Теги inbound'ов как в TransferBox («xhttp» — исторически, это HTTPUpgrade, D-015)
+# Теги inbound'ов как в TransferBox («xhttp» — исторически, это HTTPUpgrade)
 INBOUND_TAGS = {
     Transport.WS: "vless-ws-in",
     Transport.GRPC: "vless-grpc-in",

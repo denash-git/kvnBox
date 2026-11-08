@@ -263,7 +263,7 @@ def _choose_core(
     m: Menu, nick: str, label: str, protocol: Protocol, transport: Transport | None
 ) -> CoreKind | str:
     """Шаг 2 добавления — ядро (этап 11). Спрашиваем, только если выбор есть:
-    VLESS WS/gRPC/HTTPUpgrade и Xray установлен. Ядро потом не меняется (Q-010)."""
+    VLESS WS/gRPC/HTTPUpgrade и Xray установлен. Ядро потом не меняется."""
     cores = supported_cores(protocol, transport)
     if len(cores) == 1:
         return cores[0]

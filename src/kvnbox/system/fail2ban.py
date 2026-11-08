@@ -178,7 +178,7 @@ class Fail2ban:
         if not res.ok:
             raise SecurityError(f"Не удалось запустить fail2ban: {res.output}")
         # служба уже «active», но сокет клиента появляется позже: без ожидания
-        # статус сразу после включения пустой (приёмка, этап 9)
+        # статус сразу после включения пустой
         if not self.wait_ready():
             raise SecurityError("fail2ban запущен, но не отвечает (fail2ban-client ping).")
 

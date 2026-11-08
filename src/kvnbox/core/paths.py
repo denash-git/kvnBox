@@ -57,7 +57,7 @@ class Paths:
     def fakesite_dir(self) -> Path:
         return self.root / "fakesite"
 
-    # ── код панели (D-039) ───────────────────────────────────────────────────
+    # ── код панели ───────────────────────────────────────────────────
     @property
     def releases_dir(self) -> Path:
         """Распакованные версии панели: `releases/<версия>/src/kvnbox`."""

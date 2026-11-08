@@ -103,7 +103,7 @@ SPEEDTEST_TITLE = "🚀 <b>Тест скорости VPS → Интернет</b
 
 
 def _speed_lines(dl: str, ul: str, ping: str, jitter: str | None, loss: str) -> str:
-    """Короткий формат по просьбе пользователя (D-034): только числа, подписи англ."""
+    """Короткий формат: только числа, подписи англ."""
     lines = [
         f"📥 Download: <code>{dl} Mbps</code>",
         f"📤 Upload: <code>{ul} Mbps</code>",

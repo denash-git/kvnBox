@@ -109,7 +109,7 @@ def cmd_init(app: App, a: argparse.Namespace, out: TextIO) -> int:
         print("✗ Панель уже инициализирована (используйте --force для перезаписи).", file=out)
         return EXIT_FAIL
     fqdn = app.runner.run(["hostname", "-f"], timeout=10).stdout.strip()
-    # новые установки — случайные пути и имя gRPC-сервиса (Q-012): по сети их не угадать
+    # новые установки — случайные пути и имя gRPC-сервиса: по сети их не угадать
     vless = VlessSettings(
         ws_path=random_path(), grpc_service=random_name(8), httpupgrade_path=random_path()
     )

@@ -1,7 +1,7 @@
 """Конфиг Xray (этап 11): VLESS inbound'ы за Caddy — WS, gRPC, HTTPUpgrade, XHTTP.
 
 Xray слушает только 127.0.0.1; TLS снимает Caddy и по пути отдаёт запрос нужному
-ядру. Файл создаётся, только когда Xray установлен (пути заданы, D-042).
+ядру. Файл создаётся, только когда Xray установлен (пути заданы).
 """
 
 from __future__ import annotations
@@ -18,9 +18,9 @@ from kvnbox.cores.base import RenderedFile, active_connections
 TRANSPORTS = (Transport.WS, Transport.GRPC, Transport.HTTPUPGRADE, Transport.XHTTP)
 SERVICE_USER = "xray"
 
-# Протокол CDN (XHTTP через Яндекс CDN): параметры из образца владельца, без изменений.
+# Протокол CDN (XHTTP через Яндекс CDN): параметры из рабочего образца, без изменений.
 # Данные клиента — в заголовке X-Data обычных GET, маскировка padding. Порядок ключей —
-# как в образце (попадает в `extra` ссылки). Замеры: PLAN-stage11 §11.
+# как в образце (попадает в `extra` ссылки).
 CDN_EXTRA: dict[str, str | bool] = {
     "mode": "packet-up",
     "scMaxEachPostBytes": "3500",

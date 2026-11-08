@@ -404,7 +404,13 @@ def panel_update(ctx: Ctx) -> Json:
     svc = UpdateService(ctx.app)
     version = ctx.opt_str("version") or svc.check().latest
     ctx.emit(f"Обновление панели до {version}…")
-    message = svc.update(version)
+    try:
+        message = svc.update(version)
+    except ServiceError as e:
+        # страница открыта до обновления (из меню, бота или другого окна) — это не ошибка
+        if "уже установлена" not in str(e):
+            raise
+        message = f"Панель уже версии {version} — обновлять не нужно."
     # канал api serve работает на старом коде — лаунчер переподключается
     return {"message": message, "version": version, "reconnect": True}
 
@@ -1184,7 +1190,7 @@ def logs_follow(ctx: Ctx) -> Json:
     """Поток журнала (только в `api serve`): сначала последние строки, затем новые — в `emit`,
     пока не придёт отмена (проверка раз в 0,5 с, даже если служба молчит).
     Чтение — os.read кусками: select по дескриптору не видит строки, уже забранные
-    в буфер файла Python, и после первой строки поток «замирал» (приёмка веб-меню)."""
+    в буфер файла Python, и после первой строки поток «замирал»."""
     import os
     import select
 

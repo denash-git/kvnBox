@@ -399,7 +399,7 @@ async def _security_screen(cb: CallbackQuery, app: App) -> None:
     await edit(cb, security_text(st), security_menu_keyboard(st.active, bool(st.banned_ips)))
 
 
-# «settings:security_banned_list» — кнопка списка из старых сообщений (список убран, D-033)
+# «settings:security_banned_list» — кнопка списка из старых сообщений (список убран)
 @router.callback_query(F.data.in_({"settings:security_menu", "settings:security_banned_list"}))
 async def security_menu(cb: CallbackQuery, app: App) -> None:
     await _security_screen(cb, app)

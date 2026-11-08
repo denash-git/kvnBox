@@ -152,7 +152,7 @@ def apply_settings_menu(m: Menu) -> None:
 
 
 def _ok(m: Menu, text: str) -> None:
-    # в разделе SSH текст белый, зелёная только галочка (просьба владельца)
+    # в разделе SSH текст белый, зелёная только галочка
     m.ui.center_print(f"{GREEN}✓{RESET} {text}")
 
 

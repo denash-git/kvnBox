@@ -60,7 +60,7 @@ class Releases:
         return tag
 
     def latest_version_tag(self, repo: str) -> str:
-        """Старший тег вида vX.Y.Z (версии панели — git-теги, D-039)."""
+        """Старший тег вида vX.Y.Z (версии панели — git-теги)."""
         try:
             data = json.loads(
                 self.fetch(f"https://api.github.com/repos/{repo}/tags?per_page=100", 20)

@@ -103,7 +103,7 @@ class DiagnosticsService:
             argv += ["-s", server_id]
         res = self.app.runner.run(argv, timeout=180)
         # при первом запуске Ookla пишет лицензию в stderr — результат в stdout
-        # (`.output` отдал бы лицензию вместо замера; приёмка, этап 9)
+        # (`.output` отдал бы лицензию вместо замера)
         return res.stdout if res.ok and res.stdout.strip() else res.output
 
     def speedtest_json(self, server_id: str | None = None) -> str:
