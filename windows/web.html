@@ -198,6 +198,36 @@ textarea.input.ta{height:110px;padding:10px 12px;resize:vertical;font:12px "Casc
 .mod .foot{flex-wrap:wrap}.mod{min-width:0}.grid>*{min-width:0}
 .g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .uname small{white-space:nowrap}
+.srv-btn .t .addr{display:flex;align-items:center;gap:14px;color:var(--dim);font-size:12px;white-space:nowrap}
+.srv-btn .t .addr .ms{display:inline-flex;align-items:center;gap:3px}.srv-btn .t .addr .ms .i{width:12px;height:12px;color:var(--yellow)}
+.srv-menu{right:auto;width:max(100%,290px)}
+.srv-item{align-items:flex-start}.srv-item .dot{margin-top:6px}.srv-item .st{display:grid;min-width:0;flex:1}
+.srv-item .st b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.srv-item .st small{margin:0;color:var(--dim);font-size:12px}
+.srv-item.cur{background:rgba(59,130,246,.12)}.srv-item .ck{color:var(--blue)}
+.chips.sm .chip{padding:3px 9px;font-size:11.5px}
+.chip.p{display:inline-flex;align-items:center;gap:5px}.chip.p i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.drawer{width:min(780px,100%)}
+.dact{display:flex;gap:8px;flex-wrap:wrap;padding:12px 22px;border-bottom:1px solid var(--line)}
+.page.ov{gap:14px;padding-top:18px}
+.ov .card{padding:14px 18px}.ov .kpi{gap:6px}.ov .kpi .val{font-size:22px}
+.ov .li{padding:7px 2px}.ov .res{gap:10px}
+.strip{display:flex;align-items:center;gap:12px;padding:10px 16px!important;flex-wrap:wrap}
+.strip.warn{border-color:rgba(234,179,8,.35);background:linear-gradient(90deg,rgba(234,179,8,.08),transparent)}
+.strip .t{flex:1;min-width:0}.strip .t b{font-weight:600}.strip .t span{color:var(--dim);font-size:12.5px;margin-left:8px}
+.mods .card{padding:14px 16px}.mods .mod{gap:8px}.mods .mod .lg{width:34px;height:34px;font-size:12px;border-radius:8px}
+.mods .mod .foot{padding-top:8px;gap:6px}.mods .btn{padding:5px 10px;font-size:12.5px}
+.mod .kv{display:grid;gap:3px;font-size:12.5px;color:var(--dim)}.mod .kv b{color:var(--text2);font-weight:550;word-break:break-all}
+.sw[disabled]{opacity:.45;cursor:not-allowed}
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;align-items:start}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.sum .card{padding:12px 14px}.sum .n{font-size:24px;font-weight:650}.sum .l{color:var(--dim);font-size:12.5px}
+.found{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r2);flex-wrap:wrap}
+.stres{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stres .card{padding:12px 14px;display:grid;gap:4px}.stres .n{font-size:24px;font-weight:650}.stres .n small{font-size:13px;color:var(--dim);font-weight:500;margin-left:4px}.stres .l{color:var(--dim);font-size:12.5px}
+.lockbtn.on .i{color:var(--green)}.lockbtn.off .i{color:var(--yellow)}
+.strips{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}.strips:not(:has(.card)){display:none}
+.kvg{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;margin-top:6px}.kvg div{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;border-bottom:1px solid var(--line);padding:7px 0;min-width:0}.kvg span{color:var(--dim)}.kvg b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:820px){.form2{grid-template-columns:1fr}}
 @media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:820px){.split{grid-template-columns:1fr}.g4,.g3,.g2{grid-template-columns:minmax(0,1fr)}}
 </style>
@@ -205,21 +235,20 @@ textarea.input.ta{height:110px;padding:10px 12px;resize:vertical;font:12px "Casc
 <body>
 <div class="app">
   <aside id="aside">
-    <div class="brand"><svg width="34" height="34" viewBox="0 0 64 64"><path d="M32 6 56 19 32 32 8 19Z" fill="#22c55e"/><path d="M8 19 32 32v26L8 45Z" fill="#ef4444"/><path d="M56 19 32 32v26l24-13Z" fill="#3b82f6"/><path d="M32 6 56 19v26L32 58 8 45V19Z M8 19 32 32 56 19 M32 32v26" fill="none" stroke="#0e1a2e" stroke-width="2.4" stroke-linejoin="round"/></svg><div><b>kvnBox</b><small id="lver">веб-меню</small></div></div>
+    <div class="brand"><svg width="34" height="34" viewBox="0 0 64 64"><path d="M32 6 56 19 32 32 8 19Z" fill="#22c55e"/><path d="M8 19 32 32v26L8 45Z" fill="#ef4444"/><path d="M56 19 32 32v26l24-13Z" fill="#3b82f6"/><path d="M32 6 56 19v26L32 58 8 45V19Z M8 19 32 32 56 19 M32 32v26" fill="none" stroke="#0e1a2e" stroke-width="2.4" stroke-linejoin="round"/></svg><div><b>kvnBox</b><small id="lver">web лаунчер</small></div></div>
     <div class="srv">
-      <button class="srv-btn" id="srvBtn"><span class="dot" id="srvDot"></span><span class="t"><b id="srvName">…</b><span id="srvAddr"></span></span><svg class="i"><use href="#i-chev"/></svg></button>
+      <button class="srv-btn" id="srvBtn"><span class="dot" id="srvDot"></span><span class="t"><b id="srvName">…</b><span class="addr"><span id="srvAddr"></span><span class="ms" id="srvMs"></span></span></span><svg class="i"><use href="#i-chev"/></svg></button>
       <div class="srv-menu" id="srvMenu"></div>
     </div>
     <nav id="nav"></nav>
-    <div class="aside-foot"><button class="icon-btn" id="themeBtn"></button><span>Подключение по SSH · ключ</span></div>
   </aside>
   <main>
     <div class="top">
       <button class="icon-btn burger" id="burger"><svg class="i"><use href="#i-menu"/></svg></button>
       <div><h1 id="title"></h1><div class="sub" id="subtitle"></div></div>
       <div class="sp"></div>
-      <span class="conn hide-m" id="conn"></span>
       <button class="icon-btn" title="Обновить" id="refresh"><svg class="i"><use href="#i-refresh"/></svg></button>
+      <button class="icon-btn" id="themeBtn"></button>
     </div>
     <div class="page" id="page"></div>
   </main>
@@ -256,6 +285,9 @@ textarea.input.ta{height:110px;padding:10px 12px;resize:vertical;font:12px "Casc
   <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 3 10.5l7 2.5 2.5 7z"/><path d="m10 13 4-4"/></symbol>
 
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></symbol>
   <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9.2-9.2M17 6l3 3M14 9l2 2"/></symbol>
 </svg>
 <script>
@@ -388,8 +420,8 @@ const PAGES = [
 ];
 let PAGE = localStorage.getItem('kvn-page') || 'overview', USERCOUNT = '';
 function renderNav() {
-  $('#nav').innerHTML = PAGES.map(([k, t, i]) => `<a class="${PAGE === k ? 'on' : ''}" data-p="${k}">${ic(i)}${t}${k === 'users' && USERCOUNT !== '' ? `<span class="cnt">${USERCOUNT}</span>` : ''}</a>`).join('');
-  $$('#nav a').forEach(a => a.onclick = () => go(a.dataset.p));
+  $('#nav').innerHTML = PAGES.map(([k, t, i]) => `<a class="${PAGE === k ? 'on' : ''}" data-nav="${k}">${ic(i)}${t}${k === 'users' && USERCOUNT !== '' ? `<span class="cnt">${USERCOUNT}</span>` : ''}</a>`).join('');
+  $$('#nav a').forEach(a => a.onclick = () => go(a.dataset.nav));
 }
 let STOP = null; // остановка потока журнала при уходе со страницы
 function go(p) {
@@ -397,6 +429,8 @@ function go(p) {
   PAGE = p; localStorage.setItem('kvn-page', p); renderNav(); $('#aside').classList.remove('open');
   const pg = PAGES.find(x => x[0] === p) || PAGES[0];
   $('#title').textContent = pg[1]; $('#subtitle').textContent = pg[3];
+  $('#page').className = 'page' + (p === 'overview' ? ' ov' : '');
+  closeAll();
   if (!SRV) { $('#page').innerHTML = noServers(); return; }
   if (!READY) { connect(); return; }
   ({overview, users, modules, settings, logs, backups, diag})[p]();
@@ -404,48 +438,60 @@ function go(p) {
 }
 
 /* ═══ серверы и подключение ═══ */
-let READY = false, PANEL = '';
+let READY = false, PANEL = '', MYIP = '';
 async function loadServers() {
   const r = await fetch(`/app/servers?t=${TOKEN}`).then(r => r.json());
   SERVERS = r.servers || []; LAUNCHER = r.launcher || '';
-  $('#lver').textContent = LAUNCHER ? `веб-меню · лаунчер ${LAUNCHER}` : 'веб-меню';
+  $('#lver').textContent = LAUNCHER ? `web лаунчер ${LAUNCHER}` : 'web лаунчер';
   if (!SERVERS.some(s => s.Alias === SRV)) SRV = SERVERS[0]?.Alias || '';
   renderSrv();
 }
+/* состояние связи по серверам: alias → {st: 'ok'|'bad'|'wait', ms, panel} */
+const LINK = {};
+const addrOf = x => `${esc(x.Host)}&nbsp;&nbsp;:${esc(x.Port)}`;
 function renderSrv() {
   const s = SERVERS.find(x => x.Alias === SRV);
+  const l = LINK[SRV] || {};
   $('#srvName').textContent = s ? s.Name : 'нет серверов';
-  $('#srvAddr').textContent = s ? `${s.Host} · ${s.Port}` : 'добавьте в лаунчере';
-  $('#srvDot').className = 'dot ' + (s ? (s.Online ? 'ok' : 'bad') : '');
-  $('#srvMenu').innerHTML = SERVERS.map(x => `<div class="srv-item" data-a="${esc(x.Alias)}"><span class="dot ${x.Online ? 'ok' : 'bad'}"></span><b>${esc(x.Name)}</b><small>${esc(x.Host)}</small></div>`).join('')
+  $('#srvAddr').innerHTML = s ? addrOf(s) : 'добавьте в лаунчере';
+  $('#srvMs').innerHTML = s && l.st === 'ok' && l.ms != null ? `${ic('bolt')}${l.ms} мс` : '';
+  $('#srvDot').className = 'dot ' + (!s ? '' : l.st === 'ok' ? 'ok' : l.st === 'wait' ? 'warn' : l.st === 'bad' ? 'bad' : (s.Online ? 'ok' : 'bad'));
+  $('#srvBtn').title = s ? (l.st === 'ok' ? `На связи${l.panel ? ' · панель ' + l.panel : ''}` : l.st === 'bad' ? 'Нет связи' : '') : '';
+  $('#srvMenu').innerHTML = SERVERS.map(x => { const k = LINK[x.Alias] || {}; const on = k.st ? k.st === 'ok' : x.Online;
+    return `<div class="srv-item ${x.Alias === SRV ? 'cur' : ''}" data-a="${esc(x.Alias)}"><span class="dot ${on ? 'ok' : 'bad'}"></span>
+      <span class="st"><b>${esc(x.Name)}</b><small>${addrOf(x)}${k.panel ? ` · панель ${esc(k.panel)}` : ''}</small></span>${x.Alias === SRV ? `<span class="ck">${ic('check')}</span>` : ''}</div>`; }).join('')
     + `<div class="srv-hint">Добавить сервер — в лаунчере kvnBox (окно PowerShell)</div>`;
-  $$('.srv-item[data-a]').forEach(el => el.onclick = e => { e.stopPropagation(); $('#srvMenu').classList.remove('open'); switchSrv(el.dataset.a); });
+  $$('.srv-item[data-a]').forEach(el => el.onclick = e => { e.stopPropagation(); $('#srvMenu').classList.remove('open'); if (el.dataset.a !== SRV) switchSrv(el.dataset.a); });
 }
-function switchSrv(alias) { SRV = alias; localStorage.setItem('kvn-srv', alias); READY = false; renderSrv(); go(PAGE); }
+function switchSrv(alias) { if (STOP) { STOP(); STOP = null; } SRV = alias; localStorage.setItem('kvn-srv', alias); READY = false; closeAll(); renderSrv(); go(PAGE); }
 const noServers = () => `<div class="card empty" style="padding:70px 20px">${ic('box')}<b style="font-size:16px;color:var(--text)">Серверов пока нет</b><span>Добавьте сервер в лаунчере kvnBox: пункт «Добавить сервер» в окне PowerShell.</span></div>`;
 async function connect() {
   $('#page').innerHTML = skeleton();
-  setConn('wait', 'подключение…');
+  setConn('wait');
   const s = SERVERS.find(x => x.Alias === SRV);
+  const alias = SRV;
   try {
-    const t0 = performance.now();
     const v = await api('api.version');
-    PANEL = v.panel; READY = true;
-    setConn('ok', `на связи · панель ${PANEL}`);
-    ping(t0);
+    if (alias !== SRV) return;
+    PANEL = v.panel; MYIP = v.client_ip || ''; READY = true;
+    LINK[SRV] = {st: 'ok', panel: PANEL, ms: null}; renderSrv();
+    ping();
     go(PAGE);
   } catch (e) {
-    READY = false; setConn('bad', 'нет связи');
+    if (alias !== SRV) return;
+    READY = false; setConn('bad');
     const old = /Нет такого действия|invalid choice|api/i.test(e.message) && !/потеряно|timed out|refused|Permission/i.test(e.message);
     $('#page').innerHTML = old
       ? `<div class="card empty" style="padding:60px 20px"><span style="color:var(--yellow)">${ic('up')}</span><b style="font-size:16px;color:var(--text)">Панель на сервере устарела</b><span>Веб-меню работает с панелью kvnBox 0.5.0 и новее. Обновите панель: в лаунчере выберите сервер (Enter) → Настройки → Проверить обновления панели.</span><button class="btn" onclick="connect()">${ic('refresh')} Проверить снова</button></div>`
       : `<div class="card empty" style="padding:60px 20px"><span style="color:var(--red)">${ic('alert')}</span><b style="font-size:16px;color:var(--text)">${esc(s ? s.Name : '')} не отвечает</b><span>${esc(e.message)}</span><button class="btn" onclick="connect()">${ic('refresh')} Повторить</button></div>`;
   }
 }
-function setConn(cls, text) { $('#conn').innerHTML = `<span class="dot ${cls === 'wait' ? 'warn' : cls}"></span>${esc(text)}`; }
-async function ping(t0) {
-  try { const a = t0 || performance.now(); if (!t0) await api('api.version'); const ms = Math.round(performance.now() - a);
-    setConn('ok', `на связи · ${ms} мс · панель ${PANEL}`); } catch (_) { setConn('bad', 'нет связи'); }
+function setConn(st) { LINK[SRV] = {...(LINK[SRV] || {}), st}; renderSrv(); }
+async function ping() {
+  const alias = SRV;
+  try { const a = performance.now(); await api('api.version'); const ms = Math.round(performance.now() - a);
+    LINK[alias] = {...(LINK[alias] || {}), st: 'ok', ms}; } catch (_) { LINK[alias] = {...(LINK[alias] || {}), st: 'bad', ms: null}; }
+  renderSrv();
 }
 
 /* ═══ Обзор ═══ */
@@ -457,41 +503,65 @@ async function overview() {
     const running = svc.filter(s => s.installed && s.state === 'active').length, inst = svc.filter(s => s.installed).length;
     const memPct = res.memory.exact_percent, diskPct = Math.round(res.disk.used * 100 / Math.max(1, res.disk.used + res.disk.free));
     $('#page').innerHTML = `
-    ${ov.update_available ? `<div class="card banner"><span class="kico" style="background:rgba(234,179,8,.15);color:var(--yellow)">${ic('up')}</span>
-      <div style="flex:1"><b>Доступна версия панели ${esc(ov.latest_version)}</b><div class="muted">Сейчас ${esc(ov.version)}. Обновление около минуты, VPN на это время прервётся.</div></div>
-      <button class="btn" id="bUpd">${ic('up')} Обновить</button></div>` : ''}
+    <div class="strips">${ov.update_available ? `<div class="card strip warn"><span class="kico" style="background:rgba(234,179,8,.15);color:var(--yellow)">${ic('up')}</span>
+      <div class="t"><b>Доступна панель ${esc(ov.latest_version)}</b><span>сейчас ${esc(ov.version)} · около минуты, VPN на это время прервётся</span></div>
+      <button class="btn" id="bUpd">${ic('up')} Обновить панель</button></div>` : ''}<div id="osStrip" style="display:contents"></div></div>
     <div class="grid g4">
       <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(59,130,246,.15);color:var(--blue)">${ic('users')}</span>Пользователи</span><span class="val">${ov.users}<small>${ov.users_active} активных</small></span></div>
       <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(34,197,94,.15);color:var(--green)">${ic('power')}</span>Службы</span><span class="val">${running}<small>из ${inst} работают</small></span></div>
-      <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(139,92,246,.15);color:var(--violet)">${ic('shield')}</span>Защита</span><span class="val" style="font-size:18px;padding-top:6px">${ov.security ? '<span class="pill ok">Fail2ban активна</span>' : '<span class="pill bad">отключена</span>'}</span></div>
-      <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(6,182,212,.15);color:var(--cyan)">${ic('cpu')}</span>Аптайм</span><span class="val" style="font-size:20px">${esc(res.uptime)}</span></div>
+      <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(139,92,246,.15);color:var(--violet)">${ic('shield')}</span>Защита</span><span class="val" style="font-size:16px;padding-top:4px">${ov.security ? '<span class="pill ok">Fail2ban активна</span>' : '<span class="pill bad">отключена</span>'}</span></div>
+      <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(6,182,212,.15);color:var(--cyan)">${ic('cpu')}</span>Аптайм</span><span class="val" style="font-size:18px">${esc(res.uptime)}</span></div>
     </div>
     <div class="grid g2">
-      <div class="card"><div class="row"><h3>Службы</h3><span class="sp"></span><button class="btn ghost" id="bRall">${ic('refresh')} Перезапустить все</button></div>
-        <div class="list" style="margin-top:8px">${svc.map(s => `<div class="li"><span class="dot ${stateCls(s.installed ? s.state : 'not_installed')}"></span><div class="t"><b>${esc(s.label)}</b><small>${esc(s.unit)}</small></div>
-          <span class="pill ${stateCls(s.installed ? s.state : 'not_installed')}">${stateText(s.installed ? s.state : 'not_installed')}</span>
-          ${s.installed ? `<button class="icon-btn sm" title="Перезапустить" data-r="${s.unit}">${ic('refresh')}</button>` : '<span style="width:30px"></span>'}</div>`).join('')}</div></div>
       <div class="grid">
-        <div class="card"><div class="row"><h3>Ресурсы</h3><span class="sp"></span><span class="muted">нагрузка ${res.load.map(x => x.toFixed(2)).join(' · ')}</span></div><div class="res" style="margin-top:12px">
-          ${[['CPU', res.cpu_percent + '%', res.cpu_percent], ['Память', `${res.memory.used_mb} / ${res.memory.total_mb} МБ`, memPct], ['Диск', `${(res.disk.used / 1e9).toFixed(1)} / ${(res.disk.total / 1e9).toFixed(1)} ГБ`, diskPct]]
+        <div class="card"><div class="row"><h3>Ресурсы</h3><span class="sp"></span><span class="muted">нагрузка ${res.load.map(x => x.toFixed(2)).join(' · ')}</span></div><div class="res" style="margin-top:10px">
+          ${[['Процессор', res.cpu_percent + '%', res.cpu_percent], ['Память', `${res.memory.used_mb} / ${res.memory.total_mb} МБ`, memPct], ['Диск', `${(res.disk.used / 1e9).toFixed(1)} / ${(res.disk.total / 1e9).toFixed(1)} ГБ`, diskPct]]
             .map(([a, b, c]) => `<div class="r"><div class="row"><span>${a}</span><span class="sp"></span><b>${b}</b></div><div class="bar"><i style="width:${Math.min(100, c)}%;${c > 85 ? 'background:var(--red)' : ''}"></i></div></div>`).join('')}
           <div class="row muted" style="font-size:12.5px">Сеть ${esc(res.iface)}: ↓ ${fmtBytes(res.rx_per_s)}/с · ↑ ${fmtBytes(res.tx_per_s)}/с</div></div></div>
-        <div class="card"><h3>Сервер</h3><div class="list" style="margin-top:6px">
+        <div class="card"><h3>Сервер</h3><div class="kvg">
           ${[['Домен', esc(ov.domain)], ['FQDN VPS', esc(ov.fqdn)], ['Сайт-маскировка', esc(ov.site_template)], ['TCP BBR', ov.bbr ? '<span class="pill ok">активен</span>' : '<span class="pill">отключен</span>'], ['Панель', esc(ov.version)]]
-            .map(([a, b]) => `<div class="li"><div class="t"><small style="font-size:13px">${a}</small></div><b>${b}</b></div>`).join('')}</div>
-          <div class="row wrap" style="margin-top:12px"><button class="btn" id="bChk">${ic('up')} Проверить обновления</button><button class="btn" id="bRec">${ic('refresh')} Пересоздать конфигурации</button><button class="btn danger" id="bReb">${ic('power')} Перезагрузить сервер</button></div></div>
+            .map(([a, b]) => `<div><span>${a}</span><b>${b}</b></div>`).join('')}</div>
+          <div class="row wrap" style="margin-top:10px"><button class="btn" id="bChk">${ic('up')} Проверить обновления</button><button class="btn" id="bRec">${ic('refresh')} Пересоздать конфигурации</button><button class="btn danger" id="bReb">${ic('power')} Перезагрузить сервер</button></div></div>
       </div>
+      <div class="card"><div class="row"><h3>Службы</h3><span class="sp"></span><button class="btn ghost" id="bRall">${ic('refresh')} Перезапустить все</button></div>
+        <div class="list" style="margin-top:6px">${svc.map(s => `<div class="li"><span class="dot ${stateCls(s.installed ? s.state : 'not_installed')}"></span><div class="t"><b>${esc(s.label)}</b><small>${esc(s.unit)}</small></div>
+          <span class="pill ${stateCls(s.installed ? s.state : 'not_installed')}">${stateText(s.installed ? s.state : 'not_installed')}</span>
+          ${s.installed ? `<button class="icon-btn sm" title="Перезапустить" data-r="${s.unit}">${ic('refresh')}</button>` : '<span style="width:30px"></span>'}</div>`).join('')}</div></div>
     </div>`;
-    $$('[data-r]').forEach(b => b.onclick = () => busy(b, async () => msg(await api('service.restart', {unit: b.dataset.r}))));
+    $$('#page [data-r]').forEach(b => b.onclick = () => busy(b, async () => msg(await api('service.restart', {unit: b.dataset.r}))));
     $('#bRall').onclick = e => busy(e.currentTarget, async () => msg(await api('service.restart_all')));
-    $('#bChk').onclick = e => busy(e.currentTarget, async () => { const c = await api('panel.check_update');
-      if (c.newer) { if (await confirmBox('Обновить панель?', `Доступна версия ${c.latest} (сейчас ${c.current}). VPN прервётся примерно на минуту.`, 'Обновить')) panelUpdate(c.latest); }
-      else toast(`Установлена последняя версия ${c.current}`); });
+    $('#bChk').onclick = e => busy(e.currentTarget, async () => {
+      const [c, os] = await Promise.all([api('panel.check_update').catch(e => ({error: e.message})), api('server.os_updates', {refresh: true}).catch(() => null)]);
+      if (os) osStrip(os);
+      if (c.error) toast(c.error, 'bad');
+      else if (c.newer) { if (await confirmBox('Обновить панель?', `Доступна версия ${c.latest} (сейчас ${c.current}). VPN прервётся примерно на минуту.`, 'Обновить')) return panelUpdate(c.latest); }
+      else toast(`Панель: установлена последняя версия ${c.current}` + (os ? (os.count ? ` · Ubuntu: ${os.count} обновл.` : ' · Ubuntu: обновлений нет') : ''));
+    });
     if ($('#bUpd')) $('#bUpd').onclick = async () => { if (await confirmBox('Обновить панель?', `Обновление до ${ov.latest_version}. VPN прервётся примерно на минуту.`, 'Обновить')) panelUpdate(ov.latest_version); };
     $('#bRec').onclick = async e => { if (await confirmBox('Пересоздать конфигурации?', 'Конфигурации всех служб будут собраны заново и службы перезапущены.', 'Пересоздать')) busy(e.target.closest('button'), async () => msg(await api('config.recreate'))); };
-    $('#bReb').onclick = async () => { if (await confirmBox('Перезагрузить сервер?', 'VPN и веб-меню будут недоступны 1–2 минуты.', 'Перезагрузить', true)) {
-      try { msg(await api('server.reboot')); } catch (e) { toast(e.message, 'bad'); } READY = false; setTimeout(() => go('overview'), 60000); } };
+    $('#bReb').onclick = () => reboot();
+    api('server.os_updates').then(osStrip, () => {});
   } catch (e) { $('#page').innerHTML = errorCard(e, 'overview()'); }
+}
+async function reboot() {
+  if (!await confirmBox('Перезагрузить сервер?', 'VPN и веб-меню будут недоступны 1–2 минуты.', 'Перезагрузить', true)) return;
+  try { msg(await api('server.reboot')); } catch (e) { toast(e.message, 'bad'); }
+  READY = false; setConn('wait'); setTimeout(() => go('overview'), 60000);
+}
+/* обновления Ubuntu: одна строка над карточками */
+function osStrip(os) {
+  const box = $('#osStrip'); if (!box) return;
+  if (!os.count && !os.reboot_required) { box.innerHTML = ''; return; }
+  const what = os.count ? `Обновления Ubuntu: ${os.count} ${plural(os.count, 'пакет', 'пакета', 'пакетов')}` : 'Обновления Ubuntu установлены';
+  const sub = [os.security ? `${os.security} — исправления безопасности` : '', os.reboot_required ? 'нужна перезагрузка сервера' : ''].filter(Boolean).join(' · ');
+  box.innerHTML = `<div class="card strip warn"><span class="kico" style="background:rgba(234,179,8,.15);color:var(--yellow)">${ic('shield')}</span>
+    <div class="t" title="${esc(os.packages.join(', '))}"><b>${what}</b><span>${esc(sub)}</span></div>
+    ${os.count ? `<button class="btn" id="bOs">${ic('dl')} Установить</button>` : ''}${os.reboot_required ? `<button class="btn danger" id="bOsReb">${ic('power')} Перезагрузить</button>` : ''}</div>`;
+  if ($('#bOs')) $('#bOs').onclick = async () => {
+    if (!await confirmBox('Установить обновления Ubuntu?', `${os.count} ${plural(os.count, 'пакет', 'пакета', 'пакетов')}. Обычно 1–5 минут, службы могут ненадолго перезапуститься.`, 'Установить')) return;
+    try { const r = await longOp('Обновление пакетов Ubuntu', 'server.os_upgrade'); osStrip({count: 0, security: 0, packages: [], reboot_required: r.reboot_required}); } catch (_) {}
+  };
+  if ($('#bOsReb')) $('#bOsReb').onclick = () => reboot();
 }
 async function panelUpdate(version) {
   try { await longOp('Обновление панели', 'panel.update', {version}); } catch (_) { return; }
@@ -500,24 +570,36 @@ async function panelUpdate(version) {
 }
 
 /* ═══ Пользователи ═══ */
-let USERS = [], FILTER = 'all', QUERY = '';
+let USERS = [], FILTER = 'all', QUERY = '', SLOTS_ON = [];
 async function users() {
   $('#page').innerHTML = `<div class="toolbar">
     <div class="search">${ic('search')}<input id="q" placeholder="Поиск по имени" value="${esc(QUERY)}"></div>
-    <div class="chips">${[['all', 'Все'], ['on', 'Активные'], ['off', 'Выключенные'], ['awg', 'AmneziaWG'], ['vless', 'VLESS']].map(([k, t]) => `<span class="chip ${FILTER === k ? 'on' : ''}" data-f="${k}">${t}</span>`).join('')}</div>
     <span style="flex:1"></span><button class="btn primary" id="bAdd">${ic('plus')} Добавить пользователя</button></div>
+    <div class="chips sm" id="chips" style="margin-top:-8px"></div>
     <div class="card tbl"><table><thead><tr><th>Пользователь</th><th class="hide-m">Протоколы</th><th>Вкл.</th><th></th></tr></thead><tbody id="ub"><tr><td colspan="4"><div class="sk" style="height:120px"></div></td></tr></tbody></table></div>`;
   $('#q').oninput = e => { QUERY = e.target.value; fillUsers(); };
-  $$('.chip').forEach(c => c.onclick = () => { FILTER = c.dataset.f; $$('.chip').forEach(x => x.classList.toggle('on', x === c)); fillUsers(); });
   $('#bAdd').onclick = () => addUser();
-  try { USERS = await api('users.list'); USERCOUNT = USERS.length; renderNav(); fillUsers(); }
-  catch (e) { $('#ub').innerHTML = `<tr><td colspan="4">${errorCard(e, 'users()')}</td></tr>`; }
+  try {
+    const [list, slots] = await Promise.all([api('users.list'), api('users.slots').catch(() => [])]);
+    USERS = list; USERCOUNT = USERS.length; renderNav();
+    const used = new Set(USERS.flatMap(u => u.connections.map(c => c.slot)));
+    SLOTS_ON = Object.keys(PROTOS).filter(k => slots.some(s => s.slot === k && s.available) || used.has(k));
+    if (!['all', 'on', 'off', ...SLOTS_ON].includes(FILTER)) FILTER = 'all';
+    renderChips(); fillUsers();
+  } catch (e) { $('#ub').innerHTML = `<tr><td colspan="4">${errorCard(e, 'users()')}</td></tr>`; }
+}
+function renderChips() {
+  const st = [['all', 'Все'], ['on', 'Активные'], ['off', 'Выключенные']].map(([k, t]) => `<span class="chip ${FILTER === k ? 'on' : ''}" data-f="${k}">${t}</span>`);
+  const pr = SLOTS_ON.map(k => { const v = PROTOS[k]; const on = FILTER === k;
+    return `<span class="chip p" data-f="${k}" style="color:${v.c};border-color:${v.c}${on ? '' : '55'};background:${v.c}${on ? '33' : '10'}"><i></i>${esc(v.n)}</span>`; });
+  $('#chips').innerHTML = st.join('') + pr.join('');
+  $$('#chips .chip').forEach(c => c.onclick = () => { FILTER = c.dataset.f; renderChips(); fillUsers(); });
 }
 const plural = (n, a, b, c) => n % 10 === 1 && n % 100 !== 11 ? a : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? b : c;
 function fillUsers() {
   const q = QUERY.toLowerCase();
   const list = USERS.filter(u => u.name.includes(q)).filter(u => FILTER === 'all' || (FILTER === 'on' && u.active) || (FILTER === 'off' && !u.active)
-    || (FILTER === 'awg' && u.connections.some(c => c.slot === 'awg')) || (FILTER === 'vless' && u.connections.some(c => c.slot.startsWith('vless'))));
+    || u.connections.some(c => c.slot === FILTER));
   $('#ub').innerHTML = list.length ? list.map(u => `<tr data-u="${esc(u.name)}">
     <td><div class="uname"><span class="av" style="background:${avc(u.name)}">${esc(u.name[0].toUpperCase())}</span><div><b class="nw">${esc(u.name)}</b><small>${u.connections.length} ${plural(u.connections.length, 'подключение', 'подключения', 'подключений')}</small></div></div></td>
     <td class="hide-m">${u.connections.map(c => badge(c.slot, c.enabled && u.active)).join('')}</td>
@@ -545,6 +627,7 @@ async function openUser(name) {
     <div class="dh"><span class="av" style="background:${avc(u.name)};width:42px;height:42px;font-size:16px">${esc(u.name[0].toUpperCase())}</span>
       <div style="flex:1"><b style="font-size:17px">${esc(u.name)}</b><div style="font-size:12.5px;color:var(--dim)">${u.active ? '<span class="pill ok">активен</span>' : '<span class="pill bad">выключен</span>'} · ${u.connections.length} подкл.</div></div>
       <button class="sw ${u.enabled ? 'on' : ''}" id="uSw" title="Пользователь целиком"></button><button class="icon-btn" onclick="closeAll()">${ic('x')}</button></div>
+    <div class="dact"><button class="btn" id="uAdd">${ic('plus')} Добавить протокол</button><button class="btn" id="uTg">${ic('send')} Отправить всё в Telegram</button><span class="sp" style="flex:1"></span><button class="btn danger" id="uDel">${ic('trash')} Удалить пользователя</button></div>
     <div class="db">
       <div class="conn-card" style="border-color:rgba(59,130,246,.4)"><div class="row"><b>Подписка</b><span class="pill info">всё, кроме AmneziaWG</span><span class="sp"></span>
         <button class="icon-btn sm" title="Копировать" data-copy="${esc(u.subscription)}">${ic('copy')}</button><button class="icon-btn sm" title="QR" data-qr="${esc(u.subscription)}">${ic('qr')}</button></div><code>${esc(u.subscription)}</code><div class="qrslot"></div></div>
@@ -555,9 +638,9 @@ async function openUser(name) {
         <button class="icon-btn sm" title="QR" data-qr="${esc(c.link)}">${ic('qr')}</button>
         ${c.conf ? `<button class="icon-btn sm" title="Скачать .conf" data-conf="${i}">${ic('dl')}</button><button class="icon-btn sm" title="QR конфига (приложение AmneziaWG)" data-qrc="${i}">${ic('qr')}<sup>conf</sup></button>` : ''}
         ${c.mieru ? `<button class="icon-btn sm" title="sing-box JSON (Karing)" data-mieru="${i}">${ic('copy')}<sup>json</sup></button>` : ''}
+        <button class="icon-btn sm" title="Отправить это подключение в Telegram" data-ctg="${i}">${ic('send')}</button>
         <button class="icon-btn sm" title="Удалить подключение" data-cdel="${i}">${ic('trash')}</button></div>
         <code>${esc(c.link)}</code><div class="qrslot"></div></div>`).join('')}
-      <div class="row wrap"><button class="btn" id="uAdd">${ic('plus')} Добавить протокол</button><button class="btn" id="uTg">${ic('send')} Отправить в Telegram</button><button class="btn danger" id="uDel">${ic('trash')} Удалить пользователя</button></div>
     </div>`;
   const refresh = async () => { USERS = await api('users.list'); if (PAGE === 'users') fillUsers(); openUser(name); };
   $('#uSw').onclick = e => busy(e.currentTarget, async () => { await api('users.set_enabled', {name, enabled: !u.enabled}); toast(`${name}: ${!u.enabled ? 'включён' : 'выключен'}`); refresh(); });
@@ -566,6 +649,7 @@ async function openUser(name) {
   $$('#drawer [data-qrc]').forEach(b => b.onclick = () => qrIn(b, u.connections[+b.dataset.qrc].conf));
   $$('#drawer [data-conf]').forEach(b => b.onclick = () => { const c = u.connections[+b.dataset.conf]; download(c.conf_name, c.conf, 'text/plain'); toast(`${c.conf_name} сохранён в «Загрузки»`); });
   $$('#drawer [data-mieru]').forEach(b => b.onclick = () => copyText(u.connections[+b.dataset.mieru].mieru.singbox));
+  $$('#drawer [data-ctg]').forEach(b => b.onclick = () => busy(b, async () => msg(await api('users.send_telegram', {name, slot: u.connections[+b.dataset.ctg].slot}))));
   $$('#drawer [data-csw]').forEach(b => b.onclick = () => busy(b, async () => { const c = u.connections[+b.dataset.csw];
     await api('users.set_enabled', {name, slot: c.slot, enabled: !c.enabled}); toast(`${c.label}: ${!c.enabled ? 'включён' : 'выключен'}`); refresh(); }));
   $$('#drawer [data-cdel]').forEach(b => b.onclick = async () => { const c = u.connections[+b.dataset.cdel];
@@ -615,30 +699,41 @@ async function modules() {
   $('#page').innerHTML = skeleton();
   try {
     const [mods, bbr] = await Promise.all([api('modules.list'), api('bbr.status')]);
-    $('#page').innerHTML = `<div class="grid g3">${mods.map(m => modCard(m)).join('')}</div>
-      <div class="card row"><span class="kico" style="background:rgba(6,182,212,.15);color:var(--cyan)">${ic('cpu')}</span><div style="flex:1"><h3>TCP BBR</h3><span class="muted">Ускоряет TCP на загруженных каналах</span></div><button class="sw ${bbr.active ? 'on' : ''}" id="bbr"></button></div>`;
+    $('#page').innerHTML = `<div class="grid g3 mods">
+      <div class="card mod"><div class="head"><span class="lg" style="background:#06b6d4">BB</span><div style="flex:1;min-width:0"><h3>TCP BBR</h3><span class="pill ${bbr.active ? 'ok' : ''}"><span class="dot ${bbr.active ? 'ok' : ''}"></span>${bbr.active ? 'включён' : 'выключен'}</span></div>
+        <button class="sw ${bbr.active ? 'on' : ''}" id="bbr" title="${bbr.active ? 'Выключить' : 'Включить'}"></button></div>
+        <div class="muted">Ускоряет TCP на загруженных и дальних каналах</div></div>
+      ${mods.map(m => modCard(m)).join('')}</div>`;
     $('#bbr').onclick = e => busy(e.currentTarget, async () => { msg(await api('bbr.set', {enabled: !bbr.active})); modules(); });
-    $$('[data-m]').forEach(b => b.onclick = () => modAction(b, b.dataset.m, b.dataset.a, mods.find(x => x.id === b.dataset.m)));
+    $$('#page [data-m]').forEach(b => b.onclick = () => modAction(b, b.dataset.m, b.dataset.a, mods.find(x => x.id === b.dataset.m)));
   } catch (e) { $('#page').innerHTML = errorCard(e, 'modules()'); }
 }
 function modCard(m) {
   const [s, c] = MODC[m.id]; const st = m.installed ? m.state : 'not_installed';
   const sw = ['xray', 'mieru', 'awg'].includes(m.id) && (m.installed || m.id === 'awg');
+  const locked = sw && m.enabled && m.users_on > 0;
   const btn = (a, t, i, cls = '') => `<button class="btn ${cls}" data-m="${m.id}" data-a="${a}">${i ? ic(i) : ''} ${t}</button>`;
   const acts = [];
   if (!m.installed && ['xray', 'mieru', 'netbird'].includes(m.id)) acts.push(btn('install', 'Установить', 'dl', 'primary'));
-  if (m.installed && m.id !== 'netbird') acts.push(btn('update', 'Проверить обновление', 'up'));
+  if (m.installed && m.id !== 'netbird') acts.push(btn('update', 'Обновление', 'up'));
   if (m.id === 'awg' && m.update_available) acts.push(btn('update', `Обновить до ${esc(m.target_version)}`, 'up', 'primary'));
-  if (m.installed && ['singbox', 'caddy', 'xray', 'mieru', 'awg'].includes(m.id) && st === 'active') acts.push(btn('restart', 'Перезапустить', 'refresh', 'ghost'));
+  if (m.installed && ['singbox', 'caddy', 'xray', 'mieru', 'awg'].includes(m.id) && st === 'active') acts.push(btn('restart', 'Перезапуск', 'refresh', 'ghost'));
   if (m.id === 'mieru' && m.installed) acts.push(btn('port', 'Порт', '', 'ghost'));
   if (m.id === 'awg' && m.enabled) acts.push(btn('port', 'Порт', '', 'ghost'), btn('regen', 'Новая маскировка', '', 'ghost'));
-  if (m.id === 'netbird' && m.installed) acts.push(btn('key', 'Setup Key', '', 'ghost'), btn('url', 'Management URL', '', 'ghost'), btn('up', 'Подключить', '', 'ghost'), btn('nbstat', 'Статус', '', 'ghost'), btn('nbupd', 'Обновить', 'up', 'ghost'));
+  if (m.id === 'netbird' && m.installed) acts.push(btn('url', 'Management URL', '', 'ghost'), btn('key', 'Setup Key', '', 'ghost'), btn('up', 'Подключить', '', 'ghost'), btn('nbstat', 'Статус', '', 'ghost'), btn('nbupd', 'Обновить', 'up', 'ghost'));
   if (m.installed && ['xray', 'mieru', 'netbird'].includes(m.id)) acts.push(btn('uninstall', 'Удалить', 'trash', 'ghost danger'));
   if (m.installed) acts.push(`<button class="btn ghost" onclick="LOGUNIT='${m.unit}';go('logs')">${ic('log')} Журнал</button>`);
+  const kv = [];
+  if (m.version) kv.push(['Версия', esc(m.version)]);
+  if (m.id === 'netbird' && m.installed) {
+    kv.push(['Management URL', m.management_url ? esc(m.management_url) : 'не задан (облако NetBird)']);
+    kv.push(['Setup Key', m.has_setup_key ? '<span style="color:var(--green)">задан</span>' : '<span style="color:var(--yellow)">не задан</span>']);
+    if (m.ip) kv.push(['IP в сети NetBird', esc(m.ip)]);
+  }
   return `<div class="card mod"><div class="head"><span class="lg" style="background:${c}">${s}</span><div style="flex:1;min-width:0"><h3>${esc(m.name)}</h3><span class="pill ${stateCls(st)}"><span class="dot ${stateCls(st)}"></span>${stateText(st)}</span></div>
-    ${sw ? `<button class="sw ${m.enabled ? 'on' : ''}" data-m="${m.id}" data-a="toggle" title="${m.enabled ? 'Выключить' : 'Включить'}"></button>` : ''}</div>
-    <div class="muted">${esc(m.note || '')}</div><div class="meta">${m.version ? `<span>Версия <b>${esc(m.version)}</b></span>` : ''}${m.ip ? `<span>IP <b>${esc(m.ip)}</b></span>` : ''}${m.peers && m.id === 'netbird' ? `<span>${esc(m.peers)}</span>` : ''}</div>
-    ${m.id === 'awg' && m.peers?.length ? `<div class="list peers">${m.peers.map(p => `<div class="li"><span class="dot ${p.last_handshake && Date.now() / 1000 - p.last_handshake < 180 ? 'ok' : ''}"></span><div class="t"><b>${esc(p.user)}</b><small>${esc(p.address)}</small></div><small class="muted">${p.last_handshake ? new Date(p.last_handshake * 1000).toLocaleString('ru') : 'ещё не подключался'}</small></div>`).join('')}</div>` : ''}
+    ${sw ? `<button class="sw ${m.enabled ? 'on' : ''}" data-m="${m.id}" data-a="toggle" ${locked ? 'disabled' : ''} title="${locked ? `Нельзя выключить: включённые подключения у ${m.users_on} ${plural(m.users_on, 'пользователя', 'пользователей', 'пользователей')}` : m.enabled ? 'Выключить' : 'Включить'}"></button>` : ''}</div>
+    <div class="muted">${esc(m.note || '')}</div>
+    ${kv.length ? `<div class="kv">${kv.map(([a, b]) => `<span>${a}: <b>${b}</b></span>`).join('')}</div>` : ''}
     <div class="foot">${acts.join('')}</div></div>`;
 }
 async function modAction(btn, id, a, m) {
@@ -661,8 +756,8 @@ async function modAction(btn, id, a, m) {
     if (a === 'port') { const v = await formBox(`${m.name}: порт`, [{label: 'Порт', value: String(m.port || ''), type: 'number'}], 'Сменить', id === 'awg' ? 'После смены порта клиентам AmneziaWG нужны новые конфиги.' : 'После смены порта клиентам Mieru нужны новые ссылки.'); if (!v) return;
       return busy(btn, async () => { msg(await api(id === 'awg' ? 'awg.set_port' : 'mieru.set_port', {port: +v[0]})); modules(); }); }
     if (a === 'regen') { if (await confirmBox('Новая маскировка AmneziaWG?', 'Новые ключ сервера и параметры. Все выданные конфиги AmneziaWG перестанут работать — выдайте их заново.', 'Сменить', true)) busy(btn, async () => msg(await api('awg.regenerate'))); return; }
-    if (a === 'key') { const v = await formBox('NetBird: Setup Key', [{label: 'Setup Key', ph: 'XXXXXXXX-XXXX-…'}]); if (v) busy(btn, async () => msg(await api('netbird.set_setup_key', {key: v[0]}))); return; }
-    if (a === 'url') { const v = await formBox('NetBird: Management URL', [{label: 'Адрес', value: m.management_url || '', ph: 'https://netbird.example.com'}]); if (v) busy(btn, async () => msg(await api('netbird.set_management_url', {url: v[0]}))); return; }
+    if (a === 'key') { const v = await formBox('NetBird: Setup Key', [{label: 'Setup Key', ph: 'XXXXXXXX-XXXX-…'}]); if (v) busy(btn, async () => { msg(await api('netbird.set_setup_key', {key: v[0]})); modules(); }); return; }
+    if (a === 'url') { const v = await formBox('NetBird: Management URL', [{label: 'Адрес', value: m.management_url || '', ph: 'https://netbird.example.com'}]); if (v) busy(btn, async () => { msg(await api('netbird.set_management_url', {url: v[0]})); modules(); }); return; }
     if (a === 'up') { await longOp('Подключение NetBird', 'netbird.up'); return modules(); }
     if (a === 'nbupd') { await longOp('Обновление NetBird', 'modules.update', {id: 'netbird'}); return modules(); }
     if (a === 'nbstat') { const d = await busy(btn, () => api('netbird.status')); if (d) openModal(`<div class="mh"><h2>NetBird: статус</h2></div><div class="mb"><div class="term small">${esc(d.detail || d.state)}</div></div><div class="mf"><button class="btn" onclick="closeAll()">Закрыть</button></div>`); }
@@ -682,9 +777,10 @@ const field = (id, label, value, hint = '', type = 'text') => `<label class="f">
 async function setSite() {
   const s = await api('settings.get');
   const pal = ['#0082c9', '#f4a12c', '#2c3e50', '#4250af', '#041e42', '#7c3aed', '#0f766e', '#be123c', '#334155', '#1d4ed8'];
-  $('#sbody').innerHTML = `<div class="split"><div class="form">${field('fDom', 'Домен', s.domain, 'A-запись должна указывать на сервер')}${field('fMail', 'Email для сертификатов', s.admin_email)}
-      <div class="row"><button class="btn primary" id="sDom">Сохранить домен</button></div></div>
-    <div class="form">${field('fFq', 'FQDN VPS (имя хоста)', s.fqdn)}<div class="row"><button class="btn" id="sFq">Сохранить имя</button></div></div></div>
+  $('#sbody').innerHTML = `<div class="form2">
+      ${field('fDom', 'Домен', s.domain, 'A-запись должна указывать на сервер')}${field('fFq', 'FQDN VPS (имя хоста)', s.fqdn, 'имя сервера в системе (hostname)')}
+      ${field('fMail', 'Email для сертификатов', s.admin_email, 'необязательно')}<span></span>
+      <div class="row"><button class="btn primary" id="sDom">Сохранить домен</button></div><div class="row"><button class="btn" id="sFq">Сохранить имя</button></div></div>
     <div style="display:grid;gap:10px;margin-top:22px"><b>Сайт-маскировка</b><span class="muted">Что видит посторонний, открывший ваш домен в браузере</span>
     <div class="tpls">${s.site.templates.map((t, i) => `<div class="tpl ${s.site.template === t.id ? 'on' : ''}" data-t="${t.id}"><div class="pv" style="background:linear-gradient(135deg,${pal[i % pal.length]},${pal[i % pal.length]}aa)">${esc(t.label.split(':').pop().split('(')[0].trim())}</div><div><span>${esc(t.label)}</span>${s.site.template === t.id ? `<span style="color:var(--blue)">${ic('check')}</span>` : ''}</div></div>`).join('')}</div></div>`;
   $('#sDom').onclick = e => busy(e.currentTarget, async () => msg(await api('settings.set_domain', {domain: $('#fDom').value, email: $('#fMail').value})));
@@ -698,7 +794,7 @@ async function setPaths() {
     ['xray', 'ws_path', 'Xray: WebSocket'], ['xray', 'grpc_service', 'Xray: gRPC (имя сервиса)'], ['xray', 'httpupgrade_path', 'Xray: HTTPUpgrade'], ['xray', 'xhttp_path', 'Xray: XHTTP'], ['xray', 'cdn_path', 'Xray: CDN']];
   $('#sbody').innerHTML = `<div class="muted" style="margin-bottom:14px">После смены пути клиентам нужны новые ссылки (подписка обновится сама).</div>
     <div class="paths">${rows.map(([c, f, l], i) => `<div class="li"><div class="t"><b>${l}</b></div><input class="input" id="p${i}" value="${esc(s[c][f] || '')}" style="max-width:280px"><button class="btn" data-p="${i}">Сохранить</button></div>`).join('')}</div>`;
-  $$('[data-p]').forEach(b => b.onclick = () => { const [c, f] = rows[+b.dataset.p]; busy(b, async () => msg(await api('settings.set_path', {core: c, field: f, value: $('#p' + b.dataset.p).value.trim()}))); });
+  $$('#sbody [data-p]').forEach(b => b.onclick = () => { const [c, f] = rows[+b.dataset.p]; busy(b, async () => msg(await api('settings.set_path', {core: c, field: f, value: $('#p' + b.dataset.p).value.trim()}))); });
 }
 async function setCdn() {
   const s = await api('settings.get');
@@ -747,15 +843,32 @@ async function setSec() {
   const st = await api('security.status');
   $('#sbody').innerHTML = `<div class="form">
     <div class="li"><div class="t"><b>Защита от сканеров (Fail2ban)</b><small>${st.installed ? (st.active ? 'активна' : 'отключена') : 'не установлена'}</small></div><button class="sw ${st.active ? 'on' : ''}" id="fEn" ${st.installed ? '' : 'disabled'}></button></div>
-    <div class="row"><div class="sect" style="margin:0">Заблокированные IP (${st.banned_ips.length})</div><span class="sp"></span>${st.banned_ips.length ? '<button class="btn ghost" id="fAll">Разблокировать все</button>' : ''}</div>
-    <div class="search" style="min-width:0">${ic('search')}<input id="fQ" placeholder="Найти IP"></div>
-    <div class="list bans" id="fList"></div></div>`;
-  const fill = () => { const q = $('#fQ').value.trim(); const l = st.banned_ips.filter(ip => ip.includes(q));
-    $('#fList').innerHTML = l.slice(0, 300).map(ip => `<div class="li"><span class="dot bad"></span><div class="t"><b class="mono">${esc(ip)}</b></div><button class="btn ghost" data-ip="${esc(ip)}">Разблокировать</button></div>`).join('') + (l.length > 300 ? `<div class="muted">… и ещё ${l.length - 300}</div>` : '') || '<span class="muted">Никто не заблокирован</span>';
-    $$('[data-ip]').forEach(b => b.onclick = () => busy(b, async () => { msg(await api('security.unban', {ip: b.dataset.ip})); st.banned_ips = st.banned_ips.filter(x => x !== b.dataset.ip); fill(); })); };
-  $('#fQ').oninput = fill; fill();
+    <div class="sum">
+      <div class="card"><div class="n">${st.total}</div><div class="l">заблокировано адресов всего</div></div>
+      ${st.jails.map(j => `<div class="card"><div class="n">${j.count}</div><div class="l">${esc(j.label)}</div></div>`).join('')}
+    </div>
+    <div class="row wrap"><div class="search" style="min-width:0;flex:1">${ic('search')}<input id="fQ" placeholder="Проверить IP, например 203.0.113.5"></div><button class="btn" id="fFind">Найти</button></div>
+    <div id="fRes"></div>
+    <div class="row wrap">
+      <button class="btn" id="fMe" ${st.my_ip ? '' : 'disabled'} title="${esc(st.my_ip ? 'IP этого компьютера: ' + st.my_ip : 'IP этого компьютера не определён')}">${ic('shield')} Разблокировать мой IP${st.my_ip ? ` <span class="muted mono">${esc(st.my_ip)}</span>` : ''}</button>
+      ${st.my_ip_banned ? '<span class="pill bad">ваш IP заблокирован</span>' : ''}
+      <span class="sp" style="flex:1"></span>
+      <button class="btn ghost" id="fDl" ${st.total ? '' : 'disabled'}>${ic('dl')} Скачать список</button>
+      <button class="btn ghost danger" id="fAll" ${st.total ? '' : 'disabled'}>Разблокировать все</button></div></div>`;
+  const find = () => busy($('#fFind'), async () => {
+    const q = $('#fQ').value.trim(); if (!q) return;
+    const r = await api('security.find', {ip: q});
+    $('#fRes').innerHTML = r.banned
+      ? `<div class="found"><span class="dot bad"></span><b class="mono">${esc(r.ip)}</b><span class="muted">заблокирован: ${esc(r.jails.join(', '))}</span><span style="flex:1"></span><button class="btn" id="fUn">Разблокировать</button></div>`
+      : `<div class="found"><span class="dot ok"></span><b class="mono">${esc(r.ip)}</b><span class="muted">не заблокирован</span></div>`;
+    if ($('#fUn')) $('#fUn').onclick = e => busy(e.currentTarget, async () => { msg(await api('security.unban', {ip: r.ip})); setSec(); });
+  });
+  $('#fFind').onclick = find;
+  $('#fQ').onkeydown = e => { if (e.key === 'Enter') find(); };
   $('#fEn').onclick = e => busy(e.currentTarget, async () => { msg(await api('security.set_enabled', {enabled: !st.active})); setSec(); });
-  if ($('#fAll')) $('#fAll').onclick = e => busy(e.currentTarget, async () => { msg(await api('security.unban')); setSec(); });
+  $('#fMe').onclick = e => busy(e.currentTarget, async () => { msg(await api('security.unban', {ip: 'me'})); setSec(); });
+  $('#fDl').onclick = e => busy(e.currentTarget, async () => { const r = await api('security.export'); download(r.name, r.text, 'text/plain'); toast(`${r.name} сохранён в «Загрузки»`); });
+  $('#fAll').onclick = async e => { if (await confirmBox('Разблокировать все?', `Будут сняты все блокировки (${st.total}).`, 'Разблокировать')) busy(e.target.closest('button'), async () => { msg(await api('security.unban')); setSec(); }); };
 }
 
 /* ═══ Журналы ═══ */
@@ -787,26 +900,30 @@ async function logs() {
 /* ═══ Бэкапы ═══ */
 async function backups() {
   $('#page').innerHTML = `<div class="card"><div class="sk" style="height:200px"></div></div>`;
-  let b;
-  try { b = await api('backup.list'); } catch (e) { $('#page').innerHTML = errorCard(e, 'backups()'); return; }
-  $('#page').innerHTML = `<div class="row wrap"><span class="muted">Пользователи, ключи и настройки. Пароль бэкапов: ${b.password_set ? '<span class="pill ok">задан</span>' : '<span class="pill">не задан</span>'}</span><span class="sp"></span>
-      <button class="btn" id="bPw">${ic('key')} Пароль</button><label class="btn">${ic('up')} Загрузить с ПК<input type="file" id="bUp" accept=".zip" hidden></label><button class="btn primary" id="bNew">${ic('plus')} Создать бэкап</button></div>
+  let b, tg;
+  try { [b, tg] = await Promise.all([api('backup.list'), api('telegram.state').catch(() => ({configured: false}))]); }
+  catch (e) { $('#page').innerHTML = errorCard(e, 'backups()'); return; }
+  const pw = b.password_set;
+  $('#page').innerHTML = `<div class="row wrap"><span class="sp" style="flex:1"></span>
+      <button class="btn lockbtn ${pw ? 'on' : 'off'}" id="bPw" title="${pw ? 'Бэкапы защищены паролем — нажмите, чтобы сменить или убрать' : 'Бэкапы без пароля — нажмите, чтобы задать'}">${ic(pw ? 'lock' : 'unlock')} ${pw ? 'Защищены паролем' : 'Без пароля'}</button>
+      <label class="btn">${ic('up')} Загрузить с ПК<input type="file" id="bUp" accept=".zip" hidden></label><button class="btn primary" id="bNew">${ic('plus')} Создать бэкап</button></div>
     <div class="card row wrap"><div style="flex:1"><h3>Автоматический бэкап</h3><span class="muted">${b.schedule.enabled ? `каждый день в ${String(b.schedule.hour).padStart(2, '0')}:${String(b.schedule.minute).padStart(2, '0')}` : 'выключен'}</span></div>
       <input class="input" id="bTime" type="time" value="${String(b.schedule.hour).padStart(2, '0')}:${String(b.schedule.minute).padStart(2, '0')}" style="width:120px"><button class="sw ${b.schedule.enabled ? 'on' : ''}" id="bSch"></button></div>
-    <div class="card tbl"><table><thead><tr><th>Файл</th><th>Дата</th><th class="hide-m">Размер</th><th></th></tr></thead><tbody>${b.files.map(f => `<tr><td><div class="uname"><span class="av" style="background:var(--card2);color:var(--text2)">${ic('arch')}</span><div><b class="mono" style="font-size:12.5px">${esc(f.name)}</b><small>${f.encrypted ? 'зашифрован' : 'без пароля'}</small></div></div></td>
+    <div class="card tbl"><table><thead><tr><th>Файл</th><th>Дата</th><th class="hide-m">Размер</th><th></th></tr></thead><tbody>${b.files.map(f => `<tr><td><div class="uname"><span class="av" style="background:var(--card2);color:${f.encrypted ? 'var(--green)' : 'var(--text2)'}">${ic(f.encrypted ? 'lock' : 'arch')}</span><div><b class="mono" style="font-size:12.5px">${esc(f.name)}</b><small>${f.encrypted ? 'зашифрован' : 'без пароля'}</small></div></div></td>
       <td class="nw">${new Date(f.date).toLocaleString('ru', {dateStyle: 'medium', timeStyle: 'short'})}</td><td class="hide-m">${fmtBytes(f.size)}</td>
-      <td><div class="acts"><button class="icon-btn sm" title="Скачать на ПК" data-dl="${esc(f.name)}">${ic('dl')}</button><button class="btn" data-rs="${esc(f.name)}" data-enc="${f.encrypted ? 1 : ''}">Восстановить</button><button class="icon-btn sm" title="Удалить" data-rm="${esc(f.name)}">${ic('trash')}</button></div></td></tr>`).join('')
+      <td><div class="acts"><button class="icon-btn sm" title="Скачать на ПК" data-dl="${esc(f.name)}">${ic('dl')}</button><button class="icon-btn sm" title="${tg.configured ? 'Отправить в Telegram' : 'Telegram-бот не настроен'}" data-tg="${esc(f.name)}" ${tg.configured ? '' : 'disabled'}>${ic('send')}</button><button class="btn" data-rs="${esc(f.name)}" data-enc="${f.encrypted ? 1 : ''}">Восстановить</button><button class="icon-btn sm" title="Удалить" data-rm="${esc(f.name)}">${ic('trash')}</button></div></td></tr>`).join('')
       || `<tr><td colspan="4"><div class="empty">${ic('arch')}<b>Бэкапов пока нет</b></div></td></tr>`}</tbody></table></div>`;
   $('#bNew').onclick = e => busy(e.currentTarget, async () => { msg(await api('backup.create')); backups(); });
-  $('#bPw').onclick = async () => { const v = await formBox('Пароль бэкапов', [{label: 'Пароль', type: 'password', hint: 'пусто — убрать пароль'}], 'Сохранить', 'Новые бэкапы будут зашифрованы этим паролем.'); if (v) busy(null, async () => { msg(await api('backup.set_password', {password: v[0]})); backups(); }); };
+  $('#bPw').onclick = async () => { const v = await formBox('Пароль бэкапов', [{label: 'Пароль', type: 'password', hint: 'пусто — убрать пароль'}], 'Сохранить', `${pw ? 'Сейчас бэкапы защищены паролем.' : 'Сейчас бэкапы без пароля.'} Новые бэкапы будут зашифрованы этим паролем.`); if (v) busy(null, async () => { msg(await api('backup.set_password', {password: v[0]})); backups(); }); };
   const sched = en => { const [h, m] = $('#bTime').value.split(':').map(Number); return api('backup.set_schedule', {enabled: en, hour: h, minute: m}).then(d => { msg(d); backups(); }, e => toast(e.message, 'bad')); };
   $('#bSch').onclick = () => sched(!b.schedule.enabled);
   $('#bTime').onchange = () => { if (b.schedule.enabled) sched(true); };
   $('#bUp').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader();
     r.onload = () => busy(null, async () => { msg(await api('backup.upload', {name: f.name.replace(/[^A-Za-z0-9._-]/g, '_'), base64: r.result.split(',')[1]})); backups(); }); r.readAsDataURL(f); };
-  $$('[data-dl]').forEach(x => x.onclick = () => busy(x, async () => { const d = await api('backup.download', {name: x.dataset.dl}); download(d.name, b64blob(d.base64, 'application/zip')); toast(`${d.name} сохранён в «Загрузки»`); }));
-  $$('[data-rm]').forEach(x => x.onclick = async () => { if (await confirmBox('Удалить бэкап?', x.dataset.rm, 'Удалить', true)) busy(x, async () => { msg(await api('backup.delete', {name: x.dataset.rm})); backups(); }); });
-  $$('[data-rs]').forEach(x => x.onclick = async () => {
+  $$('#page [data-dl]').forEach(x => x.onclick = () => busy(x, async () => { const d = await api('backup.download', {name: x.dataset.dl}); download(d.name, b64blob(d.base64, 'application/zip')); toast(`${d.name} сохранён в «Загрузки»`); }));
+  $$('#page [data-tg]').forEach(x => x.onclick = () => busy(x, async () => msg(await api('backup.send_telegram', {name: x.dataset.tg}))));
+  $$('#page [data-rm]').forEach(x => x.onclick = async () => { if (await confirmBox('Удалить бэкап?', x.dataset.rm, 'Удалить', true)) busy(x, async () => { msg(await api('backup.delete', {name: x.dataset.rm})); backups(); }); });
+  $$('#page [data-rs]').forEach(x => x.onclick = async () => {
     let password = '';
     if (x.dataset.enc) { const v = await formBox('Пароль бэкапа', [{label: 'Пароль', type: 'password'}], 'Восстановить', 'Бэкап зашифрован.'); if (!v) return; password = v[0]; }
     else if (!await confirmBox('Восстановить из бэкапа?', `${x.dataset.rs}\nТекущие пользователи и настройки будут заменены (перед этим сохранится резервная копия).`, 'Восстановить', true)) return;
@@ -815,18 +932,75 @@ async function backups() {
 }
 
 /* ═══ Диагностика ═══ */
-async function diag() {
-  $('#page').innerHTML = `<div class="grid g2">
-    <div class="card"><h3>Внешний IP сервера</h3><div class="val mono" id="dIp" style="font-size:22px;margin:10px 0">…</div><span class="muted">Адрес, с которым сервер выходит в интернет</span></div>
-    <div class="card"><h3>iperf3 — скорость ПК ↔ сервер</h3><div class="muted" style="margin:8px 0">Запустите на сервере и выполните на ПК команду, которая появится ниже.</div><div class="row wrap"><button class="btn" id="dIs">Запустить iperf3</button><button class="btn ghost" id="dIx">Остановить</button></div><div id="dIc"></div></div></div>
-    <div class="card"><div class="row wrap"><h3>Тест скорости сервер → интернет</h3><span class="sp"></span><select class="input" id="dSrv" style="max-width:320px"><option value="">ближайший сервер</option></select><button class="btn primary" id="dSt">${ic('refresh')} Запустить</button></div><div id="dSr" style="margin-top:12px"></div></div>`;
-  api('diag.public_ip').then(d => $('#dIp').textContent = d.ip || '—', e => $('#dIp').textContent = e.message);
-  api('diag.speedtest_servers').then(l => $('#dSrv').insertAdjacentHTML('beforeend', l.map(s => `<option value="${esc(s.id)}">${esc(s.name || s.id)} ${esc(s.location || '')}</option>`).join('')), () => {});
-  $('#dSt').onclick = e => busy(e.currentTarget, async () => { $('#dSr').innerHTML = '<div class="muted">Идёт замер, около 30 секунд…</div>'; const r = await api('diag.speedtest', {server_id: $('#dSrv').value}); $('#dSr').innerHTML = `<div class="term small" style="height:auto">${esc(r.text)}</div>`; });
-  $('#dIs').onclick = e => busy(e.currentTarget, async () => { const r = await api('diag.iperf_start'); msg(r);
-    $('#dIc').innerHTML = `<div class="conn-card" style="margin-top:10px"><div class="row"><b>На ПК (PowerShell):</b><span class="sp"></span><button class="icon-btn sm" data-copy="iperf3 -c ${esc(r.ip)} -p ${r.port} -R">${ic('copy')}</button></div><code>iperf3 -c ${esc(r.ip)} -p ${r.port} -R</code><span class="muted">-R — скорость сервер → ПК; без -R — ПК → сервер</span></div>`;
-    $$('#dIc [data-copy]').forEach(b => b.onclick = () => copyText(b.dataset.copy)); });
-  $('#dIx').onclick = e => busy(e.currentTarget, async () => { msg(await api('diag.iperf_stop')); $('#dIc').innerHTML = ''; });
+let DTAB = 'ip';
+function diag() {
+  const tabs = [['ip', 'Внешний IP'], ['speed', 'Тест скорости'], ['iperf', 'iperf3: ПК ↔ сервер']];
+  $('#page').innerHTML = `<div class="card" style="padding:0"><div class="tabs">${tabs.map(([k, t]) => `<button class="${DTAB === k ? 'on' : ''}" data-d="${k}">${t}</button>`).join('')}</div><div id="dbody" style="padding:20px"></div></div>`;
+  $$('#page .tabs button[data-d]').forEach(b => b.onclick = () => { DTAB = b.dataset.d; diag(); });
+  ({ip: diagIp, speed: diagSpeed, iperf: diagIperf})[DTAB]();
+}
+function diagIp() {
+  $('#dbody').innerHTML = `<div class="row wrap" style="gap:16px"><div><div class="muted">Адрес, с которым сервер выходит в интернет</div>
+    <div class="mono" id="dIp" style="font-size:26px;font-weight:600;margin-top:6px">…</div></div><span class="sp" style="flex:1"></span><button class="btn" id="dIpCp" disabled>${ic('copy')} Скопировать</button></div>`;
+  api('diag.public_ip').then(d => { $('#dIp').textContent = d.ip || '—'; if (d.ip) { $('#dIpCp').disabled = false; $('#dIpCp').onclick = () => copyText(d.ip); } }, e => $('#dIp').textContent = e.message);
+}
+let SPEED = null;
+function diagSpeed() {
+  $('#dbody').innerHTML = `<div class="row wrap"><div style="flex:1"><b>Скорость сервер ↔ интернет</b><div class="muted">Замер Ookla Speedtest с сервера, около 30 секунд</div></div>
+      <select class="input" id="dSrv" style="max-width:320px"><option value="">ближайший сервер теста</option></select><button class="btn primary" id="dSt">${ic('refresh')} Запустить</button></div>
+    <div id="dSr" style="margin-top:16px"></div>`;
+  api('diag.speedtest_servers').then(l => $('#dSrv').insertAdjacentHTML('beforeend', l.map(s => `<option value="${esc(s.id)}">${esc(s.name || s.id)} — ${esc(s.location || '')}</option>`).join('')), () => {});
+  const show = r => {
+    if (r.text != null) { $('#dSr').innerHTML = `<div class="term small" style="height:auto">${esc(r.text)}</div>`; return; }
+    const card = (n, u, l) => `<div class="card"><div class="n">${n}<small>${u}</small></div><div class="l">${l}</div></div>`;
+    $('#dSr').innerHTML = `<div class="stres">${card(r.download, 'Мбит/с', '↓ Загрузка')}${card(r.upload, 'Мбит/с', '↑ Отдача')}${card(r.ping, 'мс', `Пинг · разброс ${r.jitter} мс`)}${card(r.loss == null ? '—' : r.loss, r.loss == null ? '' : '%', 'Потери пакетов')}</div>
+      <div class="row wrap" style="margin-top:12px"><span class="muted">Сервер теста: <b style="color:var(--text2)">${esc(r.server)}</b>${r.location ? ' · ' + esc(r.location) : ''}${r.isp ? ' · провайдер ' + esc(r.isp) : ''}</span><span class="sp" style="flex:1"></span>
+      ${r.url ? `<a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">Результат на speedtest.net</a>` : ''}</div>`;
+  };
+  if (SPEED && SPEED.srv === SRV) show(SPEED.r);
+  $('#dSt').onclick = e => busy(e.currentTarget, async () => { $('#dSr').innerHTML = '<div class="row"><span class="spin dark"></span><span class="muted">Идёт замер, около 30 секунд…</span></div>';
+    try { const r = await api('diag.speedtest', {server_id: $('#dSrv').value}); SPEED = {srv: SRV, r}; show(r); } catch (err) { $('#dSr').innerHTML = ''; throw err; } });
+}
+let IPERF = null;
+function diagIperf() {
+  const s = SERVERS.find(x => x.Alias === SRV);
+  $('#dbody').innerHTML = `<div class="row wrap"><div style="flex:1"><b>Скорость между этим ПК и сервером</b><div class="muted">Лаунчер сам запустит iperf3 на сервере и на ПК, замер в обе стороны ~20 секунд, затем iperf3 на сервере выключится.</div></div>
+      <button class="btn primary" id="dIs">${ic('refresh')} Запустить</button></div>
+    <div id="dIr" style="margin-top:16px"></div>
+    <details style="margin-top:18px"><summary class="muted" style="cursor:pointer">Вручную (если нужно)</summary><div class="muted" style="margin-top:8px">На сервере: Диагностика → iperf3 в меню сервера. На ПК: <code>iperf3 -c ${esc(s ? s.Host : 'IP')} -p 5201 -R</code> (с -R — сервер → ПК, без -R — ПК → сервер).</div></details>`;
+  const mbps = j => { const e = j.end || {}; const x = e.sum_received || e.sum || {}; return Math.round((x.bits_per_second || 0) / 1e5) / 10; };
+  const show = r => { const card = (n, l) => `<div class="card"><div class="n">${n}<small>Мбит/с</small></div><div class="l">${l}</div></div>`;
+    $('#dIr').innerHTML = `<div class="stres">${card(r.down, 'Сервер → ПК (загрузка)')}${card(r.up, 'ПК → сервер (отдача)')}</div>`; };
+  if (IPERF && IPERF.srv === SRV) show(IPERF.r);
+  const local = async dir => {
+    const j = await fetch(`/app/iperf?t=${TOKEN}&s=${encodeURIComponent(SRV)}&dir=${dir}&port=${IPORT}`, {method: 'POST'}).then(r => r.json());
+    if (!j.ok) { const e = new Error(j.error || 'iperf3: ошибка'); e.needInstall = j.need_install; throw e; }
+    if (j.data.error) throw new Error('iperf3: ' + j.data.error);
+    return mbps(j.data);
+  };
+  let IPORT = 5201;
+  const run = async () => {
+    const st = t => $('#dIr').innerHTML = `<div class="row"><span class="spin dark"></span><span class="muted">${t}</span></div>`;
+    st('Запуск iperf3 на сервере…');
+    const srv = await api('diag.iperf_start'); IPORT = srv.port || 5201;
+    try {
+      st('Замер: сервер → ПК…'); const down = await local('down');
+      st('Замер: ПК → сервер…'); const up = await local('up');
+      IPERF = {srv: SRV, r: {down, up}}; show(IPERF.r);
+    } finally { api('diag.iperf_stop').catch(() => {}); }
+  };
+  $('#dIs').onclick = e => busy(e.currentTarget, async () => {
+    try { await run(); }
+    catch (err) {
+      if (!err.needInstall) { $('#dIr').innerHTML = ''; throw err; }
+      $('#dIr').innerHTML = `<div class="found"><span class="dot warn"></span><div style="flex:1"><b>На этом ПК нет iperf3</b><div class="muted">Лаунчер скачает iperf3 3.22 для Windows (около 1 МБ, github.com/ar51an/iperf3-win-builds), сверит контрольную сумму и положит в свою папку.</div></div><button class="btn primary" id="dInst">${ic('dl')} Установить iperf3</button></div>`;
+      $('#dInst').onclick = ev => busy(ev.currentTarget, async () => {
+        const j = await fetch(`/app/iperf_install?t=${TOKEN}`, {method: 'POST'}).then(r => r.json());
+        if (!j.ok) throw new Error(j.error || 'Не удалось установить iperf3');
+        toast('iperf3 установлен'); await run();
+      });
+    }
+  });
 }
 
 /* ═══ тема, запуск ═══ */

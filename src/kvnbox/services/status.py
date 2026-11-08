@@ -24,7 +24,11 @@ class Overview:
 
     @property
     def update_available(self) -> bool:
-        return bool(self.latest_version) and self.latest_version != self.version
+        from kvnbox.services.update import version_key
+
+        return bool(self.latest_version) and version_key(self.latest_version) > version_key(
+            self.version
+        )
 
 
 class StatusService:

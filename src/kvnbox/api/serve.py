@@ -20,6 +20,8 @@ from kvnbox.api.actions import is_mutating, run_action
 from kvnbox.services import ServiceError
 from kvnbox.services.app import App
 
+BOM = chr(0xFEFF)
+
 
 class Server:
     def __init__(self, app: App, out: IO[str]) -> None:
@@ -70,7 +72,7 @@ class Server:
     def run(self, inp: IO[str]) -> int:
         self.send({"id": None, "ready": True, "api": API_VERSION, "panel": __version__})
         for raw in inp:
-            raw = raw.strip()
+            raw = raw.strip().lstrip(BOM)  # BOM от Windows перед первой строкой
             if not raw:
                 continue
             try:

@@ -132,15 +132,34 @@ class UserService:
             raise ServiceError("Не удалось построить QR-код (нужен пакет qrencode).")
         return path
 
-    def send_to_telegram(self, name: str) -> None:
+    def send_to_telegram(
+        self, name: str, only: tuple[Protocol, Transport | None] | None = None
+    ) -> None:
         """Ссылки, QR-коды подключений и подписки — в чат администратора
-        (как send_user_links в TransferBox)."""
+        (как send_user_links в TransferBox). `only` — одно подключение, без подписки."""
         import tempfile
 
         from kvnbox.services.notify import NotifyError
 
         telegram = Telegram(self.app.settings.load().telegram)
         user = self.get(name)
+        if only is not None:
+            conn = user.find(*only)
+            if conn is None:
+                raise ServiceError(f"У {user.name} нет такого подключения.")
+            try:
+                with tempfile.TemporaryDirectory(dir=self.app.paths.root) as tmp:
+                    if conn.protocol is Protocol.AWG:
+                        self.send_awg(telegram, user, conn, Path(tmp))
+                        return
+                    label, link = _telegram_label(conn), self.link(user, conn)
+                    telegram.send_message(f"🔑 <b>{user.name} — {label}:</b>\n<code>{link}</code>")
+                    telegram.send_photo(
+                        self.qr_png(link, Path(tmp) / "qr.png"), f"QR-код для {user.name} ({label})"
+                    )
+            except NotifyError as e:
+                raise ServiceError(str(e)) from e
+            return
         sub = self.subscription_url(user)
         parts = [
             f"🔑 <b>Ссылки для {user.name}:</b>\n",

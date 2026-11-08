@@ -195,7 +195,20 @@ def svc_users(app: App) -> Any:
 
 @action("api.version")
 def api_version(ctx: Ctx) -> Json:
-    return {"api": API_VERSION, "panel": __version__, "actions": sorted(ACTIONS)}
+    return {
+        "api": API_VERSION,
+        "panel": __version__,
+        "client_ip": client_ip(),
+        "actions": sorted(ACTIONS),
+    }
+
+
+def client_ip() -> str:
+    """IP компьютера, с которого открыт канал (по SSH-сессии)."""
+    import os
+
+    parts = (os.environ.get("SSH_CLIENT") or os.environ.get("SSH_CONNECTION") or "").split()
+    return parts[0] if parts else ""
 
 
 # ─── обзор и службы ──────────────────────────────────────────────────────────
@@ -316,6 +329,51 @@ def server_reboot(ctx: Ctx) -> Json:
 
     DiagnosticsService(ctx.app).reboot_server()
     return {"message": "Сервер перезагружается, VPN будет недоступен 1–2 минуты."}
+
+
+APT_ENV = {"DEBIAN_FRONTEND": "noninteractive"}
+
+
+@action("server.os_updates")
+def server_os_updates(ctx: Ctx) -> Json:
+    """Обновления пакетов Ubuntu: сколько ждёт установки и нужна ли перезагрузка.
+    `refresh` — сначала обновить списки пакетов (apt-get update, до минуты)."""
+    if ctx.flag("refresh", False):
+        ctx.app.runner.run(["apt-get", "update", "-q"], timeout=180, env=APT_ENV)
+    res = ctx.app.runner.run(["apt", "list", "--upgradable"], timeout=60, env=APT_ENV)
+    rows = [ln for ln in res.stdout.splitlines() if "/" in ln and "[upgradable" in ln]
+    return {
+        "count": len(rows),
+        "security": sum(1 for ln in rows if "-security" in ln),
+        "packages": [ln.split("/")[0] for ln in rows][:50],
+        "reboot_required": Path("/var/run/reboot-required").exists(),
+    }
+
+
+@action("server.os_upgrade", mutating=True)
+def server_os_upgrade(ctx: Ctx) -> Json:
+    code, tail = _stream(
+        ctx,
+        [
+            "env",
+            "DEBIAN_FRONTEND=noninteractive",
+            "apt-get",
+            "-y",
+            "-o",
+            "Dpkg::Options::=--force-confold",
+            "-o",
+            "Dpkg::Options::=--force-confdef",
+            "upgrade",
+        ],
+        3600,
+    )
+    if code != 0:
+        raise ServiceError(f"Обновление пакетов не удалось.\n{tail}")
+    reboot = Path("/var/run/reboot-required").exists()
+    return {
+        "message": "Пакеты обновлены." + (" Нужна перезагрузка сервера." if reboot else ""),
+        "reboot_required": reboot,
+    }
 
 
 @action("config.recreate", mutating=True)
@@ -478,6 +536,10 @@ def users_qr(ctx: Ctx) -> Json:
 
 @action("users.send_telegram", mutating=True)
 def users_send_telegram(ctx: Ctx) -> Json:
+    slot = ctx.opt_str("slot")
+    if slot:
+        svc_users(ctx.app).send_to_telegram(user_name(ctx), parse_slot(slot))
+        return {"message": f"{SLOT_LABELS[slot]}: отправлено в Telegram."}
     svc_users(ctx.app).send_to_telegram(user_name(ctx))
     return {"message": "Ссылки и QR-коды отправлены в Telegram."}
 
@@ -489,6 +551,21 @@ MODULES = ("singbox", "xray", "caddy", "mieru", "awg", "netbird")
 
 def _info(i: ServiceInfo) -> Json:
     return {"unit": i.unit, "installed": i.installed, "state": i.state, "version": i.version}
+
+
+def module_users(app: App, mid: str) -> list[str]:
+    """Пользователи с включёнными подключениями на модуле (Xray, Mieru, AmneziaWG)."""
+
+    def uses(c: Connection) -> bool:
+        if mid == "xray":
+            return c.core is CoreKind.XRAY
+        if mid == "mieru":
+            return c.protocol is Protocol.MIERU
+        if mid == "awg":
+            return c.protocol is Protocol.AWG
+        return False
+
+    return [u.name for u in app.users.all() if any(c.enabled and uses(c) for c in u.connections)]
 
 
 @action("modules.list")
@@ -514,7 +591,8 @@ def modules_list(ctx: Ctx) -> Json:
             "name": "Xray",
             **_info(xray.info()),
             "enabled": s.xray.enabled,
-            "note": f"XHTTP и CDN · подключений: {xray.connections_count()}",
+            "users_on": len(module_users(app, "xray")),
+            "note": "VLESS XHTTP и CDN",
         },
         {
             "id": "caddy",
@@ -528,6 +606,7 @@ def modules_list(ctx: Ctx) -> Json:
             "name": "Mieru",
             **_info(MieruModule(app).info()),
             "enabled": s.mieru.enabled,
+            "users_on": len(module_users(app, "mieru")),
             "port": s.mieru.port,
             "note": f"Порт {s.mieru.port}/tcp",
         },
@@ -536,13 +615,12 @@ def modules_list(ctx: Ctx) -> Json:
             "name": "AmneziaWG 3.1",
             **_info(awg.info()),
             "enabled": s.awg.enabled,
+            "users_on": len(module_users(app, "awg")),
             "port": s.awg.port,
             "target_version": awg.target_version(),
             "update_available": awg.update_available(),
             "peers": [jsonable(p) for p in peers],
-            "note": f"Порт {s.awg.port}/udp · клиентов: {len(peers)}"
-            if s.awg.enabled
-            else "Выключен",
+            "note": f"Порт {s.awg.port}/udp" if s.awg.enabled else "Выключен",
         },
         {
             "id": "netbird",
@@ -635,6 +713,12 @@ def modules_set_enabled(ctx: Ctx) -> Json:
     mid = ctx.text("id")
     enabled = ctx.flag("enabled")
     app = ctx.app
+    if not enabled and (busy := module_users(app, mid)):
+        raise ServiceError(
+            f"Нельзя выключить: включённые подключения у {len(busy)} польз. "
+            f"({', '.join(busy[:5])}{'…' if len(busy) > 5 else ''}). "
+            "Сначала выключите или удалите их."
+        )
     if mid == "xray":
         return result(XrayModule(app).set_enabled(enabled))
     if mid == "mieru":
@@ -973,15 +1057,54 @@ def _security(app: App) -> Any:
     return SecurityService(app)
 
 
+JAIL_LABELS = {
+    "sshd": "Подбор пароля SSH",
+    "portscan-trap": "Сканирование портов",
+}
+
+
+def _valid_ip(text: str) -> str:
+    import ipaddress
+
+    try:
+        return str(ipaddress.ip_address(text.strip()))
+    except ValueError as e:
+        raise ApiError("Это не IP-адрес.") from e
+
+
 @action("security.status")
 def security_status(ctx: Ctx) -> Json:
+    """Сводка: сколько адресов заблокировано и по каким правилам (без самого списка)."""
     st = _security(ctx.app).status()
+    me = client_ip()
     return {
         "installed": _security(ctx.app).is_installed(),
         "active": st.active,
-        "banned_ips": st.banned_ips,
-        "jails": jsonable(st.jails),
+        "total": len(st.banned_ips),
+        "jails": [
+            {"name": j.name, "label": JAIL_LABELS.get(j.name, j.name), "count": len(j.banned_ips)}
+            for j in st.jails
+        ],
+        "my_ip": me,
+        "my_ip_banned": bool(me) and me in st.banned_ips,
     }
+
+
+@action("security.find")
+def security_find(ctx: Ctx) -> Json:
+    ip = _valid_ip(ctx.text("ip"))
+    st = _security(ctx.app).status()
+    jails = [JAIL_LABELS.get(j.name, j.name) for j in st.jails if ip in j.banned_ips]
+    return {"ip": ip, "banned": bool(jails), "jails": jails}
+
+
+@action("security.export")
+def security_export(ctx: Ctx) -> Json:
+    st = _security(ctx.app).status()
+    rows = [
+        f"{ip}\t{JAIL_LABELS.get(j.name, j.name)}" for j in st.jails for ip in sorted(j.banned_ips)
+    ]
+    return {"name": "kvnbox-banned-ips.txt", "text": "\n".join(rows) + ("\n" if rows else "")}
 
 
 @action("security.set_enabled", mutating=True)
@@ -994,7 +1117,11 @@ def security_set_enabled(ctx: Ctx) -> Json:
 def security_unban(ctx: Ctx) -> Json:
     ip = ctx.opt_str("ip")
     sec = _security(ctx.app)
-    return {"message": sec.unban(ip) if ip else sec.unban_all()}
+    if ip == "me":
+        ip = client_ip()
+        if not ip:
+            raise ServiceError("Не удалось определить IP этого компьютера.")
+    return {"message": sec.unban(_valid_ip(ip)) if ip else sec.unban_all()}
 
 
 # ─── журналы ─────────────────────────────────────────────────────────────────
@@ -1135,6 +1262,23 @@ def backup_upload(ctx: Ctx) -> Json:
     return {"message": f"Файл {path.name} загружен на сервер.", "name": path.name}
 
 
+@action("backup.send_telegram")
+def backup_send_telegram(ctx: Ctx) -> Json:
+    from kvnbox.services.notify import NotifyError, Telegram
+
+    path = _backup_file(ctx)
+    if not path.exists():
+        raise ApiError("Файл бэкапа не найден.")
+    tg = Telegram(ctx.app.settings.load().telegram)
+    if not tg.configured:
+        raise ServiceError("Telegram-бот не настроен (Настройки → Telegram-бот).")
+    try:
+        tg.send_document(path, f"Бэкап kvnBox: {path.name}")
+    except NotifyError as e:
+        raise ServiceError(str(e)) from e
+    return {"message": f"{path.name} отправлен в Telegram."}
+
+
 @action("backup.delete", mutating=True)
 def backup_delete(ctx: Ctx) -> Json:
     path = _backup_file(ctx)
@@ -1180,7 +1324,37 @@ def diag_speedtest_servers(ctx: Ctx) -> Json:
 
 @action("diag.speedtest")
 def diag_speedtest(ctx: Ctx) -> Json:
-    return {"text": _diag(ctx.app).speedtest(ctx.opt_str("server_id"))}
+    return speedtest_result(_diag(ctx.app).speedtest_json(ctx.opt_str("server_id")))
+
+
+def speedtest_result(raw: str) -> Json:
+    """JSON Ookla → итог для карточек; не JSON — как есть, в `text`."""
+    import json
+
+    try:
+        d = json.loads(raw)
+        if not isinstance(d, dict) or "download" not in d:
+            raise ValueError
+    except ValueError:
+        return {"text": raw.strip()}
+    srv = d.get("server") or {}
+    ping = d.get("ping") or {}
+
+    def mbps(part: str) -> float:
+        return round(float((d.get(part) or {}).get("bandwidth", 0)) * 8 / 1e6, 1)
+
+    loss = d.get("packetLoss")
+    return {
+        "server": srv.get("name", ""),
+        "location": ", ".join(x for x in (srv.get("location"), srv.get("country")) if x),
+        "isp": d.get("isp", ""),
+        "ping": round(float(ping.get("latency", 0)), 1),
+        "jitter": round(float(ping.get("jitter", 0)), 1),
+        "download": mbps("download"),
+        "upload": mbps("upload"),
+        "loss": None if loss is None else round(float(loss), 1),
+        "url": (d.get("result") or {}).get("url", ""),
+    }
 
 
 @action("diag.iperf_start", mutating=True)

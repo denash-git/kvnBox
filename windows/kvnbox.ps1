@@ -28,6 +28,11 @@ $StartMenuDir = Get-EnvOr 'KVNBOX_STARTMENU' ([Environment]::GetFolderPath('Prog
 $AppScript = Join-Path $AppDir 'kvnbox.ps1'
 $AppIcon = Join-Path $AppDir 'kvnbox.ico'
 $AppWeb = Join-Path $AppDir 'web.html'
+$IperfDir = Join-Path $AppDir 'iperf3'
+$IperfExe = Join-Path $IperfDir 'iperf3.exe'
+# сборка iperf3 для Windows (github.com/ar51an/iperf3-win-builds), сверка по SHA-256
+$IperfUrl = 'https://github.com/ar51an/iperf3-win-builds/releases/download/3.22/iperf-3.22-win64.zip'
+$IperfSha = 'c9feabb3d721039508ccb81f74c2ada3ae11b9e75d33d24510573c2aa21da420'
 $ServersFile = Join-Path $AppDir 'servers.json'
 $UpdateFile = Join-Path $AppDir 'update.json'
 $SshConfig = Join-Path $SshDir 'config'
@@ -886,9 +891,17 @@ function Open-ApiSession([string]$Alias) {
     $psi.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
     $p = [Diagnostics.Process]::Start($psi)
     return @{
-        Alias = $Alias; Proc = $p; Pending = @{}
+        Alias = $Alias; Proc = $p; Pending = @{}; Ready = $false
+        Queue = New-Object System.Collections.Generic.List[string]   # до приветствия сервера
         Read = $p.StandardOutput.ReadLineAsync(); Err = $p.StandardError.ReadToEndAsync()
     }
+}
+
+function Write-ApiLine($Sess, [string]$Line) {
+    # байтами ASCII мимо StreamWriter: он ставит BOM перед первой строкой, и сервер её не разбирает
+    $bytes = [Text.Encoding]::ASCII.GetBytes($Line)
+    $Sess.Proc.StandardInput.BaseStream.Write($bytes, 0, $bytes.Length)
+    $Sess.Proc.StandardInput.BaseStream.Flush()
 }
 
 function Close-ApiSession($Sess, [string]$Why) {
@@ -921,6 +934,31 @@ function Send-WebEvent($Streams, [string]$Data) {
     foreach ($st in $Streams.ToArray()) {
         try { $st.Response.OutputStream.Write($bytes, 0, $bytes.Length); $st.Response.OutputStream.Flush() }
         catch { [void]$Streams.Remove($st) }
+    }
+}
+
+function Install-Iperf {
+    # iperf3 для замера скорости ПК ↔ сервер: zip из релиза, сверка SHA-256, распаковка в папку лаунчера.
+    # Возвращает текст ошибки или пустую строку.
+    $tmp = Join-Path ([IO.Path]::GetTempPath()) ("kvnbox-iperf-" + [Guid]::NewGuid().ToString('N'))
+    try {
+        New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+        $zip = Join-Path $tmp 'iperf3.zip'
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        (New-Object Net.WebClient).DownloadFile($IperfUrl, $zip)
+        $hash = (Get-FileHash -Algorithm SHA256 -Path $zip).Hash.ToLower()
+        if ($hash -ne $IperfSha) { return 'Скачанный iperf3 не совпал с ожидаемой контрольной суммой — установка отменена.' }
+        $unz = Join-Path $tmp 'x'
+        Expand-Archive -Path $zip -DestinationPath $unz -Force
+        $exe = Get-ChildItem -Path $unz -Recurse -Filter 'iperf3.exe' | Select-Object -First 1
+        if (-not $exe) { return 'В архиве нет iperf3.exe.' }
+        New-Item -ItemType Directory -Force -Path $IperfDir | Out-Null
+        Copy-Item -Path (Join-Path $exe.DirectoryName '*') -Destination $IperfDir -Force
+        return ''
+    } catch {
+        return "Не удалось скачать iperf3: $($_.Exception.Message)"
+    } finally {
+        Remove-Item -Recurse -Force -Path $tmp -ErrorAction SilentlyContinue
     }
 }
 
@@ -958,6 +996,7 @@ function Start-WebMenu {
 
     $sessions = @{}
     $streams = New-Object System.Collections.Generic.List[object]
+    $jobs = New-Object System.Collections.Generic.List[object]   # замеры iperf3 с ПК
     $httpTask = $listener.GetContextAsync()
     $lastPing = [DateTime]::UtcNow
     $webLog = Join-Path $AppDir 'web.log'
@@ -968,7 +1007,20 @@ function Start-WebMenu {
             $tasks = New-Object System.Collections.Generic.List[Threading.Tasks.Task]
             $tasks.Add($httpTask)
             foreach ($s in $sessions.Values) { $tasks.Add($s.Read) }
+            foreach ($j in $jobs) { $tasks.Add($j.Out) }
             [void][Threading.Tasks.Task]::WaitAny($tasks.ToArray(), 250)
+
+            # замеры iperf3 завершились
+            foreach ($j in $jobs.ToArray()) {
+                if (-not $j.Out.IsCompleted) { continue }
+                [void]$jobs.Remove($j)
+                $out = ''
+                try { $out = $j.Out.Result.Trim() } catch { }
+                try { [void]$j.Proc.WaitForExit(2000) } catch { }
+                if ($out.StartsWith('{')) { $json = '{"ok":true,"data":' + $out + '}' }
+                else { $json = '{"ok":false,"error":' + (ConvertTo-Json ("iperf3: " + $out) -Compress) + '}' }
+                Send-WebResponse $j.Ctx 200 'application/json; charset=utf-8' $json
+            }
 
             # ответы серверов
             foreach ($alias in @($sessions.Keys)) {
@@ -978,7 +1030,13 @@ function Start-WebMenu {
                     try { $line = $s.Read.Result } catch { }
                     if ($null -eq $line) { Close-ApiSession $s ''; $sessions.Remove($alias); break }
                     $s.Read = $s.Proc.StandardOutput.ReadLineAsync()
-                    if ($line -match '^\{"id": "([^"]*)", "event"') {
+                    if ($env:KVNBOX_WEB_DEBUG) { Add-Content -Path $webLog -Value ("< " + $line.Substring(0, [Math]::Min(90, $line.Length))) -Encoding UTF8 }
+                    if (-not $s.Ready -and $line -match '"ready": true') {
+                        # ssh для Windows теряет ввод, отправленный до открытия канала: запросы ждали приветствия
+                        $s.Ready = $true
+                        try { foreach ($q in $s.Queue) { Write-ApiLine $s $q } } catch { }
+                        $s.Queue.Clear()
+                    } elseif ($line -match '^\{"id": "([^"]*)", "event"') {
                         Send-WebEvent $streams ('{"s":' + (ConvertTo-Json $alias -Compress) + ',"m":' + $line + '}')
                     } elseif ($line -match '^\{"id": "([^"]+)", "ok"') {
                         $id = $Matches[1]
@@ -1039,12 +1097,38 @@ function Start-WebMenu {
                 }
                 $s = $sessions[$alias]
                 $s.Pending[$id] = $ctx
+                $reqLine = (ConvertTo-AsciiJson ($body -replace "[\r\n]+", ' ')) + "`n"
                 try {
-                    $s.Proc.StandardInput.Write((ConvertTo-AsciiJson ($body -replace "[\r\n]+", ' ')) + "`n")
-                    $s.Proc.StandardInput.Flush()
+                    if ($s.Ready) { Write-ApiLine $s $reqLine }
+                    else { $s.Queue.Add($reqLine) }
                 } catch {
                     Close-ApiSession $s 'Канал SSH закрыт.'; $sessions.Remove($alias)
                 }
+            } elseif ($path -eq '/app/iperf' -and $req.HttpMethod -eq 'POST') {
+                $alias = [string]$req.QueryString['s']
+                $srvObj = @(Get-Servers) | Where-Object { $_.Alias -eq $alias } | Select-Object -First 1
+                if (-not $srvObj) { Send-WebResponse $ctx 200 'application/json; charset=utf-8' '{"ok":false,"error":"Сервер не найден в лаунчере."}'; continue }
+                if (-not (Test-Path $IperfExe)) { Send-WebResponse $ctx 200 'application/json; charset=utf-8' '{"ok":false,"need_install":true,"error":"iperf3 на ПК не установлен."}'; continue }
+                $rev = if ($req.QueryString['dir'] -eq 'down') { ' -R' } else { '' }
+                $iport = [int]$req.QueryString['port']; if ($iport -le 0) { $iport = 5201 }
+                $psi = New-Object Diagnostics.ProcessStartInfo
+                $psi.FileName = $IperfExe
+                $psi.WorkingDirectory = $IperfDir
+                $psi.Arguments = "-c $($srvObj.Host) -p $iport -t 8 -J --connect-timeout 5000$rev"
+                $psi.UseShellExecute = $false
+                $psi.CreateNoWindow = $true
+                $psi.RedirectStandardOutput = $true
+                $psi.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
+                try {
+                    $p = [Diagnostics.Process]::Start($psi)
+                    $jobs.Add(@{ Ctx = $ctx; Proc = $p; Out = $p.StandardOutput.ReadToEndAsync() })
+                } catch {
+                    Send-WebResponse $ctx 200 'application/json; charset=utf-8' ('{"ok":false,"error":' + (ConvertTo-Json "Не удалось запустить iperf3: $($_.Exception.Message)" -Compress) + '}')
+                }
+            } elseif ($path -eq '/app/iperf_install' -and $req.HttpMethod -eq 'POST') {
+                $err = Install-Iperf
+                if ($err) { Send-WebResponse $ctx 200 'application/json; charset=utf-8' ('{"ok":false,"error":' + (ConvertTo-Json $err -Compress) + '}') }
+                else { Send-WebResponse $ctx 200 'application/json; charset=utf-8' '{"ok":true}' }
             } elseif ($path -eq '/app/close' -and $req.HttpMethod -eq 'POST') {
                 $alias = [string]$req.QueryString['s']
                 if ($sessions.ContainsKey($alias)) { Close-ApiSession $sessions[$alias] 'Переподключение.'; $sessions.Remove($alias) }
@@ -1060,6 +1144,7 @@ function Start-WebMenu {
         }
     } finally {
         foreach ($s in @($sessions.Values)) { Close-ApiSession $s 'Веб-меню остановлено.' }
+        foreach ($j in $jobs.ToArray()) { try { if (-not $j.Proc.HasExited) { $j.Proc.Kill() } } catch { } }
         foreach ($st in $streams.ToArray()) { try { $st.Response.Close() } catch { } }
         try { $listener.Stop(); $listener.Close() } catch { }
     }

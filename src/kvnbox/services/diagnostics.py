@@ -106,13 +106,20 @@ class DiagnosticsService:
         # (`.output` отдал бы лицензию вместо замера; приёмка, этап 9)
         return res.stdout if res.ok and res.stdout.strip() else res.output
 
-    def speedtest_json(self) -> str:
-        """Для бота: JSON Ookla, при неудаче — обычный текстовый вывод."""
+    def speedtest_json(self, server_id: str | None = None) -> str:
+        """Для бота и веб-меню: JSON Ookla, при неудаче — обычный текстовый вывод."""
         self._require_speedtest()
-        res = self.app.runner.run(["speedtest", *SPEEDTEST_FLAGS, "--format=json"], timeout=180)
+        extra: list[str] = []
+        if server_id:
+            if not server_id.isdigit():
+                raise ServiceError("Неверный ID сервера.")
+            extra = ["-s", server_id]
+        res = self.app.runner.run(
+            ["speedtest", *SPEEDTEST_FLAGS, *extra, "--format=json"], timeout=180
+        )
         if res.ok and res.stdout.strip():
             return res.stdout
-        res = self.app.runner.run(["speedtest", *SPEEDTEST_FLAGS], timeout=180)
+        res = self.app.runner.run(["speedtest", *SPEEDTEST_FLAGS, *extra], timeout=180)
         if not res.ok:
             raise ServiceError(res.output or "speedtest завершился с ошибкой")
         return res.stdout or res.stderr
