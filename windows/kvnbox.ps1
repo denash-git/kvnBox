@@ -7,7 +7,7 @@
 # Серверы: ключ SSH создаётся на ПК, добавляется на сервер (пароль root нужен один раз),
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 
-$KvnboxVersion = '2.1.0'
+$KvnboxVersion = '2.1.1'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
@@ -257,18 +257,21 @@ function Test-Newer([string]$Latest) {
 # ═══ экран (оформление как у меню kvnBox на сервере) ═════════════════════════
 
 $script:Notice = ''
-$E = [char]27
-$R = "$E[0m"
-$C = @{
-    Blue = "$E[1;34m"; Green = "$E[1;32m"; Red = "$E[1;31m"; Yellow = "$E[1;33m"
-    Cyan = "$E[1;36m"; Dim = "$E[2m"; Bold = "$E[1m"
+$Esc = [char]27
+$Rst = "$Esc[0m"
+$Col = @{
+    Blue = "$Esc[1;34m"; Green = "$Esc[1;32m"; Red = "$Esc[1;31m"; Yellow = "$Esc[1;33m"
+    Cyan = "$Esc[1;36m"; Dim = "$Esc[2m"; Bold = "$Esc[1m"
 }
 $Block = 60
 $BackLabels = @('Назад', 'Отмена', 'Выход')
 $MainTitle = "kvnBox v. $KvnboxVersion"
 
 function Get-Plain([string]$t) { return ($t -replace "$([char]27)\[[0-9;]*[A-Za-z]", '') }
-function Get-ScreenWidth { return [Console]::WindowWidth }
+function Get-ScreenWidth { try { $w = [Console]::WindowWidth } catch { $w = 0 }; if ($w -lt 20) { $w = 100 }; return $w }
+function Get-ScreenHeight { try { $h = [Console]::WindowHeight } catch { $h = 0 }; if ($h -lt 10) { $h = 30 }; return $h }
+function Set-Cursor([bool]$Visible) { try { [Console]::CursorVisible = $Visible } catch { } }
+function Read-MenuKey { return [Console]::ReadKey($true) }
 function Get-BlockPad { return (' ' * [Math]::Max([Math]::Floor(((Get-ScreenWidth) - $Block) / 2), 2)) }
 
 function Get-Centered([string]$t) {
@@ -278,21 +281,21 @@ function Get-Centered([string]$t) {
 
 function Get-HeaderLines([string]$Title, [string[]]$Sub = @(), [bool]$Badge = $false) {
     $t = $Title
-    if ($Badge) { $t = "$t $($C.Green)[↑ update]$R" }
-    $lines = @((Get-Centered "$($C.Blue)$('═' * $Block)$R"), (Get-Centered "$($C.Yellow)$t$R"))
+    if ($Badge) { $t = "$t $($Col.Green)[↑ update]$Rst" }
+    $lines = @((Get-Centered "$($Col.Blue)$('═' * $Block)$Rst"), (Get-Centered "$($Col.Yellow)$t$Rst"))
     foreach ($s in $Sub) { $lines += (Get-Centered $s) }
-    $lines += (Get-Centered "$($C.Blue)$('─' * $Block)$R")
+    $lines += (Get-Centered "$($Col.Blue)$('─' * $Block)$Rst")
     $lines += ''
     return $lines
 }
 
 function Show-Header([string]$Title, [string[]]$Sub = @()) {
     # экран с текстом и вводом (добавление, удаление, обновление)
-    [Console]::CursorVisible = $true
-    [Console]::Write("$E[2J$E[H")
+    Set-Cursor $true
+    [Console]::Write("$Esc[2J$Esc[H")
     foreach ($l in (Get-HeaderLines $Title $Sub)) { [Console]::WriteLine($l) }
     if ($script:Notice) {
-        [Console]::WriteLine((Get-Centered "$($C.Green)✓ $($script:Notice)$R"))
+        [Console]::WriteLine((Get-Centered "$($Col.Green)✓ $($script:Notice)$Rst"))
         [Console]::WriteLine('')
         $script:Notice = ''
     }
@@ -307,21 +310,26 @@ function Get-OptionLines([string[]]$Options, [int]$Active) {
     $out = @()
     for ($i = 0; $i -lt $Options.Count; $i++) {
         $opt = $Options[$i]; $p = $plain[$i]
+        if ($opt -eq '-') { $out += ''; continue }  # пустая строка-разделитель
         $isBack = $BackLabels -contains $p
         $isDanger = $p -like '*Удалить*'
         if ($isBack -and $i) { $out += '' }
-        if ($isBack -and $opt -notmatch "$([char]27)") { $opt = "$($C.Yellow)$opt$R" }
-        if ($isDanger -and $opt -notmatch "$([char]27)") { $opt = "$($C.Red)$opt$R" }
+        if ($isBack -and $opt -notmatch "$([char]27)") { $opt = "$($Col.Yellow)$opt$Rst" }
+        if ($isDanger -and $opt -notmatch "$([char]27)") { $opt = "$($Col.Red)$opt$Rst" }
         $gap = $max - $p.Length
         if ($isBack) {
             $l = ' ' * [Math]::Floor($gap / 2); $r = ' ' * ($gap - [Math]::Floor($gap / 2))
-            if ($i -eq $Active) { $out += "$indent$E[43;30m  $l$p$r  $E[0m" }
+            if ($i -eq $Active) { $out += "$indent$Esc[43;30m  $l$p$r  $Esc[0m" }
             else { $out += "$indent  $l$opt$r  " }
         } else {
             $pad = ' ' * $gap
-            if ($i -eq $Active) {
-                $style = if ($isDanger) { "$E[41;30m" } else { "$E[7m" }
-                $out += "$indent$style  $p$pad  $E[0m"
+            if ($i -eq $Active -and $p.StartsWith('●')) {
+                # сервер: точка остаётся цветной и на выделении
+                $dot = if ($opt -match '1;32m●') { '32' } else { '31' }
+                $out += "$indent$Esc[47;30m  $Esc[1;47;${dot}m●$Esc[22;47;30m$($p.Substring(1))$pad  $Esc[0m"
+            } elseif ($i -eq $Active) {
+                $style = if ($isDanger) { "$Esc[41;30m" } else { "$Esc[7m" }
+                $out += "$indent$style  $p$pad  $Esc[0m"
             } else {
                 $out += "$indent  $opt$pad  "
             }
@@ -339,28 +347,29 @@ function Select-Menu {
     if (-not $Hint) { $Hint = '↑↓ — выбор   Enter — выбрать   q — назад   0 — Выход' }
     $n = $Options.Count
     $active = [Math]::Max(0, [Math]::Min($Start, $n - 1))
+    while ($Options[$active] -eq '-') { $active = ($active + 1) % $n }
     $note = $script:Notice
     $script:Notice = ''
-    [Console]::CursorVisible = $false
-    [Console]::Write("$E[2J$E[H")
+    Set-Cursor $false
+    [Console]::Write("$Esc[2J$Esc[H")
     while ($true) {
         $lines = @(Get-HeaderLines $Title $Sub $Badge)
-        if ($note) { $lines += (Get-Centered "$($C.Green)✓ $note$R"); $lines += '' }
+        if ($note) { $lines += (Get-Centered "$($Col.Green)✓ $note$Rst"); $lines += '' }
         if ($Info.Count) {
             $pad = Get-BlockPad
             foreach ($l in $Info) { $lines += "$pad$l" }
             $lines += ''
         }
         $lines += Get-OptionLines $Options $active
-        $height = [Console]::WindowHeight
-        $frame = "$E[H" + (($lines | ForEach-Object { "$_$E[K" }) -join "`n") + "$E[J" +
-            "$E[$height;1H$E[K" + (Get-Centered "$($C.Dim)$Hint$R")
+        $height = Get-ScreenHeight
+        $frame = "$Esc[H" + (($lines | ForEach-Object { "$_$Esc[K" }) -join "`n") + "$Esc[J" +
+            "$Esc[$height;1H$Esc[K" + (Get-Centered "$($Col.Dim)$Hint$Rst")
         [Console]::Write($frame)
-        $k = [Console]::ReadKey($true)
+        $k = Read-MenuKey
         $done = $null
         switch ($k.Key) {
-            'UpArrow' { $active = ($active - 1 + $n) % $n }
-            'DownArrow' { $active = ($active + 1) % $n }
+            'UpArrow' { do { $active = ($active - 1 + $n) % $n } while ($Options[$active] -eq '-') }
+            'DownArrow' { do { $active = ($active + 1) % $n } while ($Options[$active] -eq '-') }
             'Enter' { $done = @{ Key = 'Enter'; Index = $active } }
             'Escape' { $done = @{ Key = 'Back'; Index = -1 } }
             'Q' { $done = @{ Key = 'Back'; Index = -1 } }
@@ -369,8 +378,8 @@ function Select-Menu {
             default { if ($Keys -contains [string]$k.Key) { $done = @{ Key = [string]$k.Key; Index = $active } } }
         }
         if ($done) {
-            [Console]::Write("$E[$height;1H$E[K$E[H")
-            [Console]::CursorVisible = $true
+            [Console]::Write("$Esc[$height;1H$Esc[K$Esc[H")
+            Set-Cursor $true
             return $done
         }
     }
@@ -394,16 +403,16 @@ function Read-YesNo([string]$Prompt, [bool]$Default = $false) {
 
 function Pause-Key {
     [Console]::WriteLine('')
-    [Console]::WriteLine((Get-Centered "$($C.Dim)Нажмите любую клавишу для продолжения...$R"))
-    [Console]::ReadKey($true) | Out-Null
+    [Console]::WriteLine((Get-Centered "$($Col.Dim)Нажмите любую клавишу для продолжения...$Rst"))
+    Read-MenuKey | Out-Null
 }
 
 function Write-Line([string]$t = '') { [Console]::WriteLine("$(Get-BlockPad)$t") }
-function Write-Note([string]$t) { Write-Line "$($C.Dim)$t$R" }
-function Write-Ok([string]$t) { [Console]::WriteLine((Get-Centered "$($C.Green)✓ $t$R")) }
-function Write-Warn([string]$t) { [Console]::WriteLine((Get-Centered "$($C.Yellow)⚠ $t$R")) }
-function Write-Fail([string]$t) { [Console]::WriteLine((Get-Centered "$($C.Red)✗ $t$R")) }
-function Write-Step([string]$t) { [Console]::WriteLine((Get-Centered "$($C.Dim)[*] $t$R")) }
+function Write-Note([string]$t) { Write-Line "$($Col.Dim)$t$Rst" }
+function Write-Ok([string]$t) { [Console]::WriteLine((Get-Centered "$($Col.Green)✓ $t$Rst")) }
+function Write-Warn([string]$t) { [Console]::WriteLine((Get-Centered "$($Col.Yellow)⚠ $t$Rst")) }
+function Write-Fail([string]$t) { [Console]::WriteLine((Get-Centered "$($Col.Red)✗ $t$Rst")) }
+function Write-Step([string]$t) { [Console]::WriteLine((Get-Centered "$($Col.Dim)[*] $t$Rst")) }
 
 function Get-Online($Servers) {
     # доступность серверов: TCP до порта SSH, все сразу, не дольше ~0,8 с
@@ -462,7 +471,7 @@ function Add-Server {
     $pub = ([IO.File]::ReadAllText("$key.pub")).Trim()
 
     Write-Line
-    Write-Line "$($C.Accent)Добавление ключа на сервер. Введите пароль root:$R"
+    Write-Line "$($Col.Accent)Добавление ключа на сервер. Введите пароль root:$Rst"
     $remote = "umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; " +
         "grep -qxF '$pub' ~/.ssh/authorized_keys || echo '$pub' >> ~/.ssh/authorized_keys; " +
         "command -v menu >/dev/null || echo KVNBOX_NOT_INSTALLED"
@@ -561,7 +570,7 @@ function Update-Server($s) {
 }
 
 function Get-InfoLine([string]$Label, [string]$Value) {
-    return ('{0,-16}' -f $Label) + "$($C.Bold)$Value$R"
+    return ('{0,-16}' -f $Label) + "$($Col.Bold)$Value$Rst"
 }
 
 function Show-ServerMenu($s) {
@@ -579,15 +588,15 @@ function Show-ServerMenu($s) {
             $online = ($null -ne $state) -or (Get-Online @($s))[$s.Alias]
             $checked = $true
         }
-        $status = if ($null -ne $state) { "$($C.Green)● на связи$R" }
-        elseif ($online) { "$($C.Yellow)● не входит по ключу$R" }
-        else { "$($C.Red)● не отвечает$R" }
+        $status = if ($null -ne $state) { "$($Col.Green)● на связи$Rst" }
+        elseif ($online) { "$($Col.Yellow)● не входит по ключу$Rst" }
+        else { "$($Col.Red)● не отвечает$Rst" }
         $info = @(
             (Get-InfoLine 'Адрес:' "$($s.Host):$($s.Port)"),
             (('{0,-16}' -f 'Состояние:') + $status)
         )
         if ($state -and $null -ne $state.Password) {
-            $pw = if ($state.Password) { "$($C.Yellow)включен$R" } else { "$($C.Green)отключен$R (только ключ)" }
+            $pw = if ($state.Password) { "$($Col.Yellow)включен$Rst" } else { "$($Col.Green)отключен$Rst (только ключ)" }
             $info += (('{0,-16}' -f 'Вход по паролю:') + $pw)
         }
         $info += (Get-InfoLine 'Терминал:' "ssh $($s.Alias)")
@@ -678,6 +687,29 @@ function Update-App {
     return $true
 }
 
+function Show-ManageMenu($Online) {
+    # выбор сервера для изменения/удаления → экран сервера
+    $sel = 0
+    while ($true) {
+        $servers = @(Get-Servers)
+        if (-not $servers.Count) { return '' }
+        $nameW = 0
+        foreach ($s in $servers) { $nameW = [Math]::Max($nameW, ([string]$s.Name).Length) }
+        $options = @()
+        foreach ($s in $servers) {
+            $dot = if ($Online -and $Online[$s.Alias]) { "$($Col.Green)●$Rst" } else { "$($Col.Red)●$Rst" }
+            $options += "$dot " + ([string]$s.Name).PadRight($nameW + 3) + "$($s.Host):$($s.Port)"
+        }
+        $options += 'Назад'
+        $r = Select-Menu -Title 'Изменить / удалить сервер' -Options $options -Start $sel `
+            -Info @("$($Col.Dim)Выберите сервер: вход по паролю, название, порт, ярлык, удаление.$Rst")
+        if ($r.Key -eq 'Exit') { return 'exit' }
+        if ($r.Key -ne 'Enter' -or $r.Index -ge $servers.Count) { return '' }
+        $sel = $r.Index
+        if ((Show-ServerMenu $servers[$r.Index]) -eq 'exit') { return 'exit' }
+    }
+}
+
 function Start-App {
     $Host.UI.RawUI.WindowTitle = 'kvnBox'
     [Console]::OutputEncoding = [Text.UTF8Encoding]::new()
@@ -700,16 +732,19 @@ function Start-App {
             foreach ($s in $servers) { $nameW = [Math]::Max($nameW, ([string]$s.Name).Length) }
             $options = @()
             foreach ($s in $servers) {
-                $dot = if ($online[$s.Alias]) { "$($C.Green)●$R" } else { "$($C.Red)●$R" }
+                $dot = if ($online[$s.Alias]) { "$($Col.Green)●$Rst" } else { "$($Col.Red)●$Rst" }
                 $options += "$dot " + ([string]$s.Name).PadRight($nameW + 3) + "$($s.Host):$($s.Port)"
             }
+            if ($servers.Count) { $options += '-' }
             $iAdd = $options.Count; $options += 'Добавить сервер'
+            $iMng = -1
+            if ($servers.Count) { $iMng = $options.Count; $options += 'Изменить / удалить сервер' }
             $iUpd = -1
             if ($newer) { $iUpd = $options.Count; $options += "Обновить приложение до $latest" }
             $options += 'Выход'
             $info = @()
             if (-not $servers.Count) {
-                $info = @("$($C.Dim)Серверов пока нет — добавьте первый.$R")
+                $info = @("$($Col.Dim)Серверов пока нет — добавьте первый.$Rst")
                 if ($sel -eq 0) { $sel = $iAdd }
             }
             $hint = if ($servers.Count) { '↑↓ — выбор   Enter — войти   → — управление   q — выход' } else { '↑↓ — выбор   Enter — выбрать   q — выход' }
@@ -730,6 +765,9 @@ function Start-App {
                 Add-Server
                 $online = $null
                 $sel = 0
+            } elseif ($r.Index -eq $iMng) {
+                if ((Show-ManageMenu $online) -eq 'exit') { break }
+                $online = $null
             } elseif ($r.Index -eq $iUpd) {
                 if (Update-App) { return }
             } else {
@@ -737,9 +775,9 @@ function Start-App {
             }
         }
     } finally {
-        [Console]::CursorVisible = $true
+        Set-Cursor $true
     }
-    [Console]::Write("$E[2J$E[H")
+    [Console]::Write("$Esc[2J$Esc[H")
 }
 
 # ═══ запуск ══════════════════════════════════════════════════════════════════
@@ -750,7 +788,7 @@ function Start-Kvnbox([string[]]$CliArgs) {
     if (-not $installed) {
         # первый запуск (irm | iex) или файл скачан вручную — установка и сразу приложение
         Write-Line
-        Write-Line "$($C.Accent)kvnBox — установка приложения...$R"
+        Write-Line "$($Col.Accent)kvnBox — установка приложения...$Rst"
         $text = if ($self) { [IO.File]::ReadAllText($self, [Text.Encoding]::UTF8) } else { Get-RemoteScript }
         Install-App $text
         Write-Ok 'Ярлык «kvnBox» — на рабочем столе и в меню Пуск.'
