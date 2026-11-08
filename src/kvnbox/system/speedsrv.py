@@ -1,6 +1,6 @@
 """Временный сервер замера скорости через 443 (веб-лаунчер): за скрытым путём Caddy.
 
-GET  /down?mb=N — N МБ случайных данных (не сжимаются);
+GET  /down?mb=N — N МБ случайных данных (не сжимаются); GET /ping — пустой ответ;
 POST /up        — тело читается и отбрасывается, ответ — число принятых байт.
 Только 127.0.0.1; запускается на время замера (`systemd-run`, ограничение по времени).
 """
@@ -34,6 +34,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         url = urlparse(self.path)
+        if url.path.rstrip("/") == "/ping":  # задержка: пустой ответ
+            self.send_response(204)
+            self._cors()
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         if url.path.rstrip("/") != "/down":
             self.send_error(404)
             return

@@ -9,7 +9,7 @@
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 # На чистый сервер kvnBox ставится прямо из лаунчера.
 
-$KvnboxVersion = '3.0.3'
+$KvnboxVersion = '3.0.4'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
@@ -276,12 +276,12 @@ function Install-App([string]$Text, [string]$SourceDir = '') {
 }
 
 function Get-UpdateInfo([switch]$Force) {
-    # раз в сутки спрашиваем GitHub; без интернета — тихо
+    # раз в час спрашиваем GitHub (главное меню); без интернета — тихо
     $state = $null
     if (Test-Path $UpdateFile) {
         try { $state = ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($UpdateFile)) } catch { }
     }
-    $fresh = $state -and ([DateTime]::UtcNow - [DateTime]$state.Checked).TotalHours -lt 6
+    $fresh = $state -and ([DateTime]::UtcNow - [DateTime]$state.Checked).TotalHours -lt 1
     if (-not $Force -and $fresh) { return $state.Latest }
     try {
         $latest = Get-ScriptVersion (Get-RemoteScript 3)
@@ -803,6 +803,7 @@ function Start-WebMenu {
                 $list = @(Get-Servers)
                 $on = Get-Online $list
                 $srv = @($list | ForEach-Object { [pscustomobject]@{ Alias = $_.Alias; Name = $_.Name; Host = $_.Host; Port = $_.Port; Online = [bool]$on[$_.Alias] } })
+                $latest = if ($req.QueryString['force'] -eq '1') { Get-UpdateInfo -Force } else { Get-UpdateInfo }
                 $upd = if (Test-Newer $latest) { $latest } else { '' }
                 $json = ConvertTo-Json -InputObject @{ launcher = $KvnboxVersion; update = $upd; servers = $srv } -Depth 4 -Compress
                 Send-WebResponse $ctx 200 'application/json; charset=utf-8' $json
@@ -897,12 +898,13 @@ function Start-WebMenu {
                 $srvObj = @(Get-Servers) | Where-Object { $_.Alias -eq $alias } | Select-Object -First 1
                 if (-not $srvObj) { Send-WebResponse $ctx 200 'application/json; charset=utf-8' '{"ok":false,"error":"Сервер не найден в лаунчере."}'; continue }
                 if (-not (Test-Path $IperfExe)) { Send-WebResponse $ctx 200 'application/json; charset=utf-8' '{"ok":false,"need_install":true,"error":"iperf3 на ПК не установлен."}'; continue }
-                $rev = if ($req.QueryString['dir'] -eq 'down') { ' -R' } else { '' }
+                $dir = [string]$req.QueryString['dir']
+                $rev = if ($dir -eq 'down') { ' -R -t 8' } elseif ($dir -eq 'udp') { $mb = [int]$req.QueryString['rate']; if ($mb -lt 2 -or $mb -gt 1000) { $mb = 20 }; " -u -b $($mb)M -R -t 5" } else { ' -t 8' }
                 $iport = [int]$req.QueryString['port']; if ($iport -le 0) { $iport = 5201 }
                 $psi = New-Object Diagnostics.ProcessStartInfo
                 $psi.FileName = $IperfExe
                 $psi.WorkingDirectory = $IperfDir
-                $psi.Arguments = "-c $($srvObj.Host) -p $iport -t 8 -J --connect-timeout 5000$rev"
+                $psi.Arguments = "-c $($srvObj.Host) -p $iport -J --connect-timeout 5000$rev"
                 $psi.UseShellExecute = $false
                 $psi.CreateNoWindow = $true
                 $psi.RedirectStandardOutput = $true
