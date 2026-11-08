@@ -1,11 +1,13 @@
-# kvnBox для Windows: список серверов kvnBox и вход в их меню без пароля.
+# kvnBox для Windows: веб-лаунчер — управление серверами kvnBox в браузере.
 #
 # Установка и обновление (PowerShell):
 #   irm https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1 | iex
 #
 # Приложение ставится в %LOCALAPPDATA%\kvnBox, ярлык «kvnBox» — на рабочий стол и в меню Пуск.
-# Серверы: ключ SSH создаётся на ПК, добавляется на сервер (пароль root нужен один раз),
+# Запуск открывает страницу в браузере (127.0.0.1); это окно PowerShell — её связь с серверами
+# по SSH. Серверы: ключ SSH создаётся на ПК, добавляется на сервер (пароль root нужен один раз),
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
+# На чистый сервер kvnBox ставится прямо из лаунчера.
 
 $KvnboxVersion = '3.0.0'
 
@@ -37,6 +39,7 @@ $ServersFile = Join-Path $AppDir 'servers.json'
 $UpdateFile = Join-Path $AppDir 'update.json'
 $SshConfig = Join-Path $SshDir 'config'
 $KnownHosts = [Environment]::GetEnvironmentVariable('KVNBOX_KNOWN_HOSTS')
+$SshUser = Get-EnvOr 'KVNBOX_SSH_USER' 'root'   # другой пользователь — только для проверки
 
 # ═══ инструменты ═════════════════════════════════════════════════════════════
 
@@ -66,6 +69,7 @@ function Get-SshBase {
 function Invoke-Ssh {
     # команда на сервере через ключ, без вопросов; $null — сервер недоступен
     param([string]$Alias, [string]$Command, [int]$Timeout = 10)
+    $ErrorActionPreference = 'Continue'   # строки ssh в stderr — не исключение
     $ssh = Get-Tool 'ssh'
     $base = Get-SshBase
     $out = & $ssh @base -o BatchMode=yes -o "ConnectTimeout=$Timeout" $Alias $Command 2>$null
@@ -123,7 +127,7 @@ function Set-SshConfigHost([string]$Alias, [string]$Server, [int]$Port, [string]
             "Host $Alias",
             "    HostName $Server",
             "    Port $Port",
-            "    User root",
+            "    User $SshUser",
             "    IdentityFile `"$KeyPath`"",
             "    IdentitiesOnly yes",
             "    ServerAliveInterval 30"
@@ -292,165 +296,27 @@ function Test-Newer([string]$Latest) {
     try { return ([version]$Latest -gt [version]$KvnboxVersion) } catch { return $false }
 }
 
-# ═══ экран (оформление как у меню kvnBox на сервере) ═════════════════════════
+# ═══ окно PowerShell: только связь веб-меню с серверами ══════════════════════
 
-$script:Notice = ''
 $Esc = [char]27
 $Rst = "$Esc[0m"
 $Col = @{
     Blue = "$Esc[1;34m"; Green = "$Esc[1;32m"; Red = "$Esc[1;31m"; Yellow = "$Esc[1;33m"
     Cyan = "$Esc[1;36m"; Dim = "$Esc[2m"; Bold = "$Esc[1m"
 }
-$Block = 60
-$BackLabels = @('Назад', 'Отмена', 'Выход')
-$MainTitle = "kvnBox v. $KvnboxVersion"
 
-function Get-Plain([string]$t) { return ($t -replace "$([char]27)\[[0-9;]*[A-Za-z]", '') }
-function Get-ScreenWidth { try { $w = [Console]::WindowWidth } catch { $w = 0 }; if ($w -lt 20) { $w = 100 }; return $w }
-function Get-ScreenHeight { try { $h = [Console]::WindowHeight } catch { $h = 0 }; if ($h -lt 10) { $h = 30 }; return $h }
-function Set-Cursor([bool]$Visible) { try { [Console]::CursorVisible = $Visible } catch { } }
-function Read-MenuKey { return [Console]::ReadKey($true) }
-function Get-BlockPad { return (' ' * [Math]::Max([Math]::Floor(((Get-ScreenWidth) - $Block) / 2), 2)) }
-
-function Get-Centered([string]$t) {
-    $pad = [Math]::Max([Math]::Floor(((Get-ScreenWidth) - (Get-Plain $t).Length) / 2), 0)
-    return (' ' * $pad) + $t
-}
-
-function Get-HeaderLines([string]$Title, [string[]]$Sub = @(), [bool]$Badge = $false) {
-    $t = $Title
-    if ($Badge) { $t = "$t $($Col.Green)[↑ update]$Rst" }
-    $lines = @((Get-Centered "$($Col.Blue)$('═' * $Block)$Rst"), (Get-Centered "$($Col.Yellow)$t$Rst"))
-    foreach ($s in $Sub) { $lines += (Get-Centered $s) }
-    $lines += (Get-Centered "$($Col.Blue)$('─' * $Block)$Rst")
-    $lines += ''
-    return $lines
-}
-
-function Show-Header([string]$Title, [string[]]$Sub = @()) {
-    # экран с текстом и вводом (добавление, удаление, обновление)
-    Set-Cursor $true
-    [Console]::Write("$Esc[2J$Esc[H")
-    foreach ($l in (Get-HeaderLines $Title $Sub)) { [Console]::WriteLine($l) }
-    if ($script:Notice) {
-        [Console]::WriteLine((Get-Centered "$($Col.Green)✓ $($script:Notice)$Rst"))
-        [Console]::WriteLine('')
-        $script:Notice = ''
-    }
-}
-
-function Get-OptionLines([string[]]$Options, [int]$Active) {
-    # как _draw_options на сервере: блок по центру, выбранный — инверсией,
-    # «Назад/Выход» — жёлтым и с пустой строкой перед, «Удалить» — красным
-    $plain = @($Options | ForEach-Object { Get-Plain $_ })
-    $max = ($plain | Measure-Object -Property Length -Maximum).Maximum
-    $indent = ' ' * [Math]::Max([Math]::Floor(((Get-ScreenWidth) - $max) / 2), 0)
-    $out = @()
-    for ($i = 0; $i -lt $Options.Count; $i++) {
-        $opt = $Options[$i]; $p = $plain[$i]
-        if ($opt -eq '-') { $out += ''; continue }  # пустая строка-разделитель
-        $isBack = $BackLabels -contains $p
-        $isDanger = $p -like '*Удалить*'
-        if ($isBack -and $i) { $out += '' }
-        if ($isBack -and $opt -notmatch "$([char]27)") { $opt = "$($Col.Yellow)$opt$Rst" }
-        if ($isDanger -and $opt -notmatch "$([char]27)") { $opt = "$($Col.Red)$opt$Rst" }
-        $gap = $max - $p.Length
-        if ($isBack) {
-            $l = ' ' * [Math]::Floor($gap / 2); $r = ' ' * ($gap - [Math]::Floor($gap / 2))
-            if ($i -eq $Active) { $out += "$indent$Esc[43;30m  $l$p$r  $Esc[0m" }
-            else { $out += "$indent  $l$opt$r  " }
-        } else {
-            $pad = ' ' * $gap
-            if ($i -eq $Active -and $p.StartsWith('●')) {
-                # сервер: точка остаётся цветной и на выделении
-                $dot = if ($opt -match '1;32m●') { '32' } else { '31' }
-                $out += "$indent$Esc[47;30m  $Esc[1;47;${dot}m●$Esc[22;47;30m$($p.Substring(1))$pad  $Esc[0m"
-            } elseif ($i -eq $Active) {
-                $style = if ($isDanger) { "$Esc[41;30m" } else { "$Esc[7m" }
-                $out += "$indent$style  $p$pad  $Esc[0m"
-            } else {
-                $out += "$indent  $opt$pad  "
-            }
-        }
-    }
-    return $out
-}
-
-function Select-Menu {
-    # меню стрелками: Enter → @{Key='Enter'; Index}; q/Esc → Index -1; 0 → Key='Exit'
-    param(
-        [string]$Title, [string[]]$Sub = @(), [bool]$Badge = $false, [string[]]$Info = @(),
-        [string[]]$Options, [string]$Hint = '', [int]$Start = 0, [string[]]$Keys = @()
-    )
-    if (-not $Hint) { $Hint = '↑↓ — выбор   Enter — выбрать   q — назад   0 — Выход' }
-    $n = $Options.Count
-    $active = [Math]::Max(0, [Math]::Min($Start, $n - 1))
-    while ($Options[$active] -eq '-') { $active = ($active + 1) % $n }
-    $note = $script:Notice
-    $script:Notice = ''
-    Set-Cursor $false
-    [Console]::Write("$Esc[2J$Esc[H")
-    while ($true) {
-        $lines = @(Get-HeaderLines $Title $Sub $Badge)
-        if ($note) { $lines += (Get-Centered "$($Col.Green)✓ $note$Rst"); $lines += '' }
-        if ($Info.Count) {
-            $pad = Get-BlockPad
-            foreach ($l in $Info) { $lines += "$pad$l" }
-            $lines += ''
-        }
-        $lines += Get-OptionLines $Options $active
-        $height = Get-ScreenHeight
-        $frame = "$Esc[H" + (($lines | ForEach-Object { "$_$Esc[K" }) -join "`n") + "$Esc[J" +
-            "$Esc[$height;1H$Esc[K" + (Get-Centered "$($Col.Dim)$Hint$Rst")
-        [Console]::Write($frame)
-        $k = Read-MenuKey
-        $done = $null
-        switch ($k.Key) {
-            'UpArrow' { do { $active = ($active - 1 + $n) % $n } while ($Options[$active] -eq '-') }
-            'DownArrow' { do { $active = ($active + 1) % $n } while ($Options[$active] -eq '-') }
-            'Enter' { $done = @{ Key = 'Enter'; Index = $active } }
-            'Escape' { $done = @{ Key = 'Back'; Index = -1 } }
-            'Q' { $done = @{ Key = 'Back'; Index = -1 } }
-            'D0' { $done = @{ Key = 'Exit'; Index = -1 } }
-            'NumPad0' { $done = @{ Key = 'Exit'; Index = -1 } }
-            default { if ($Keys -contains [string]$k.Key) { $done = @{ Key = [string]$k.Key; Index = $active } } }
-        }
-        if ($done) {
-            [Console]::Write("$Esc[$height;1H$Esc[K$Esc[H")
-            Set-Cursor $true
-            return $done
-        }
-    }
-}
-
-function Read-Value([string]$Prompt, [string]$Default = '') {
-    $d = if ($Default) { " [$Default]" } else { '' }
-    [Console]::Write("$(Get-BlockPad)$Prompt$d`: ")
-    $v = ([Console]::ReadLine()).Trim()
-    if ($v) { return $v }
-    return $Default
-}
-
-function Read-YesNo([string]$Prompt, [bool]$Default = $false) {
-    $hint = if ($Default) { 'Y/n' } else { 'y/N' }
-    [Console]::Write("$(Get-BlockPad)$Prompt ($hint): ")
-    $v = ([Console]::ReadLine()).Trim()
-    if (-not $v) { return $Default }
-    return ($v -match '^[yYдД]')
-}
-
-function Pause-Key {
-    [Console]::WriteLine('')
-    [Console]::WriteLine((Get-Centered "$($Col.Dim)Нажмите любую клавишу для продолжения...$Rst"))
-    Read-MenuKey | Out-Null
-}
-
-function Write-Line([string]$t = '') { [Console]::WriteLine("$(Get-BlockPad)$t") }
+function Write-Line([string]$t = '') { [Console]::WriteLine("  $t") }
 function Write-Note([string]$t) { Write-Line "$($Col.Dim)$t$Rst" }
-function Write-Ok([string]$t) { [Console]::WriteLine((Get-Centered "$($Col.Green)✓ $t$Rst")) }
-function Write-Warn([string]$t) { [Console]::WriteLine((Get-Centered "$($Col.Yellow)⚠ $t$Rst")) }
-function Write-Fail([string]$t) { [Console]::WriteLine((Get-Centered "$($Col.Red)✗ $t$Rst")) }
-function Write-Step([string]$t) { [Console]::WriteLine((Get-Centered "$($Col.Dim)[*] $t$Rst")) }
+function Write-Ok([string]$t) { Write-Line "$($Col.Green)✓ $t$Rst" }
+function Write-Fail([string]$t) { Write-Line "$($Col.Red)✗ $t$Rst" }
+
+function Show-Header([string]$Title) {
+    try { [Console]::Write("$Esc[2J$Esc[H") } catch { }
+    Write-Line "$($Col.Blue)$('═' * 56)$Rst"
+    Write-Line "$($Col.Yellow)kvnBox $KvnboxVersion — $Title$Rst"
+    Write-Line "$($Col.Blue)$('─' * 56)$Rst"
+    Write-Line
+}
 
 function Get-Online($Servers) {
     # доступность серверов: TCP до порта SSH, все сразу, не дольше ~0,8 с
@@ -470,87 +336,11 @@ function Get-Online($Servers) {
     return $res
 }
 
-# ═══ действия ════════════════════════════════════════════════════════════════
+# ═══ серверы: добавление, изменение, удаление (вызываются из веб-меню) ════════
 
-function Enter-Server($s) {
-    Clear-Host
-    $Host.UI.RawUI.WindowTitle = "kvnBox - $($s.Name)"
-    $ssh = Get-Tool 'ssh'
-    $base = Get-SshBase
-    & $ssh @base -t $s.Alias menu
-    $code = $LASTEXITCODE
-    $Host.UI.RawUI.WindowTitle = 'kvnBox'
-    if ($code -ne 0) {
-        Write-Line
-        Write-Fail "Подключение к «$($s.Name)» завершилось с ошибкой (код $code)."
-        Write-Note '  Если на сервере меняли порт SSH — «Управление → Изменить порт SSH».'
-        Pause-Key
-    }
-}
-
-function Add-Server {
-    Show-Header 'Добавление сервера'
-    Write-Line 'Нужен сервер с установленным kvnBox и пароль root (вводится один раз).'
-    Write-Note 'Пустой ввод — отмена.'
-    Write-Line
-    $server = Read-Value 'IP-адрес сервера'
-    if (-not $server) { return }
-    $port = 0
-    while ($port -lt 1 -or $port -gt 65535) {
-        [int]::TryParse((Read-Value 'Порт SSH' '22'), [ref]$port) | Out-Null
-    }
-
-    $alias = Get-Alias $server
-    $key = Join-Path $SshDir $alias
-    Write-Line
-    Write-Step 'Создание ключа SSH на этом компьютере...'
-    New-ServerKey $key
-    $pub = ([IO.File]::ReadAllText("$key.pub")).Trim()
-
-    Write-Line
-    Write-Line "$($Col.Cyan)Добавление ключа на сервер. Введите пароль root:$Rst"
-    $remote = "umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; " +
-        "grep -qxF '$pub' ~/.ssh/authorized_keys || echo '$pub' >> ~/.ssh/authorized_keys; " +
-        "command -v menu >/dev/null || echo KVNBOX_NOT_INSTALLED; " +
-        'echo "KVNBOX_FQDN=$(hostname -f 2>/dev/null || hostname)"'
-    $ssh = Get-Tool 'ssh'
-    $base = Get-SshBase
-    $out = & $ssh @base -p $port -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 `
-        "root@$server" $remote
-    if ($LASTEXITCODE -ne 0) {
-        Write-Line
-        Write-Fail 'Не удалось подключиться: проверьте IP, порт и пароль.'
-        Pause-Key
-        return
-    }
-
-    Set-SshConfigHost $alias $server $port $key
-    if ($null -eq (Invoke-Ssh $alias 'true' 15)) {
-        Write-Fail 'Ключ добавлен, но вход по нему не прошёл.'
-        Pause-Key
-        return
-    }
-    # название по умолчанию — FQDN сервера (как в меню сервера), иначе IP
-    $fqdn = ''
-    foreach ($line in @($out)) { if ($line -match '^KVNBOX_FQDN=(\S+)') { $fqdn = $Matches[1] } }
-    if (-not $fqdn -or $fqdn -eq 'localhost') { $fqdn = $server }
-    Write-Line
-    $name = Read-Value 'Название' $fqdn
-    $list = @(Get-Servers | Where-Object { $_.Alias -ne $alias })
-    $s = [pscustomobject]@{ Name = $name; Host = $server; Port = $port; Alias = $alias; Key = $key }
-    $list += $s
+function Update-Server($s) {
+    $list = @(Get-Servers | ForEach-Object { if ($_.Alias -eq $s.Alias) { $s } else { $_ } })
     Save-Servers $list
-    Write-Ok "Сервер «$name» добавлен, вход по ключу работает."
-    if (@($out) -match 'KVNBOX_NOT_INSTALLED') {
-        Write-Warn 'kvnBox на сервере не найден — установите панель, затем входите.'
-    }
-
-    Write-Line
-    Write-Line 'Вход по паролю можно отключить: на сервер смогут войти только по ключу.'
-    Write-Note 'Ключ хранится на этом компьютере — не потеряйте его (папка .ssh).'
-    if (Read-YesNo 'Отключить вход по паролю сейчас?') { Set-PasswordLogin $s $false | Out-Null }
-    $script:Notice = "Сервер «$name» добавлен."
-    Pause-Key
 }
 
 function Get-ServerFqdn($s) {
@@ -572,47 +362,129 @@ function Update-DefaultNames($Online) {
     }
 }
 
+function Get-AskPass {
+    # пароль root для ssh без окна консоли: ssh спрашивает эту программу, она отдаёт
+    # пароль из переменной окружения процесса ssh (на диск пароль не пишется)
+    $path = Join-Path $AppDir 'askpass.cmd'
+    $text = '@powershell -NoProfile -NonInteractive -Command "[Console]::Out.Write($env:KVNBOX_PW)"' + "`r`n"
+    if (-not (Test-Path $path) -or [IO.File]::ReadAllText($path) -ne $text) {
+        New-Item -ItemType Directory -Force -Path $AppDir | Out-Null
+        [IO.File]::WriteAllText($path, $text, [Text.Encoding]::ASCII)
+    }
+    return $path
+}
+
+function Invoke-SshPassword([string]$Server, [int]$Port, [string]$Password, [string]$Command) {
+    # вход root по паролю (один раз, при добавлении сервера): @{ Code; Out; Err }
+    if (-not (Test-Path $SshConfig)) { Write-Utf8 $SshConfig '' }   # ssh -F не терпит отсутствия файла
+    $psi = New-Object Diagnostics.ProcessStartInfo
+    $psi.FileName = Get-Tool 'ssh'
+    $extra = if ($KnownHosts) { "-o `"UserKnownHostsFile=$KnownHosts`" " } else { '' }
+    $psi.Arguments = "-F `"$SshConfig`" $extra-p $Port -o StrictHostKeyChecking=accept-new " +
+        "-o PreferredAuthentications=password,keyboard-interactive -o PubkeyAuthentication=no " +
+        "-o NumberOfPasswordPrompts=1 -o ConnectTimeout=15 $SshUser@$Server `"$Command`""
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.RedirectStandardInput = $true
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
+    $psi.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
+    $psi.EnvironmentVariables['SSH_ASKPASS'] = Get-AskPass
+    $psi.EnvironmentVariables['SSH_ASKPASS_REQUIRE'] = 'force'
+    $psi.EnvironmentVariables['DISPLAY'] = 'localhost:0'
+    $psi.EnvironmentVariables['KVNBOX_PW'] = $Password
+    $p = [Diagnostics.Process]::Start($psi)
+    $p.StandardInput.Close()
+    $outTask = $p.StandardOutput.ReadToEndAsync(); $errTask = $p.StandardError.ReadToEndAsync()
+    if (-not $p.WaitForExit(40000)) { try { $p.Kill() } catch { }; return @{ Code = -1; Out = ''; Err = 'нет ответа' } }
+    return @{ Code = $p.ExitCode; Out = $outTask.Result; Err = $errTask.Result }
+}
+
+function Add-ServerWeb([string]$Server, [int]$Port, [string]$Password, [string]$Name) {
+    # → @{ ok; error | alias, name, installed }
+    $Server = $Server.Trim()
+    if (-not ($Server -match '^[A-Za-z0-9.:-]+$')) { return @{ ok = $false; error = 'Неверный адрес сервера.' } }
+    if ($Port -lt 1 -or $Port -gt 65535) { return @{ ok = $false; error = 'Порт SSH: 1–65535.' } }
+    if (-not $Password) { return @{ ok = $false; error = 'Введите пароль root.' } }
+    $alias = Get-Alias $Server
+    $key = Join-Path $SshDir $alias
+    try { New-ServerKey $key } catch { return @{ ok = $false; error = $_.Exception.Message } }
+    $pub = ([IO.File]::ReadAllText("$key.pub")).Trim()
+    $remote = "umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; " +
+        "grep -qxF '$pub' ~/.ssh/authorized_keys || echo '$pub' >> ~/.ssh/authorized_keys; " +
+        "command -v kvnbox >/dev/null && echo KVNBOX_INSTALLED; " +
+        'echo KVNBOX_FQDN=$(hostname -f 2>/dev/null || hostname)'
+    $r = Invoke-SshPassword $Server $Port $Password ($remote -replace '"', '\"')
+    if ($r.Code -ne 0) {
+        $why = if ($r.Err -match 'Permission denied') { 'неверный пароль или вход root по паролю запрещён' }
+        elseif ($r.Err -match 'timed out|нет ответа') { 'сервер не отвечает (проверьте IP и порт)' }
+        elseif ($r.Err -match 'refused') { 'порт SSH закрыт' }
+        else { (($r.Err -split "`n" | Where-Object { $_.Trim() -and $_ -notmatch '^Warning' }) | Select-Object -Last 1) }
+        return @{ ok = $false; error = "Не удалось подключиться: $why" }
+    }
+    Set-SshConfigHost $alias $Server $Port $key
+    $okKey = $false
+    foreach ($try in 1..3) { if ($null -ne (Invoke-Ssh $alias 'true' 12)) { $okKey = $true; break }; Start-Sleep -Seconds 2 }
+    if (-not $okKey) {
+        return @{ ok = $false; error = 'Ключ добавлен на сервер, но вход по нему не прошёл.' }
+    }
+    $fqdn = ''
+    foreach ($line in ($r.Out -split "`n")) { if ($line -match '^KVNBOX_FQDN=(\S+)') { $fqdn = $Matches[1] } }
+    if (-not $fqdn -or $fqdn -eq 'localhost') { $fqdn = $Server }
+    if (-not $Name) { $Name = $fqdn }
+    $list = @(Get-Servers | Where-Object { $_.Alias -ne $alias })
+    $list += [pscustomobject]@{ Name = $Name; Host = $Server; Port = $Port; Alias = $alias; Key = $key }
+    Save-Servers $list
+    return @{ ok = $true; alias = $alias; name = $Name; installed = ($r.Out -match 'KVNBOX_INSTALLED') }
+}
+
+function Edit-ServerWeb([string]$Alias, [string]$Name, [int]$Port) {
+    $s = @(Get-Servers | Where-Object { $_.Alias -eq $Alias }) | Select-Object -First 1
+    if (-not $s) { return @{ ok = $false; error = 'Сервер не найден.' } }
+    if ($Port -lt 1 -or $Port -gt 65535) { return @{ ok = $false; error = 'Порт SSH: 1–65535.' } }
+    if ($Name.Trim()) { $s.Name = $Name.Trim() }
+    if ($Port -ne [int]$s.Port) {
+        $s.Port = $Port
+        Set-SshConfigHost $s.Alias $s.Host $s.Port $s.Key
+    }
+    Update-Server $s
+    return @{ ok = $true }
+}
+
 function Get-ServerState($s) {
     # @{ Password = $true/$false; Keys = N } или $null
-    $text = Invoke-Ssh $s.Alias 'kvnbox ssh status'
+    # без kvnbox: работает и на чистом сервере
+    $cmd = 'echo PW=$(sshd -T 2>/dev/null | awk ''/^passwordauthentication/{print $2}''); ' +
+        'echo KEYS=$(grep -cE ''^(ssh-|ecdsa-|sk-)'' ~/.ssh/authorized_keys 2>/dev/null)'
+    $text = Invoke-Ssh $s.Alias $cmd
     if ($null -eq $text) { return $null }
     $pw = $null
-    if ($text -match 'вход по паролю:\s*(включен|отключен)') { $pw = ($Matches[1] -eq 'включен') }
-    $keys = @($text -split "`n" | Where-Object { $_ -match '^\s*#\d+' }).Count
+    if ($text -match 'PW=(yes|no)') { $pw = ($Matches[1] -eq 'yes') }
+    $keys = 0
+    if ($text -match 'KEYS=(\d+)') { $keys = [int]$Matches[1] }
     return @{ Password = $pw; Keys = $keys }
 }
 
-function Set-PasswordLogin($s, [bool]$Enabled) {
-    $mode = if ($Enabled) { 'password' } else { 'key' }
-    Write-Step 'Применение на сервере...'
-    $text = Invoke-Ssh $s.Alias "kvnbox ssh auth $mode" 20
-    if ($null -eq $text) {
-        Write-Fail 'Не удалось изменить: сервер недоступен или команда не выполнена.'
-        return $false
-    }
-    Write-Ok (($text.Trim()) -replace '^✓\s*', '')
-    return $true
-}
-
-function Remove-Server($s) {
-    Show-Header "Удаление сервера: $($s.Name)"
-    if (-not (Read-YesNo "Удалить сервер «$($s.Name)» из списка?")) { return $false }
-    Write-Line
-    Write-Step 'Проверка сервера...'
+function Remove-ServerWeb([string]$Alias) {
+    # ключ этого ПК убирается с сервера, если это не единственный способ входа
+    $s = @(Get-Servers | Where-Object { $_.Alias -eq $Alias }) | Select-Object -First 1
+    if (-not $s) { return @{ ok = $false; error = 'Сервер не найден.' } }
+    $note = ''
     $state = Get-ServerState $s
+    if ($null -eq $state) { Start-Sleep -Seconds 1; $state = Get-ServerState $s }   # повтор: сеть бывает нестабильна
     $pub = $null
     if (Test-Path "$($s.Key).pub") { $pub = ([IO.File]::ReadAllText("$($s.Key).pub")).Trim() }
     if ($null -eq $state) {
-        Write-Warn 'Сервер недоступен — ключ этого компьютера на нём останется.'
+        $note = 'Сервер не ответил — ключ этого компьютера на нём остался.'
     } elseif ($state.Password -eq $false -and $state.Keys -le 1) {
-        Write-Warn 'Ключ на сервере оставлен: он единственный, а вход по паролю отключён.'
-        Write-Note '  Иначе на сервер нельзя будет войти.'
+        $note = 'Ключ на сервере оставлен: он единственный, а вход по паролю отключён.'
     } elseif ($pub) {
         $body = ($pub -split '\s+')[1]
         $cmd = 'f=~/.ssh/authorized_keys; grep -vF ''' + $body + ''' "$f" > "$f.kvnbox"; ' +
             'cat "$f.kvnbox" > "$f"; rm -f "$f.kvnbox"'
-        if ($null -ne (Invoke-Ssh $s.Alias $cmd)) { Write-Ok 'Ключ удалён с сервера.' }
-        else { Write-Warn 'Не удалось удалить ключ с сервера.' }
+        if ($null -ne (Invoke-Ssh $s.Alias $cmd)) { $note = 'Ключ этого компьютера удалён с сервера.' }
+        else { $note = 'Не удалось удалить ключ с сервера.' }
     }
     Clear-SshConfigHost $s.Alias
     foreach ($f in @($s.Key, "$($s.Key).pub")) {
@@ -621,232 +493,58 @@ function Remove-Server($s) {
     $lnk = Get-ServerShortcut $s
     if (Test-Path -LiteralPath $lnk) { Remove-Item -LiteralPath $lnk -Force }
     Save-Servers @(Get-Servers | Where-Object { $_.Alias -ne $s.Alias })
-    Write-Ok "Сервер «$($s.Name)» удалён с этого компьютера."
-    $script:Notice = "Сервер «$($s.Name)» удалён."
-    Pause-Key
-    return $true
+    return @{ ok = $true; note = $note }
 }
 
-function Update-Server($s) {
-    $list = @(Get-Servers | ForEach-Object { if ($_.Alias -eq $s.Alias) { $s } else { $_ } })
-    Save-Servers $list
-}
-
-function Get-InfoLine([string]$Label, [string]$Value) {
-    return ('{0,-16}' -f $Label) + "$($Col.Bold)$Value$Rst"
-}
-
-function Show-ServerMenu($s) {
-    # 'exit' — выйти из приложения (клавиша 0)
-    $state = $null
-    $checked = $false
-    $online = $false
-    $sel = 0
-    while ($true) {
-        $title = "Сервер: $($s.Name)"
-        if (-not $checked) {
-            Show-Header $title
-            Write-Step 'Проверка сервера...'
-            $state = Get-ServerState $s
-            $online = ($null -ne $state) -or (Get-Online @($s))[$s.Alias]
-            $checked = $true
-        }
-        $status = if ($null -ne $state) { "$($Col.Green)● на связи$Rst" }
-        elseif ($online) { "$($Col.Yellow)● не входит по ключу$Rst" }
-        else { "$($Col.Red)● не отвечает$Rst" }
-        $info = @(
-            (Get-InfoLine 'Адрес:' "$($s.Host):$($s.Port)"),
-            (('{0,-16}' -f 'Состояние:') + $status)
-        )
-        if ($state -and $null -ne $state.Password) {
-            $pw = if ($state.Password) { "$($Col.Yellow)включен$Rst" } else { "$($Col.Green)отключен$Rst (только ключ)" }
-            $info += (('{0,-16}' -f 'Вход по паролю:') + $pw)
-        }
-        $info += (Get-InfoLine 'Терминал:' "ssh $($s.Alias)")
-        $pwItem = if ($state -and $state.Password -eq $false) { 'Включить вход по паролю' } else { 'Отключить вход по паролю' }
-        $lnkItem = if (Test-Path -LiteralPath (Get-ServerShortcut $s)) { 'Убрать ярлык с рабочего стола' } else { 'Ярлык сервера на рабочий стол' }
-        $options = @('Войти в меню сервера', $pwItem, 'Переименовать', 'Изменить порт SSH', $lnkItem, 'Удалить сервер', 'Назад')
-        $r = Select-Menu -Title $title -Info $info -Options $options -Start $sel -Keys @('LeftArrow')
-        if ($r.Key -eq 'Exit') { return 'exit' }
-        if ($r.Key -ne 'Enter') { return '' }
-        $sel = $r.Index
-        switch ($r.Index) {
-            0 { Enter-Server $s; $checked = $false }
-            1 {
-                Show-Header $title
-                if ($null -eq $state) { Write-Fail 'Сервер не отвечает.'; Pause-Key; $checked = $false; break }
-                $enable = ($state.Password -eq $false)
-                if (-not $enable) {
-                    Write-Line 'После отключения войти на сервер можно будет только по ключу.'
-                    Write-Note 'Ключ этого компьютера уже работает.'
-                    Write-Line
-                    if (-not (Read-YesNo 'Отключить вход по паролю?')) { break }
-                    Write-Line
-                }
-                Set-PasswordLogin $s $enable | Out-Null
-                Pause-Key
-                $checked = $false
-            }
-            2 {
-                Show-Header $title
-                $new = Read-Value 'Новое название' $s.Name
-                if ($new -and $new -ne $s.Name) {
-                    $oldLnk = Get-ServerShortcut $s
-                    $hadLnk = Test-Path -LiteralPath $oldLnk
-                    $s.Name = $new
-                    Update-Server $s
-                    if ($hadLnk) {
-                        Remove-Item -LiteralPath $oldLnk -Force
-                        New-Shortcut (Get-ServerShortcut $s) "kvnBox - $($s.Name)" "-Connect $($s.Alias)"
-                    }
-                    $script:Notice = 'Название изменено.'
-                }
-            }
-            3 {
-                Show-Header $title
-                Write-Line 'Только запись на этом компьютере — если порт SSH уже сменили на сервере.'
-                Write-Note 'Сменить порт на сервере: меню сервера → Настройки → Управление SSH.'
-                Write-Line
-                $p = 0
-                [int]::TryParse((Read-Value 'Порт SSH' ([string]$s.Port)), [ref]$p) | Out-Null
-                if ($p -ge 1 -and $p -le 65535 -and $p -ne $s.Port) {
-                    $s.Port = $p
-                    Update-Server $s
-                    Set-SshConfigHost $s.Alias $s.Host $s.Port $s.Key
-                    $script:Notice = "Порт изменён на $p."
-                    $checked = $false
-                }
-            }
-            4 {
-                $lnk = Get-ServerShortcut $s
-                if (Test-Path -LiteralPath $lnk) {
-                    Remove-Item -LiteralPath $lnk -Force
-                    $script:Notice = 'Ярлык убран.'
-                } else {
-                    New-Shortcut $lnk "kvnBox - $($s.Name)" "-Connect $($s.Alias)"
-                    $script:Notice = "Ярлык «$(Split-Path $lnk -Leaf)» на рабочем столе."
-                }
-            }
-            5 { if (Remove-Server $s) { return '' } }
-            6 { return '' }
-        }
+function Open-ServerTerminal($s) {
+    # меню сервера в отдельном окне терминала
+    $ssh = Get-Tool 'ssh'
+    $cmd = "& '$ssh' -F '$SshConfig' -t $($s.Alias) menu"
+    $wt = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\wt.exe'
+    if (Test-Path $wt) {
+        Start-Process $wt -ArgumentList @('--title', "`"kvnBox - $($s.Name)`"", (Get-PowerShellExe), '-NoProfile', '-Command', $cmd)
+    } else {
+        Start-Process (Get-PowerShellExe) -ArgumentList @('-NoProfile', '-Command', $cmd)
     }
 }
 
-function Update-App {
-    Show-Header 'Обновление приложения'
-    Write-Step 'Загрузка новой версии...'
+function Enter-Server($s) {
+    # ярлыки серверов прежних версий (-Connect): меню сервера в этом окне
+    $Host.UI.RawUI.WindowTitle = "kvnBox - $($s.Name)"
+    $ssh = Get-Tool 'ssh'
+    $base = Get-SshBase
+    & $ssh @base -t $s.Alias menu
+}
+
+function Start-InstallJob($s, [string]$Domain) {
+    # установка kvnBox на чистый сервер: установщик с GitHub, домен — переменной,
+    # вывод построчно (без терминала установщик пишет «[ok] этап»)
+    $url = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/install.sh'
+    $remote = "set -o pipefail; command -v curl >/dev/null || (apt-get update -q && apt-get install -y -q curl) >/dev/null 2>&1; " +
+        "curl -fsSL --retry 3 $url -o ~/kvnbox-install.sh && KVNBOX_DOMAIN='$Domain' bash ~/kvnbox-install.sh 2>&1"
+    $psi = New-Object Diagnostics.ProcessStartInfo
+    $psi.FileName = Get-Tool 'ssh'
+    $extra = if ($KnownHosts) { "-o `"UserKnownHostsFile=$KnownHosts`" " } else { '' }
+    $psi.Arguments = "-F `"$SshConfig`" $extra-o BatchMode=yes -o ConnectTimeout=15 -o ServerAliveInterval=20 $($s.Alias) `"$remote`""
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.RedirectStandardInput = $true
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
+    $psi.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
+    $p = [Diagnostics.Process]::Start($psi)
+    $p.StandardInput.Close()
+    return $p
+}
+
+function Update-AppWeb {
+    # новая версия лаунчера с GitHub; '' — готово, иначе текст ошибки
     try {
         $text = Get-RemoteScript
         Install-App $text
-    } catch {
-        Write-Fail "Обновить не удалось: $($_.Exception.Message)"
-        Pause-Key
-        return $false
-    }
-    Write-Ok "Установлена версия $(Get-ScriptVersion $text). Перезапуск..."
-    Start-Sleep -Milliseconds 800
-    & (Get-PowerShellExe) -NoProfile -ExecutionPolicy Bypass -File $AppScript
-    return $true
-}
-
-function Show-ManageMenu($Online) {
-    # выбор сервера для изменения/удаления → экран сервера
-    $sel = 0
-    while ($true) {
-        $servers = @(Get-Servers)
-        if (-not $servers.Count) { return '' }
-        $nameW = 0
-        foreach ($s in $servers) { $nameW = [Math]::Max($nameW, ([string]$s.Name).Length) }
-        $options = @()
-        foreach ($s in $servers) {
-            $dot = if ($Online -and $Online[$s.Alias]) { "$($Col.Green)●$Rst" } else { "$($Col.Red)●$Rst" }
-            $options += "$dot " + ([string]$s.Name).PadRight($nameW + 3) + "$($s.Host):$($s.Port)"
-        }
-        $options += 'Назад'
-        $r = Select-Menu -Title 'Изменить / удалить сервер' -Options $options -Start $sel `
-            -Info @("$($Col.Dim)Выберите сервер: вход по паролю, название, порт, ярлык, удаление.$Rst")
-        if ($r.Key -eq 'Exit') { return 'exit' }
-        if ($r.Key -ne 'Enter' -or $r.Index -ge $servers.Count) { return '' }
-        $sel = $r.Index
-        if ((Show-ServerMenu $servers[$r.Index]) -eq 'exit') { return 'exit' }
-    }
-}
-
-function Start-App {
-    $Host.UI.RawUI.WindowTitle = 'kvnBox'
-    [Console]::OutputEncoding = [Text.UTF8Encoding]::new()
-    if (-not (Get-Tool 'ssh') -or -not (Get-Tool 'ssh-keygen')) {
-        Show-Header $MainTitle @('лаунчер управления')
-        Write-Fail 'Не найден клиент OpenSSH (ssh.exe).'
-        Write-Line 'Установите: Параметры → Система → Дополнительные компоненты → «Клиент OpenSSH».'
-        Pause-Key
-        return
-    }
-    $latest = Get-UpdateInfo
-    $sel = 0
-    $online = Get-Online @(Get-Servers)
-    Update-DefaultNames $online
-    try {
-        while ($true) {
-            $servers = @(Get-Servers)
-            if ($null -eq $online) { $online = Get-Online $servers }
-            $newer = Test-Newer $latest
-            $nameW = 0
-            foreach ($s in $servers) { $nameW = [Math]::Max($nameW, ([string]$s.Name).Length) }
-            $options = @()
-            foreach ($s in $servers) {
-                $dot = if ($online[$s.Alias]) { "$($Col.Green)●$Rst" } else { "$($Col.Red)●$Rst" }
-                $options += "$dot " + ([string]$s.Name).PadRight($nameW + 3) + "$($s.Host):$($s.Port)"
-            }
-            if ($servers.Count) { $options += '-' }
-            $iAdd = $options.Count; $options += 'Добавить сервер'
-            $iMng = -1
-            if ($servers.Count) { $iMng = $options.Count; $options += 'Изменить / удалить сервер' }
-            $iWeb = -1
-            if ($servers.Count) { $iWeb = $options.Count; $options += 'Веб-меню (в браузере)' }
-            $iUpd = -1
-            if ($newer) { $iUpd = $options.Count; $options += "Обновить приложение до $latest" }
-            $options += 'Выход'
-            $info = @()
-            if (-not $servers.Count) {
-                $info = @("$($Col.Dim)Серверов пока нет — добавьте первый.$Rst")
-                if ($sel -eq 0) { $sel = $iAdd }
-            }
-            $hint = if ($servers.Count) { '↑↓ — выбор   Enter — войти   → — управление   q — выход' } else { '↑↓ — выбор   Enter — выбрать   q — выход' }
-            $r = Select-Menu -Title $MainTitle -Sub @('лаунчер управления') -Badge $newer -Info $info `
-                -Options $options -Hint $hint -Start $sel -Keys @('RightArrow')
-            if ($r.Key -in @('Back', 'Exit')) { break }
-            $sel = $r.Index
-            if ($r.Index -lt $servers.Count) {
-                if ($r.Key -eq 'RightArrow') {
-                    if ((Show-ServerMenu $servers[$r.Index]) -eq 'exit') { break }
-                } else {
-                    Enter-Server $servers[$r.Index]
-                }
-                $online = $null
-            } elseif ($r.Key -ne 'Enter') {
-                continue
-            } elseif ($r.Index -eq $iAdd) {
-                Add-Server
-                $online = $null
-                $sel = 0
-            } elseif ($r.Index -eq $iMng) {
-                if ((Show-ManageMenu $online) -eq 'exit') { break }
-                $online = $null
-            } elseif ($r.Index -eq $iWeb) {
-                Start-WebMenu
-                $online = $null
-            } elseif ($r.Index -eq $iUpd) {
-                if (Update-App) { return }
-            } else {
-                break
-            }
-        }
-    } finally {
-        Set-Cursor $true
-    }
-    [Console]::Write("$Esc[2J$Esc[H")
+        return ''
+    } catch { return "Обновить не удалось: $($_.Exception.Message)" }
 }
 
 # ═══ веб-меню ════════════════════════════════════════════════════════════════
@@ -965,9 +663,9 @@ function Install-Iperf {
 function Start-WebMenu {
     if (-not (Test-Path $AppWeb)) { Install-WebPage $PSScriptRoot }
     if (-not (Test-Path $AppWeb)) {
-        Show-Header 'Веб-меню'
-        Write-Fail 'Страница веб-меню не найдена и не скачалась. Проверьте интернет и повторите.'
-        Pause-Key
+        Show-Header 'ошибка'
+        Write-Fail 'Страница kvnBox не найдена и не скачалась. Проверьте интернет и повторите.'
+        Start-Sleep -Seconds 8
         return
     }
     $page = [IO.File]::ReadAllText($AppWeb, [Text.Encoding]::UTF8)
@@ -979,24 +677,29 @@ function Start-WebMenu {
         $l.Prefixes.Add("http://127.0.0.1:$port/")
         try { $l.Start(); $listener = $l; break } catch { $l.Close() }
     }
-    if (-not $listener) { Show-Header 'Веб-меню'; Write-Fail 'Не удалось запустить веб-сервер на ПК.'; Pause-Key; return }
+    if (-not $listener) { Show-Header 'ошибка'; Write-Fail 'Не удалось запустить веб-сервер на ПК.'; Start-Sleep -Seconds 8; return }
     $url = "http://127.0.0.1:$port/?t=$token"
     $hostOk = "127.0.0.1:$port"
 
-    Show-Header 'Веб-меню'
-    Write-Line 'Веб-меню открыто в браузере. Это окно — его связь с серверами:'
-    Write-Line 'пока оно открыто, страница работает.'
+    $Host.UI.RawUI.WindowTitle = 'kvnBox'
+    Show-Header 'web лаунчер'
+    Write-Line 'kvnBox открыт в браузере. Это окно — его связь с серверами:'
+    Write-Line 'пока оно открыто, страница работает. Окно можно свернуть.'
     Write-Line
     Write-Line "Адрес: $($Col.Cyan)$url$Rst"
     Write-Note 'Адрес одноразовый: после закрытия окна он перестаёт работать.'
     Write-Line
-    Write-Line "$($Col.Yellow)q$Rst — остановить и вернуться в лаунчер"
+    Write-Line "$($Col.Yellow)q$Rst — закрыть kvnBox"
     Write-Line
     if (-not $env:KVNBOX_WEB_NOBROWSER) { Start-Process $url }
 
     $sessions = @{}
     $streams = New-Object System.Collections.Generic.List[object]
     $jobs = New-Object System.Collections.Generic.List[object]   # замеры iperf3 с ПК
+    $streamJobs = New-Object System.Collections.Generic.List[object]   # установка kvnBox: вывод построчно
+    $quit = $false; $restart = $false
+    $latest = Get-UpdateInfo
+    Update-DefaultNames (Get-Online @(Get-Servers))
     $httpTask = $listener.GetContextAsync()
     $lastPing = [DateTime]::UtcNow
     $webLog = Join-Path $AppDir 'web.log'
@@ -1008,7 +711,29 @@ function Start-WebMenu {
             $tasks.Add($httpTask)
             foreach ($s in $sessions.Values) { $tasks.Add($s.Read) }
             foreach ($j in $jobs) { $tasks.Add($j.Out) }
+            foreach ($j in $streamJobs) { $tasks.Add($j.Read) }
             [void][Threading.Tasks.Task]::WaitAny($tasks.ToArray(), 250)
+            if ($quit) { Start-Sleep -Milliseconds 300; break }
+
+            # установка kvnBox: строки — в браузер, в конце — ответ на запрос
+            foreach ($j in $streamJobs.ToArray()) {
+                while ($j.Read.IsCompleted) {
+                    $line = $null
+                    try { $line = $j.Read.Result } catch { }
+                    if ($null -eq $line) {
+                        [void]$streamJobs.Remove($j)
+                        try { [void]$j.Proc.WaitForExit(3000) } catch { }
+                        $code = try { $j.Proc.ExitCode } catch { -1 }
+                        $json = if ($code -eq 0) { '{"ok":true,"data":{"code":0}}' }
+                        else { '{"ok":false,"error":' + (ConvertTo-Json "Установка завершилась с ошибкой (код $code). Подробности — в выводе выше и в /var/log/kvnbox-install.log на сервере." -Compress) + '}' }
+                        Send-WebResponse $j.Ctx 200 'application/json; charset=utf-8' $json
+                        break
+                    }
+                    $j.Read = $j.Proc.StandardOutput.ReadLineAsync()
+                    $clean = ($line -replace "$([char]27)\[[0-9;?]*[A-Za-z]", '').TrimEnd()
+                    if ($clean) { Send-WebEvent $streams ('{"s":"","m":{"id":' + (ConvertTo-Json $j.Id -Compress) + ',"event":"line","data":' + (ConvertTo-Json $clean -Compress) + '}}') }
+                }
+            }
 
             # замеры iperf3 завершились
             foreach ($j in $jobs.ToArray()) {
@@ -1072,8 +797,59 @@ function Start-WebMenu {
                 $list = @(Get-Servers)
                 $on = Get-Online $list
                 $srv = @($list | ForEach-Object { [pscustomobject]@{ Alias = $_.Alias; Name = $_.Name; Host = $_.Host; Port = $_.Port; Online = [bool]$on[$_.Alias] } })
-                $json = ConvertTo-Json -InputObject @{ launcher = $KvnboxVersion; servers = $srv } -Depth 4 -Compress
+                $upd = if (Test-Newer $latest) { $latest } else { '' }
+                $json = ConvertTo-Json -InputObject @{ launcher = $KvnboxVersion; update = $upd; servers = $srv } -Depth 4 -Compress
                 Send-WebResponse $ctx 200 'application/json; charset=utf-8' $json
+            } elseif ($path -like '/app/server_*' -or $path -in @('/app/self_update', '/app/quit', '/app/terminal')) {
+                # главное меню лаунчера: тело — JSON
+                $in = $null
+                try { $in = ConvertFrom-Json -InputObject ((New-Object IO.StreamReader($req.InputStream, [Text.Encoding]::UTF8)).ReadToEnd()) } catch { }
+                if ($req.HttpMethod -ne 'POST' -or -not $in) { Send-WebResponse $ctx 400 'application/json' '{"ok":false,"error":"bad request"}'; continue }
+                $srvObj = $null
+                if ($in.alias) { $srvObj = @(Get-Servers) | Where-Object { $_.Alias -eq [string]$in.alias } | Select-Object -First 1 }
+                $res = $null
+                try {
+                switch ($path) {
+                    '/app/server_add' { $res = Add-ServerWeb ([string]$in.host) ([int]$in.port) ([string]$in.password) ([string]$in.name) }
+                    '/app/server_edit' { $res = Edit-ServerWeb ([string]$in.alias) ([string]$in.name) ([int]$in.port) }
+                    '/app/server_delete' {
+                        if ($sessions.ContainsKey([string]$in.alias)) { Close-ApiSession $sessions[[string]$in.alias] 'Сервер удалён.'; $sessions.Remove([string]$in.alias) }
+                        $res = Remove-ServerWeb ([string]$in.alias)
+                    }
+                    '/app/server_check' {
+                        if (-not $srvObj) { $res = @{ ok = $false; error = 'Сервер не найден.' }; break }
+                        $t = Invoke-Ssh $srvObj.Alias 'command -v kvnbox >/dev/null && kvnbox --version 2>/dev/null | head -1 || echo KVNBOX_NONE' 10
+                        if ($null -eq $t) { $res = @{ ok = $false; error = 'Сервер не отвечает по ключу.' } }
+                        elseif ($t -match 'KVNBOX_NONE') { $res = @{ ok = $true; installed = $false } }
+                        else { $res = @{ ok = $true; installed = $true; version = ($t.Trim() -replace '^\D*', '') } }
+                    }
+                    '/app/server_install' {
+                        $dom = ([string]$in.domain).Trim().ToLower()
+                        if (-not $srvObj) { $res = @{ ok = $false; error = 'Сервер не найден.' }; break }
+                        if ($dom -notmatch '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$') { $res = @{ ok = $false; error = 'Неверный домен.' }; break }
+                        if ([string]$in.id -notmatch '^[A-Za-z0-9-]+$') { $res = @{ ok = $false; error = 'bad id' }; break }
+                        try {
+                            $p = Start-InstallJob $srvObj $dom
+                            $streamJobs.Add(@{ Ctx = $ctx; Proc = $p; Id = [string]$in.id; Read = $p.StandardOutput.ReadLineAsync() })
+                        } catch { $res = @{ ok = $false; error = "Не удалось запустить ssh: $($_.Exception.Message)" } }
+                    }
+                    '/app/terminal' {
+                        if ($srvObj) { Open-ServerTerminal $srvObj; $res = @{ ok = $true } } else { $res = @{ ok = $false; error = 'Сервер не найден.' } }
+                    }
+                    '/app/self_update' {
+                        $err = Update-AppWeb
+                        if ($err) { $res = @{ ok = $false; error = $err } } else { $res = @{ ok = $true }; $quit = $true; $restart = $true }
+                    }
+                    '/app/quit' { $res = @{ ok = $true }; $quit = $true }
+                }
+                } catch { $res = @{ ok = $false; error = "Ошибка лаунчера: $($_.Exception.Message)" } }
+                if ($null -ne $res) {
+                    $ok = [bool]$res.ok
+                    $data = @{}; foreach ($k in $res.Keys) { if ($k -notin @('ok', 'error')) { $data[$k] = $res[$k] } }
+                    $json = if ($ok) { ConvertTo-Json -InputObject @{ ok = $true; data = $data } -Depth 4 -Compress }
+                    else { ConvertTo-Json -InputObject @{ ok = $false; error = [string]$res.error } -Compress }
+                    Send-WebResponse $ctx 200 'application/json; charset=utf-8' $json
+                }
             } elseif ($path -eq '/app/events') {
                 $ctx.Response.ContentType = 'text/event-stream; charset=utf-8'
                 $ctx.Response.Headers['Cache-Control'] = 'no-store'
@@ -1145,8 +921,13 @@ function Start-WebMenu {
     } finally {
         foreach ($s in @($sessions.Values)) { Close-ApiSession $s 'Веб-меню остановлено.' }
         foreach ($j in $jobs.ToArray()) { try { if (-not $j.Proc.HasExited) { $j.Proc.Kill() } } catch { } }
+        foreach ($j in $streamJobs.ToArray()) { try { if (-not $j.Proc.HasExited) { $j.Proc.Kill() } } catch { } }
         foreach ($st in $streams.ToArray()) { try { $st.Response.Close() } catch { } }
         try { $listener.Stop(); $listener.Close() } catch { }
+    }
+    if ($restart) {
+        # обновлённый лаунчер — новым процессом, он откроет новую вкладку
+        Start-Process (Get-PowerShellExe) -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$AppScript`"")
     }
 }
 
@@ -1165,12 +946,21 @@ function Start-Kvnbox([string[]]$CliArgs) {
         Write-Ok 'Ярлык «kvnBox» — на рабочем столе и в меню Пуск.'
         Start-Sleep -Milliseconds 800
     }
-    if ($CliArgs.Count -ge 1 -and $CliArgs[0] -eq '-Web') { Start-WebMenu; return }
     if ($CliArgs.Count -ge 2 -and $CliArgs[0] -eq '-Connect') {
+        # ярлыки серверов прежних версий: меню сервера в терминале
         $s = @(Get-Servers | Where-Object { $_.Alias -eq $CliArgs[1] })
         if ($s.Count) { Enter-Server $s[0]; return }
     }
-    Start-App
+    [Console]::OutputEncoding = [Text.UTF8Encoding]::new()
+    if (-not (Get-Tool 'ssh') -or -not (Get-Tool 'ssh-keygen')) {
+        Show-Header 'ошибка'
+        Write-Fail 'Не найден клиент OpenSSH (ssh.exe).'
+        Write-Line 'Установите: Параметры → Система → Дополнительные компоненты → «Клиент OpenSSH».'
+        Start-Sleep -Seconds 15
+        return
+    }
+    Import-OldServers
+    Start-WebMenu
 }
 
 if (-not $env:KVNBOX_SETUP_TEST) { Start-Kvnbox $args }

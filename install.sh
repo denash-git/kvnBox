@@ -619,8 +619,14 @@ if [[ -f "$DATA/settings.json" ]]; then
     DOMAIN=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["domain"])' "$DATA/settings.json" 2>/dev/null || echo "?")
 else
     REPAIR=false
-    [[ -r /dev/tty ]] || die "Нужен интерактивный терминал для ввода настроек."
-    echo -e "${BLUE}[*] Сбор настроек установки${RESET}"
+    # домен заранее (установка из лаунчера kvnBox для Windows): KVNBOX_DOMAIN=…
+    DOMAIN="${KVNBOX_DOMAIN:-}"
+    DOMAIN="${DOMAIN// /}"
+    if [[ -n "$DOMAIN" && ! "$DOMAIN" =~ ^[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$ ]]; then
+        die "Неверный домен: ${DOMAIN}"
+    fi
+    [[ -n "$DOMAIN" || -r /dev/tty ]] || die "Нужен интерактивный терминал для ввода настроек."
+    [[ -z "$DOMAIN" ]] && echo -e "${BLUE}[*] Сбор настроек установки${RESET}"
     while [[ -z "$DOMAIN" ]]; do
         read -rp "  Введите ваш домен (например, proxy.example.com): " DOMAIN </dev/tty
         DOMAIN="${DOMAIN// /}"

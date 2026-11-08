@@ -336,7 +336,7 @@ APT_ENV = {"DEBIAN_FRONTEND": "noninteractive"}
 
 @action("server.os_updates")
 def server_os_updates(ctx: Ctx) -> Json:
-    """Обновления пакетов Ubuntu: сколько ждёт установки и нужна ли перезагрузка.
+    """Обновление ОС Linux (пакеты apt): сколько ждёт установки и нужна ли перезагрузка.
     `refresh` — сначала обновить списки пакетов (apt-get update, до минуты)."""
     if ctx.flag("refresh", False):
         ctx.app.runner.run(["apt-get", "update", "-q"], timeout=180, env=APT_ENV)
@@ -537,6 +537,9 @@ def users_qr(ctx: Ctx) -> Json:
 @action("users.send_telegram", mutating=True)
 def users_send_telegram(ctx: Ctx) -> Json:
     slot = ctx.opt_str("slot")
+    if slot == "subscription":
+        svc_users(ctx.app).send_subscription(user_name(ctx))
+        return {"message": "Подписка отправлена в Telegram."}
     if slot:
         svc_users(ctx.app).send_to_telegram(user_name(ctx), parse_slot(slot))
         return {"message": f"{SLOT_LABELS[slot]}: отправлено в Telegram."}
@@ -1365,6 +1368,51 @@ def diag_iperf_start(ctx: Ctx) -> Json:
         "ip": _diag(ctx.app).public_ip(),
         "message": f"iperf3 ждёт клиента на порту {port} (10 минут).",
     }
+
+
+SPEED_UNIT = "kvnbox-speedtest"
+
+
+@action("diag.https_start", mutating=True)
+def diag_https_start(ctx: Ctx) -> Json:
+    """Замер через 443: скрытый путь в Caddy (один раз, дальше постоянный) и временный
+    сервер замера на 5 минут. Возвращает адрес для страницы."""
+    import secrets
+    import sys
+
+    from kvnbox.cores import ports
+
+    app = ctx.app
+    s = app.settings.load()
+    if not s.speedtest_path:
+        path = "st-" + secrets.token_hex(12)
+        res = _settings(app).update(lambda x: setattr(x, "speedtest_path", path))
+        if not res.ok:
+            raise ServiceError(f"Не удалось подготовить Caddy: {res.message}")
+        s = app.settings.load()
+    app.systemd.stop(SPEED_UNIT)
+    run = app.runner.run(
+        [
+            "systemd-run",
+            f"--unit={SPEED_UNIT}",
+            "--collect",
+            "--property=RuntimeMaxSec=300",
+            sys.executable,
+            "-m",
+            "kvnbox.system.speedsrv",
+            str(ports.SPEED),
+        ],
+        timeout=30,
+    )
+    if not run.ok:
+        raise ServiceError(f"Не удалось запустить сервер замера: {run.output.strip()}")
+    return {"url": f"https://{s.domain}/{s.speedtest_path}"}
+
+
+@action("diag.https_stop", mutating=True)
+def diag_https_stop(ctx: Ctx) -> Json:
+    ctx.app.systemd.stop(SPEED_UNIT)
+    return {"message": "Сервер замера остановлен."}
 
 
 @action("diag.iperf_stop", mutating=True)

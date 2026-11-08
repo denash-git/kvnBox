@@ -505,6 +505,8 @@ class Settings(_Model):
     security: SecuritySettings = Field(default_factory=SecuritySettings)
     ssh: SshSettings = Field(default_factory=SshSettings)
     netbird: NetbirdSettings = Field(default_factory=NetbirdSettings)
+    # скрытый путь замера скорости через 443 (веб-лаунчер); пусто — маршрута нет
+    speedtest_path: str = ""
 
     @field_validator("admin_email")
     @classmethod

@@ -218,7 +218,7 @@ textarea.input.ta{height:110px;padding:10px 12px;resize:vertical;font:12px "Casc
 .mods .mod .foot{padding-top:8px;gap:6px}.mods .btn{padding:5px 10px;font-size:12.5px}
 .mod .kv{display:grid;gap:3px;font-size:12.5px;color:var(--dim)}.mod .kv b{color:var(--text2);font-weight:550;word-break:break-all}
 .sw[disabled]{opacity:.45;cursor:not-allowed}
-.form2{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;align-items:start}
+.form2{display:grid;grid-template-columns:repeat(2,minmax(0,400px));gap:14px 64px;align-items:start}
 .sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .sum .card{padding:12px 14px}.sum .n{font-size:24px;font-weight:650}.sum .l{color:var(--dim);font-size:12.5px}
 .found{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r2);flex-wrap:wrap}
@@ -226,7 +226,13 @@ textarea.input.ta{height:110px;padding:10px 12px;resize:vertical;font:12px "Casc
 .stres .card{padding:12px 14px;display:grid;gap:4px}.stres .n{font-size:24px;font-weight:650}.stres .n small{font-size:13px;color:var(--dim);font-weight:500;margin-left:4px}.stres .l{color:var(--dim);font-size:12.5px}
 .lockbtn.on .i{color:var(--green)}.lockbtn.off .i{color:var(--yellow)}
 .strips{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}.strips:not(:has(.card)){display:none}
-.kvg{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;margin-top:6px}.kvg div{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;border-bottom:1px solid var(--line);padding:7px 0;min-width:0}.kvg span{color:var(--dim)}.kvg b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kvg{display:grid;grid-template-columns:1fr 1fr;gap:0 44px;margin-top:6px}.kvg div{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;border-bottom:1px solid var(--line);padding:7px 0;min-width:0}.kvg span{color:var(--dim)}.kvg b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-sep{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;padding:14px 12px 4px}
+.hosts .host{display:grid;gap:8px;min-width:0}.hosts .host .nm{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.hosts .host .foot{display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px;margin-top:4px}.hosts .btn{padding:5px 10px;font-size:12.5px}
+.steps{display:grid;gap:4px;max-height:300px;overflow:auto}.stp{display:flex;align-items:center;gap:8px;font-size:13px}.stp .i{width:14px;height:14px}
+.dtitle{font-size:17px;font-weight:600}
+.cdnt{width:100%;border-collapse:collapse;font-size:12.5px}.cdnt th,.cdnt td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.cdnt th{color:var(--dim);font-weight:500}
 @media (max-width:820px){.form2{grid-template-columns:1fr}}
 @media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:820px){.split{grid-template-columns:1fr}.g4,.g3,.g2{grid-template-columns:minmax(0,1fr)}}
@@ -285,6 +291,8 @@ textarea.input.ta{height:110px;padding:10px 12px;resize:vertical;font:12px "Casc
   <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 3 10.5l7 2.5 2.5 7z"/><path d="m10 13 4-4"/></symbol>
 
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
   <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></symbol>
@@ -416,35 +424,39 @@ const PAGES = [
   ['settings', 'Настройки', 'gear', 'Домен, сайт, пути, CDN, бот, SSH, защита'],
   ['logs', 'Журналы', 'log', 'Журналы служб в реальном времени'],
   ['backups', 'Бэкапы', 'arch', 'Резервные копии настроек и пользователей'],
-  ['diag', 'Диагностика', 'cpu', 'IP, скорость, iperf3'],
+  ['diag', 'Диагностика', 'cpu', 'IP, скорость, CDN, iperf3'],
 ];
-let PAGE = localStorage.getItem('kvn-page') || 'overview', USERCOUNT = '';
+const HOME = ['home', 'Главное меню', 'grid', 'Серверы kvnBox на этом компьютере'];
+let PAGE = 'home', USERCOUNT = '';
 function renderNav() {
-  $('#nav').innerHTML = PAGES.map(([k, t, i]) => `<a class="${PAGE === k ? 'on' : ''}" data-nav="${k}">${ic(i)}${t}${k === 'users' && USERCOUNT !== '' ? `<span class="cnt">${USERCOUNT}</span>` : ''}</a>`).join('');
+  const item = ([k, t, i]) => `<a class="${PAGE === k ? 'on' : ''}" data-nav="${k}">${ic(i)}${t}${k === 'users' && USERCOUNT !== '' ? `<span class="cnt">${USERCOUNT}</span>` : ''}</a>`;
+  $('#nav').innerHTML = item(HOME) + (SRV ? `<div class="nav-sep">Сервер</div>` + PAGES.map(item).join('') : '');
   $$('#nav a').forEach(a => a.onclick = () => go(a.dataset.nav));
+  $('.srv').style.display = SERVERS.length ? '' : 'none';
 }
 let STOP = null; // остановка потока журнала при уходе со страницы
 function go(p) {
   if (STOP) { STOP(); STOP = null; }
-  PAGE = p; localStorage.setItem('kvn-page', p); renderNav(); $('#aside').classList.remove('open');
-  const pg = PAGES.find(x => x[0] === p) || PAGES[0];
+  if (p !== 'home' && !SRV) p = 'home';
+  PAGE = p; renderNav(); $('#aside').classList.remove('open');
+  const pg = p === 'home' ? HOME : PAGES.find(x => x[0] === p) || PAGES[0];
   $('#title').textContent = pg[1]; $('#subtitle').textContent = pg[3];
   $('#page').className = 'page' + (p === 'overview' ? ' ov' : '');
   closeAll();
-  if (!SRV) { $('#page').innerHTML = noServers(); return; }
+  if (p === 'home') { home(); window.scrollTo(0, 0); return; }
   if (!READY) { connect(); return; }
   ({overview, users, modules, settings, logs, backups, diag})[p]();
   window.scrollTo(0, 0);
 }
 
 /* ═══ серверы и подключение ═══ */
-let READY = false, PANEL = '', MYIP = '';
+let READY = false, PANEL = '', MYIP = '', LUPDATE = '';
 async function loadServers() {
   const r = await fetch(`/app/servers?t=${TOKEN}`).then(r => r.json());
-  SERVERS = r.servers || []; LAUNCHER = r.launcher || '';
+  SERVERS = r.servers || []; LAUNCHER = r.launcher || ''; LUPDATE = r.update || '';
   $('#lver').textContent = LAUNCHER ? `web лаунчер ${LAUNCHER}` : 'web лаунчер';
-  if (!SERVERS.some(s => s.Alias === SRV)) SRV = SERVERS[0]?.Alias || '';
-  renderSrv();
+  if (!SERVERS.some(s => s.Alias === SRV)) { SRV = SERVERS[0]?.Alias || ''; READY = false; }
+  renderSrv(); renderNav();
 }
 /* состояние связи по серверам: alias → {st: 'ok'|'bad'|'wait', ms, panel} */
 const LINK = {};
@@ -453,18 +465,18 @@ function renderSrv() {
   const s = SERVERS.find(x => x.Alias === SRV);
   const l = LINK[SRV] || {};
   $('#srvName').textContent = s ? s.Name : 'нет серверов';
-  $('#srvAddr').innerHTML = s ? addrOf(s) : 'добавьте в лаунчере';
+  $('#srvAddr').innerHTML = s ? addrOf(s) : '';
   $('#srvMs').innerHTML = s && l.st === 'ok' && l.ms != null ? `${ic('bolt')}${l.ms} мс` : '';
   $('#srvDot').className = 'dot ' + (!s ? '' : l.st === 'ok' ? 'ok' : l.st === 'wait' ? 'warn' : l.st === 'bad' ? 'bad' : (s.Online ? 'ok' : 'bad'));
   $('#srvBtn').title = s ? (l.st === 'ok' ? `На связи${l.panel ? ' · панель ' + l.panel : ''}` : l.st === 'bad' ? 'Нет связи' : '') : '';
   $('#srvMenu').innerHTML = SERVERS.map(x => { const k = LINK[x.Alias] || {}; const on = k.st ? k.st === 'ok' : x.Online;
     return `<div class="srv-item ${x.Alias === SRV ? 'cur' : ''}" data-a="${esc(x.Alias)}"><span class="dot ${on ? 'ok' : 'bad'}"></span>
       <span class="st"><b>${esc(x.Name)}</b><small>${addrOf(x)}${k.panel ? ` · панель ${esc(k.panel)}` : ''}</small></span>${x.Alias === SRV ? `<span class="ck">${ic('check')}</span>` : ''}</div>`; }).join('')
-    + `<div class="srv-hint">Добавить сервер — в лаунчере kvnBox (окно PowerShell)</div>`;
-  $$('.srv-item[data-a]').forEach(el => el.onclick = e => { e.stopPropagation(); $('#srvMenu').classList.remove('open'); if (el.dataset.a !== SRV) switchSrv(el.dataset.a); });
+    + `<div class="srv-item" data-home="1"><span class="st"><b style="font-weight:500">${ic('grid')} Главное меню</b><small>добавить, изменить, удалить сервер</small></span></div>`;
+  $$('.srv-item[data-a]').forEach(el => el.onclick = e => { e.stopPropagation(); $('#srvMenu').classList.remove('open'); if (el.dataset.a !== SRV) switchSrv(el.dataset.a, PAGE === 'home' ? 'overview' : PAGE); else if (PAGE === 'home') go('overview'); });
+  $$('.srv-item[data-home]').forEach(el => el.onclick = e => { e.stopPropagation(); $('#srvMenu').classList.remove('open'); go('home'); });
 }
-function switchSrv(alias) { if (STOP) { STOP(); STOP = null; } SRV = alias; localStorage.setItem('kvn-srv', alias); READY = false; closeAll(); renderSrv(); go(PAGE); }
-const noServers = () => `<div class="card empty" style="padding:70px 20px">${ic('box')}<b style="font-size:16px;color:var(--text)">Серверов пока нет</b><span>Добавьте сервер в лаунчере kvnBox: пункт «Добавить сервер» в окне PowerShell.</span></div>`;
+function switchSrv(alias, page = PAGE) { if (STOP) { STOP(); STOP = null; } SRV = alias; localStorage.setItem('kvn-srv', alias); READY = false; closeAll(); renderSrv(); go(page); }
 async function connect() {
   $('#page').innerHTML = skeleton();
   setConn('wait');
@@ -492,6 +504,128 @@ async function ping() {
   try { const a = performance.now(); await api('api.version'); const ms = Math.round(performance.now() - a);
     LINK[alias] = {...(LINK[alias] || {}), st: 'ok', ms}; } catch (_) { LINK[alias] = {...(LINK[alias] || {}), st: 'bad', ms: null}; }
   renderSrv();
+}
+
+/* ═══ Главное меню лаунчера: серверы на этом ПК ═══ */
+/* запрос к самому лаунчеру (без сервера); onLine — строки долгой операции */
+async function lpost(path, body = {}, onLine) {
+  const id = 'l' + (++SEQ) + '-' + Date.now().toString(36);
+  if (onLine) LINE.set(id, onLine);
+  try {
+    const j = await fetch(`${path}?t=${TOKEN}`, {method: 'POST', body: JSON.stringify({...body, id})}).then(r => r.json());
+    if (!j.ok) throw new Error(j.error || 'Ошибка');
+    return j.data || {};
+  } finally { LINE.delete(id); }
+}
+/* действие панели на конкретном сервере (не выбранном) */
+const apiOn = (alias, action, args = {}) => fetch(`/app/call?t=${TOKEN}&s=${encodeURIComponent(alias)}`, {method: 'POST', body: JSON.stringify({id: 'h' + (++SEQ) + '-' + Date.now().toString(36), action, args})})
+  .then(r => r.json()).then(j => { if (!j.ok) throw new Error(j.error || 'Ошибка'); return j.data; });
+const CHECK = {}; // alias → {installed, version} | {error}
+async function home(fresh = false) {
+  if (fresh) await loadServers().catch(() => {});
+  $('#page').innerHTML = `
+    ${LUPDATE ? `<div class="card strip warn"><span class="kico" style="background:rgba(234,179,8,.15);color:var(--yellow)">${ic('up')}</span>
+      <div class="t"><b>Доступен web лаунчер ${esc(LUPDATE)}</b><span>сейчас ${esc(LAUNCHER)} · после обновления откроется новая вкладка</span></div>
+      <button class="btn" id="hUpd">${ic('up')} Обновить лаунчер</button></div>` : ''}
+    ${SERVERS.length ? `<div class="row wrap"><h3 style="margin:0;font-size:16px">Серверы</h3><span class="sp" style="flex:1"></span><button class="btn primary" id="hAdd">${ic('plus')} Добавить сервер</button></div>
+      <div class="grid g2 hosts">${SERVERS.map(hostCard).join('')}</div>`
+    : `<div class="card empty" style="padding:64px 20px">${ic('box')}<b style="font-size:17px;color:var(--text)">Серверов пока нет</b>
+        <span>Добавьте сервер: нужны его IP и пароль root (один раз — дальше вход по ключу).<br>На чистый сервер kvnBox установится прямо отсюда.</span>
+        <button class="btn primary" id="hAdd">${ic('plus')} Добавить сервер</button></div>`}
+    <div class="row wrap muted" style="font-size:12.5px"><span>Ключи SSH и список серверов хранятся на этом компьютере. Окно PowerShell — связь страницы с серверами.</span><span class="sp" style="flex:1"></span>
+      <button class="btn ghost danger" id="hQuit">${ic('power')} Закрыть kvnBox</button></div>`;
+  $('#hAdd').onclick = () => addServer();
+  $('#hQuit').onclick = async () => { if (!await confirmBox('Закрыть kvnBox?', 'Окно PowerShell закроется, эта страница перестанет работать. Снова открыть — ярлыком «kvnBox».', 'Закрыть')) return;
+    await lpost('/app/quit').catch(() => {}); document.body.innerHTML = `<div class="empty" style="height:100vh;display:grid;place-content:center;gap:10px;text-align:center">${ic('power')}<b style="font-size:17px">kvnBox закрыт</b><span class="muted">Вкладку можно закрыть. Открыть снова — ярлыком «kvnBox».</span></div>`; };
+  if ($('#hUpd')) $('#hUpd').onclick = e => busy(e.currentTarget, async () => { await lpost('/app/self_update');
+    document.body.innerHTML = `<div class="empty" style="height:100vh;display:grid;place-content:center;gap:10px;text-align:center">${ic('check')}<b style="font-size:17px">Лаунчер обновлён</b><span class="muted">Новая версия откроется в новой вкладке, эту можно закрыть.</span></div>`; });
+  $$('#page [data-h]').forEach(b => b.onclick = e => hostAction(e.currentTarget, b.dataset.h, b.dataset.a));
+  SERVERS.forEach(s => { if (s.Online && !CHECK[s.Alias]) lpost('/app/server_check', {alias: s.Alias}).then(r => { CHECK[s.Alias] = r; if (PAGE === 'home') home(); }, e => { CHECK[s.Alias] = {error: e.message}; if (PAGE === 'home') home(); }); });
+}
+function hostCard(s) {
+  const c = CHECK[s.Alias];
+  const st = !s.Online ? '<span class="pill bad"><span class="dot bad"></span>не отвечает</span>'
+    : !c ? '<span class="pill"><span class="spin dark" style="width:10px;height:10px"></span> проверка…</span>'
+    : c.error ? `<span class="pill bad" title="${esc(c.error)}">нет входа по ключу</span>`
+    : c.installed ? `<span class="pill ok"><span class="dot ok"></span>kvnBox ${esc(c.version || '')}</span>`
+    : '<span class="pill" style="color:var(--yellow);border-color:rgba(234,179,8,.4)">kvnBox не установлен</span>';
+  const b = (a, t, i, cls = '') => `<button class="btn ${cls}" data-h="${esc(s.Alias)}" data-a="${a}">${i ? ic(i) : ''} ${t}</button>`;
+  const main = c && c.installed === false ? b('install', 'Установить kvnBox', 'dl', 'primary') : b('open', 'Открыть', 'arrow', 'primary');
+  return `<div class="card host"><div class="row"><span class="dot ${s.Online ? 'ok' : 'bad'}"></span><b class="nm" title="${esc(s.Name)}">${esc(s.Name)}</b></div>
+    <div class="muted mono" style="font-size:12.5px">${addrOf(s)}</div><div>${st}</div>
+    <div class="foot">${main}${b('term', 'Терминал', 'log', 'ghost')}${b('edit', 'Изменить', 'gear', 'ghost')}${b('del', 'Удалить', 'trash', 'ghost danger')}</div></div>`;
+}
+async function hostAction(btn, alias, a) {
+  const s = SERVERS.find(x => x.Alias === alias); if (!s) return;
+  if (a === 'open') return switchSrv(alias, 'overview');
+  if (a === 'term') return busy(btn, async () => { await lpost('/app/terminal', {alias}); toast('Меню сервера открыто в окне терминала'); });
+  if (a === 'install') return installServer(s);
+  if (a === 'edit') {
+    const v = await formBox(`Сервер: ${s.Name}`, [{label: 'Название', value: s.Name}, {label: 'Порт SSH', type: 'number', value: String(s.Port), hint: 'только запись на этом ПК — если порт уже сменили на сервере (Настройки → SSH)'}], 'Сохранить');
+    if (!v) return;
+    try { await lpost('/app/server_edit', {alias, name: v[0], port: +v[1]}); toast('Сохранено'); if (+v[1] !== +s.Port && alias === SRV) READY = false; home(true); } catch (e) { toast(e.message, 'bad'); }
+    return;
+  }
+  if (a === 'del') {
+    if (!await confirmBox(`Удалить ${s.Name}?`, 'Сервер уберётся из списка на этом компьютере, ключ этого ПК — с сервера (если это не единственный способ входа).\nСам сервер и kvnBox на нём не затрагиваются.', 'Удалить', true)) return;
+    try { const r = await lpost('/app/server_delete', {alias}); toast(`${s.Name} удалён` + (r.note ? `. ${r.note}` : '')); delete CHECK[alias]; delete LINK[alias]; if (alias === SRV) { SRV = ''; READY = false; } home(true); }
+    catch (e) { toast(e.message, 'bad'); }
+  }
+}
+async function addServer() {
+  const v = await formBox('Добавить сервер', [
+    {label: 'IP-адрес сервера', ph: '203.0.113.10'},
+    {label: 'Порт SSH', type: 'number', value: '22'},
+    {label: 'Пароль root', type: 'password', hint: 'нужен один раз: на сервер добавится ключ этого ПК, пароль нигде не сохраняется'},
+    {label: 'Название', ph: 'по умолчанию — имя сервера (hostname)'},
+  ], 'Подключить');
+  if (!v) return;
+  openModal(`<div class="mh"><h2>Добавление сервера</h2></div><div class="mb"><div class="row"><span class="spin dark"></span><span class="muted">Подключение к ${esc(v[0])}, создание ключа…</span></div></div>`);
+  $('#modal').dataset.locked = '1';
+  let r;
+  try { r = await lpost('/app/server_add', {host: v[0], port: +v[1] || 22, password: v[2], name: v[3]}); }
+  catch (e) { delete $('#modal').dataset.locked; closeAll(); toast(e.message, 'bad'); return; }
+  delete $('#modal').dataset.locked; closeAll();
+  await loadServers().catch(() => {});
+  const s = SERVERS.find(x => x.Alias === r.alias);
+  toast(`${r.name}: добавлен, вход по ключу работает`);
+  if (!r.installed) { CHECK[r.alias] = {installed: false}; home(); if (s) installServer(s); return; }
+  CHECK[r.alias] = undefined;
+  if (await confirmBox('Отключить вход по паролю?', `На ${esc(r.name)} войти можно будет только по ключу — он уже есть на этом ПК (папка .ssh).\nТак безопаснее. Включить обратно можно в Настройки → SSH.`, 'Отключить', false)) {
+    try { msg(await apiOn(r.alias, 'ssh.set_auth', {mode: 'key'})); } catch (e) { toast(e.message, 'bad'); }
+  }
+  home();
+}
+async function installServer(s) {
+  const v = await formBox(`Установка kvnBox: ${s.Name}`, [{label: 'Домен', ph: 'proxy.example.com', hint: 'A-запись домена должна указывать на IP сервера (' + s.Host + ')'}], 'Установить',
+    'На сервер установится kvnBox: сайт-маскировка, VLESS, NaiveProxy и остальные компоненты. Это займёт 5–15 минут, окно можно не трогать. Нужен чистый Debian/Ubuntu.');
+  if (!v) return;
+  const dom = v[0].trim().toLowerCase();
+  if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/.test(dom)) { toast('Неверный домен', 'bad'); return; }
+  openModal(`<div class="mh"><h2>Установка kvnBox на ${esc(s.Name)}</h2></div><div class="mb"><div class="row"><span class="spin dark"></span><span id="lstat" style="color:var(--text2)">Установка… 5–15 минут, не закрывайте страницу</span></div>
+    <div class="steps" id="isteps"></div><div class="term small" id="lout" style="max-height:180px"></div></div><div class="mf"><button class="btn" id="lclose" disabled>Закрыть</button></div>`);
+  $('#modal').dataset.locked = '1';
+  const out = $('#lout'), steps = $('#isteps');
+  const add = t => {
+    const m = t.match(/^\[(\.\.|ok|!!|FAIL)\]\s*(.*)$/);
+    if (m) {
+      const [, k, name] = m; const last = steps.lastElementChild;
+      if (k !== '..' && last && last.dataset.run === '1') last.remove();
+      const ico = k === '..' ? '<span class="spin dark" style="width:12px;height:12px"></span>' : k === 'ok' ? `<span style="color:var(--green)">${ic('check')}</span>` : k === '!!' ? `<span style="color:var(--yellow)">${ic('alert')}</span>` : `<span style="color:var(--red)">${ic('x')}</span>`;
+      steps.insertAdjacentHTML('beforeend', `<div class="stp" data-run="${k === '..' ? 1 : 0}">${ico}<span>${esc(name)}</span></div>`);
+      return;
+    }
+    out.insertAdjacentHTML('beforeend', `<div>${esc(t)}</div>`); out.scrollTop = out.scrollHeight;
+  };
+  try {
+    await lpost('/app/server_install', {alias: s.Alias, domain: dom}, add);
+    $('#lstat').innerHTML = `<b style="color:var(--green)">✓ kvnBox установлен на ${esc(s.Name)}</b>`;
+    CHECK[s.Alias] = undefined;
+  } catch (e) { $('#lstat').innerHTML = `<b style="color:var(--red)">✗ ${esc(e.message)}</b>`; }
+  finally {
+    $('.spin.dark')?.remove(); delete $('#modal').dataset.locked;
+    $('#lclose').disabled = false; $('#lclose').onclick = () => { closeAll(); home(); };
+  }
 }
 
 /* ═══ Обзор ═══ */
@@ -535,7 +669,7 @@ async function overview() {
       if (os) osStrip(os);
       if (c.error) toast(c.error, 'bad');
       else if (c.newer) { if (await confirmBox('Обновить панель?', `Доступна версия ${c.latest} (сейчас ${c.current}). VPN прервётся примерно на минуту.`, 'Обновить')) return panelUpdate(c.latest); }
-      else toast(`Панель: установлена последняя версия ${c.current}` + (os ? (os.count ? ` · Ubuntu: ${os.count} обновл.` : ' · Ubuntu: обновлений нет') : ''));
+      else toast(`Панель: установлена последняя версия ${c.current}` + (os ? (os.count ? ` · ОС Linux: ${os.count} обновл.` : ' · ОС Linux: обновлений нет') : ''));
     });
     if ($('#bUpd')) $('#bUpd').onclick = async () => { if (await confirmBox('Обновить панель?', `Обновление до ${ov.latest_version}. VPN прервётся примерно на минуту.`, 'Обновить')) panelUpdate(ov.latest_version); };
     $('#bRec').onclick = async e => { if (await confirmBox('Пересоздать конфигурации?', 'Конфигурации всех служб будут собраны заново и службы перезапущены.', 'Пересоздать')) busy(e.target.closest('button'), async () => msg(await api('config.recreate'))); };
@@ -548,18 +682,18 @@ async function reboot() {
   try { msg(await api('server.reboot')); } catch (e) { toast(e.message, 'bad'); }
   READY = false; setConn('wait'); setTimeout(() => go('overview'), 60000);
 }
-/* обновления Ubuntu: одна строка над карточками */
+/* обновления ОС: одна строка над карточками */
 function osStrip(os) {
   const box = $('#osStrip'); if (!box) return;
   if (!os.count && !os.reboot_required) { box.innerHTML = ''; return; }
-  const what = os.count ? `Обновления Ubuntu: ${os.count} ${plural(os.count, 'пакет', 'пакета', 'пакетов')}` : 'Обновления Ubuntu установлены';
+  const what = os.count ? `Обновление ОС Linux: ${os.count} ${plural(os.count, 'пакет', 'пакета', 'пакетов')}` : 'Обновление ОС Linux установлено';
   const sub = [os.security ? `${os.security} — исправления безопасности` : '', os.reboot_required ? 'нужна перезагрузка сервера' : ''].filter(Boolean).join(' · ');
   box.innerHTML = `<div class="card strip warn"><span class="kico" style="background:rgba(234,179,8,.15);color:var(--yellow)">${ic('shield')}</span>
     <div class="t" title="${esc(os.packages.join(', '))}"><b>${what}</b><span>${esc(sub)}</span></div>
     ${os.count ? `<button class="btn" id="bOs">${ic('dl')} Установить</button>` : ''}${os.reboot_required ? `<button class="btn danger" id="bOsReb">${ic('power')} Перезагрузить</button>` : ''}</div>`;
   if ($('#bOs')) $('#bOs').onclick = async () => {
-    if (!await confirmBox('Установить обновления Ubuntu?', `${os.count} ${plural(os.count, 'пакет', 'пакета', 'пакетов')}. Обычно 1–5 минут, службы могут ненадолго перезапуститься.`, 'Установить')) return;
-    try { const r = await longOp('Обновление пакетов Ubuntu', 'server.os_upgrade'); osStrip({count: 0, security: 0, packages: [], reboot_required: r.reboot_required}); } catch (_) {}
+    if (!await confirmBox('Установить обновление ОС Linux?', `${os.count} ${plural(os.count, 'пакет', 'пакета', 'пакетов')}. Обычно 1–5 минут, службы могут ненадолго перезапуститься.`, 'Установить')) return;
+    try { const r = await longOp('Обновление ОС Linux', 'server.os_upgrade'); osStrip({count: 0, security: 0, packages: [], reboot_required: r.reboot_required}); } catch (_) {}
   };
   if ($('#bOsReb')) $('#bOsReb').onclick = () => reboot();
 }
@@ -630,7 +764,7 @@ async function openUser(name) {
     <div class="dact"><button class="btn" id="uAdd">${ic('plus')} Добавить протокол</button><button class="btn" id="uTg">${ic('send')} Отправить всё в Telegram</button><span class="sp" style="flex:1"></span><button class="btn danger" id="uDel">${ic('trash')} Удалить пользователя</button></div>
     <div class="db">
       <div class="conn-card" style="border-color:rgba(59,130,246,.4)"><div class="row"><b>Подписка</b><span class="pill info">всё, кроме AmneziaWG</span><span class="sp"></span>
-        <button class="icon-btn sm" title="Копировать" data-copy="${esc(u.subscription)}">${ic('copy')}</button><button class="icon-btn sm" title="QR" data-qr="${esc(u.subscription)}">${ic('qr')}</button></div><code>${esc(u.subscription)}</code><div class="qrslot"></div></div>
+        <button class="icon-btn sm" title="Копировать" data-copy="${esc(u.subscription)}">${ic('copy')}</button><button class="icon-btn sm" title="QR" data-qr="${esc(u.subscription)}">${ic('qr')}</button><button class="icon-btn sm" title="Отправить подписку в Telegram" id="uSubTg">${ic('send')}</button></div><code>${esc(u.subscription)}</code><div class="qrslot"></div></div>
       <div class="sect">Подключения</div>
       ${u.connections.map((c, i) => `<div class="conn-card" data-i="${i}"><div class="row">${badge(c.slot, true)}${c.core === 'xray' && c.slot.startsWith('vless') ? '<span class="pill">Xray</span>' : ''}<span class="sp"></span>
         <button class="sw ${c.enabled ? 'on' : ''}" data-csw="${i}" title="${c.enabled ? 'Выключить' : 'Включить'}"></button>
@@ -657,6 +791,7 @@ async function openUser(name) {
     try { await api('users.remove', {name, slot: c.slot}); toast(`${c.label} удалён`); if (u.connections.length === 1) { closeAll(); USERS = await api('users.list'); fillUsers(); } else refresh(); } catch (e) { toast(e.message, 'bad'); } });
   $('#uAdd').onclick = () => addUser(name);
   $('#uTg').onclick = e => busy(e.currentTarget, async () => msg(await api('users.send_telegram', {name})));
+  $('#uSubTg').onclick = e => busy(e.currentTarget, async () => msg(await api('users.send_telegram', {name, slot: 'subscription'})));
   $('#uDel').onclick = () => delUser(name);
 }
 async function qrIn(btn, text) {
@@ -780,7 +915,7 @@ async function setSite() {
   $('#sbody').innerHTML = `<div class="form2">
       ${field('fDom', 'Домен', s.domain, 'A-запись должна указывать на сервер')}${field('fFq', 'FQDN VPS (имя хоста)', s.fqdn, 'имя сервера в системе (hostname)')}
       ${field('fMail', 'Email для сертификатов', s.admin_email, 'необязательно')}<span></span>
-      <div class="row"><button class="btn primary" id="sDom">Сохранить домен</button></div><div class="row"><button class="btn" id="sFq">Сохранить имя</button></div></div>
+      <div class="row"><button class="btn primary" id="sDom">Сохранить домен</button></div><div class="row"><button class="btn primary" id="sFq">Сохранить имя</button></div></div>
     <div style="display:grid;gap:10px;margin-top:22px"><b>Сайт-маскировка</b><span class="muted">Что видит посторонний, открывший ваш домен в браузере</span>
     <div class="tpls">${s.site.templates.map((t, i) => `<div class="tpl ${s.site.template === t.id ? 'on' : ''}" data-t="${t.id}"><div class="pv" style="background:linear-gradient(135deg,${pal[i % pal.length]},${pal[i % pal.length]}aa)">${esc(t.label.split(':').pop().split('(')[0].trim())}</div><div><span>${esc(t.label)}</span>${s.site.template === t.id ? `<span style="color:var(--blue)">${ic('check')}</span>` : ''}</div></div>`).join('')}</div></div>`;
   $('#sDom').onclick = e => busy(e.currentTarget, async () => msg(await api('settings.set_domain', {domain: $('#fDom').value, email: $('#fMail').value})));
@@ -934,26 +1069,27 @@ async function backups() {
 /* ═══ Диагностика ═══ */
 let DTAB = 'ip';
 function diag() {
-  const tabs = [['ip', 'Внешний IP'], ['speed', 'Тест скорости'], ['iperf', 'iperf3: ПК ↔ сервер']];
+  const tabs = [['ip', 'Внешний IP'], ['speed', 'Сервер ↔ интернет'], ['cdn', 'CDN'], ['pc', 'ПК ↔ сервер']];
+  if (!tabs.some(x => x[0] === DTAB)) DTAB = 'ip';
   $('#page').innerHTML = `<div class="card" style="padding:0"><div class="tabs">${tabs.map(([k, t]) => `<button class="${DTAB === k ? 'on' : ''}" data-d="${k}">${t}</button>`).join('')}</div><div id="dbody" style="padding:20px"></div></div>`;
   $$('#page .tabs button[data-d]').forEach(b => b.onclick = () => { DTAB = b.dataset.d; diag(); });
-  ({ip: diagIp, speed: diagSpeed, iperf: diagIperf})[DTAB]();
+  ({ip: diagIp, speed: diagSpeed, cdn: diagCdn, pc: diagPc})[DTAB]();
 }
+const nCard = (n, u, l) => `<div class="card"><div class="n">${n}<small>${u}</small></div><div class="l">${l}</div></div>`;
 function diagIp() {
-  $('#dbody').innerHTML = `<div class="row wrap" style="gap:16px"><div><div class="muted">Адрес, с которым сервер выходит в интернет</div>
-    <div class="mono" id="dIp" style="font-size:26px;font-weight:600;margin-top:6px">…</div></div><span class="sp" style="flex:1"></span><button class="btn" id="dIpCp" disabled>${ic('copy')} Скопировать</button></div>`;
+  $('#dbody').innerHTML = `<div class="row wrap" style="gap:16px"><div><div class="dtitle">Внешний IP сервера</div><div class="muted">Адрес, с которым сервер выходит в интернет</div>
+    <div class="mono" id="dIp" style="font-size:26px;font-weight:600;margin-top:8px">…</div></div><span class="sp" style="flex:1"></span><button class="btn" id="dIpCp" disabled>${ic('copy')} Скопировать</button></div>`;
   api('diag.public_ip').then(d => { $('#dIp').textContent = d.ip || '—'; if (d.ip) { $('#dIpCp').disabled = false; $('#dIpCp').onclick = () => copyText(d.ip); } }, e => $('#dIp').textContent = e.message);
 }
 let SPEED = null;
 function diagSpeed() {
-  $('#dbody').innerHTML = `<div class="row wrap"><div style="flex:1"><b>Скорость сервер ↔ интернет</b><div class="muted">Замер Ookla Speedtest с сервера, около 30 секунд</div></div>
+  $('#dbody').innerHTML = `<div class="row wrap"><div style="flex:1"><div class="dtitle">Скорость сервер ↔ интернет</div><div class="muted">Замер Ookla Speedtest с сервера, около 30 секунд</div></div>
       <select class="input" id="dSrv" style="max-width:320px"><option value="">ближайший сервер теста</option></select><button class="btn primary" id="dSt">${ic('refresh')} Запустить</button></div>
     <div id="dSr" style="margin-top:16px"></div>`;
   api('diag.speedtest_servers').then(l => $('#dSrv').insertAdjacentHTML('beforeend', l.map(s => `<option value="${esc(s.id)}">${esc(s.name || s.id)} — ${esc(s.location || '')}</option>`).join('')), () => {});
   const show = r => {
     if (r.text != null) { $('#dSr').innerHTML = `<div class="term small" style="height:auto">${esc(r.text)}</div>`; return; }
-    const card = (n, u, l) => `<div class="card"><div class="n">${n}<small>${u}</small></div><div class="l">${l}</div></div>`;
-    $('#dSr').innerHTML = `<div class="stres">${card(r.download, 'Мбит/с', '↓ Загрузка')}${card(r.upload, 'Мбит/с', '↑ Отдача')}${card(r.ping, 'мс', `Пинг · разброс ${r.jitter} мс`)}${card(r.loss == null ? '—' : r.loss, r.loss == null ? '' : '%', 'Потери пакетов')}</div>
+    $('#dSr').innerHTML = `<div class="stres">${nCard(r.download, 'Мбит/с', '↓ Загрузка')}${nCard(r.upload, 'Мбит/с', '↑ Отдача')}${nCard(r.ping, 'мс', `Пинг · разброс ${r.jitter} мс`)}${nCard(r.loss == null ? '—' : r.loss, r.loss == null ? '' : '%', 'Потери пакетов')}</div>
       <div class="row wrap" style="margin-top:12px"><span class="muted">Сервер теста: <b style="color:var(--text2)">${esc(r.server)}</b>${r.location ? ' · ' + esc(r.location) : ''}${r.isp ? ' · провайдер ' + esc(r.isp) : ''}</span><span class="sp" style="flex:1"></span>
       ${r.url ? `<a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">Результат на speedtest.net</a>` : ''}</div>`;
   };
@@ -961,38 +1097,74 @@ function diagSpeed() {
   $('#dSt').onclick = e => busy(e.currentTarget, async () => { $('#dSr').innerHTML = '<div class="row"><span class="spin dark"></span><span class="muted">Идёт замер, около 30 секунд…</span></div>';
     try { const r = await api('diag.speedtest', {server_id: $('#dSrv').value}); SPEED = {srv: SRV, r}; show(r); } catch (err) { $('#dSr').innerHTML = ''; throw err; } });
 }
-let IPERF = null;
-function diagIperf() {
+async function diagCdn() {
+  $('#dbody').innerHTML = `<div class="sk" style="height:120px"></div>`;
+  let s; try { s = await api('settings.get'); } catch (e) { $('#dbody').innerHTML = errorCard(e, 'diag()'); return; }
+  $('#dbody').innerHTML = `<div class="row wrap"><div style="flex:1"><div class="dtitle">Проверка CDN</div><div class="muted">${s.cdn.configured ? `Запросы к домену CDN <b>${esc(s.cdn.domain)}</b>: доходят ли до сервера и за сколько` : 'CDN не настроен — Настройки → CDN'}</div></div>
+    <button class="btn primary" id="dCdn" ${s.cdn.configured ? '' : 'disabled'}>${ic('refresh')} Проверить</button></div><div id="dCr" style="margin-top:16px"></div>`;
+  const ms = v => v == null ? '—' : v + ' мс';
+  $('#dCdn').onclick = e => busy(e.currentTarget, async () => {
+    $('#dCr').innerHTML = '<div class="row"><span class="spin dark"></span><span class="muted">Проверка, до минуты…</span></div>';
+    let r; try { r = await api('cdn.test'); } catch (err) { $('#dCr').innerHTML = ''; throw err; }
+    const rep = r.report, d = rep.direct, okN = rep.probes.filter(p => p.ok).length;
+    $('#dCr').innerHTML = `<div class="found" style="border-color:${r.ok ? 'rgba(34,197,94,.4)' : 'rgba(239,68,68,.4)'}"><span class="dot ${r.ok ? 'ok' : 'bad'}"></span><b>${r.ok ? 'CDN работает' : 'Есть проблемы'}</b><span class="muted">через CDN успешно ${okN} из ${rep.probes.length} · origin ${esc(rep.origin)} напрямую: ${d.ok ? 'OK, ' + ms(d.total_ms) : 'ошибка — ' + esc(d.error)}</span></div>
+      <div style="overflow:auto;margin-top:12px"><table class="cdnt"><thead><tr><th></th><th>Узел CDN</th><th>IP</th><th>Соединение</th><th>TLS</th><th>До сервера</th><th>Обратно</th><th>Всего</th></tr></thead><tbody>
+      ${rep.probes.map(p => `<tr><td>${p.ok ? `<span style="color:var(--green)">${ic('check')}</span>` : `<span style="color:var(--red)" title="${esc(p.error)}">${ic('x')}</span>`}</td><td>${esc(p.node || '—')}</td><td class="mono">${esc(p.edge_ip || '—')}</td><td>${ms(p.connect_ms)}</td><td>${ms(p.tls_ms)}</td><td>${ms(p.to_origin_ms)}</td><td>${ms(p.back_ms)}</td><td><b>${p.ok ? ms(p.total_ms) : esc(p.error)}</b></td></tr>`).join('')}
+      </tbody></table></div>`;
+  });
+}
+let PCRES = null;
+function diagPc() {
   const s = SERVERS.find(x => x.Alias === SRV);
-  $('#dbody').innerHTML = `<div class="row wrap"><div style="flex:1"><b>Скорость между этим ПК и сервером</b><div class="muted">Лаунчер сам запустит iperf3 на сервере и на ПК, замер в обе стороны ~20 секунд, затем iperf3 на сервере выключится.</div></div>
-      <button class="btn primary" id="dIs">${ic('refresh')} Запустить</button></div>
+  $('#dbody').innerHTML = `<div class="row wrap"><div style="flex:1"><div class="dtitle">Скорость между этим ПК и сервером</div>
+      <div class="muted">Два замера по ~8 секунд в каждую сторону: <b>HTTPS через порт 443</b> — как ходят VPN-клиенты (шифрование, маршрут до сайта);
+      <b>iperf3 через порт 5201</b> — «чистый» канал, порт открывается только на время замера.</div></div>
+      <button class="btn primary" id="dPh">${ic('refresh')} HTTPS (443)</button><button class="btn" id="dIs">${ic('refresh')} iperf3 (5201)</button></div>
     <div id="dIr" style="margin-top:16px"></div>
-    <details style="margin-top:18px"><summary class="muted" style="cursor:pointer">Вручную (если нужно)</summary><div class="muted" style="margin-top:8px">На сервере: Диагностика → iperf3 в меню сервера. На ПК: <code>iperf3 -c ${esc(s ? s.Host : 'IP')} -p 5201 -R</code> (с -R — сервер → ПК, без -R — ПК → сервер).</div></details>`;
+    <div class="muted" style="margin-top:18px;font-size:12.5px">Вручную: на ПК <code>iperf3 -c ${esc(s ? s.Host : 'IP')} -p 5201 -R</code> (с -R — сервер → ПК, без -R — ПК → сервер), пока замер iperf3 запущен отсюда.</div>`;
+  const show = () => { if (!PCRES || PCRES.srv !== SRV) return; const r = PCRES;
+    $('#dIr').innerHTML = `<div class="stres">${r.https ? nCard(r.https.down, 'Мбит/с', 'HTTPS 443: сервер → ПК') + nCard(r.https.up, 'Мбит/с', 'HTTPS 443: ПК → сервер') : ''}${r.iperf ? nCard(r.iperf.down, 'Мбит/с', 'iperf3: сервер → ПК') + nCard(r.iperf.up, 'Мбит/с', 'iperf3: ПК → сервер') : ''}</div>`; };
+  const st = t => $('#dIr').innerHTML = `<div class="row"><span class="spin dark"></span><span class="muted">${t}</span></div>`;
+  const keep = (k, v) => { if (!PCRES || PCRES.srv !== SRV) PCRES = {srv: SRV}; PCRES[k] = v; show(); };
+  show();
+  // HTTPS через 443: страница сама качает с сервера и отправляет на него (как браузер/клиент)
+  $('#dPh').onclick = e => busy(e.currentTarget, async () => {
+    st('Подготовка сервера замера…');
+    const {url} = await api('diag.https_start');
+    try {
+      const mbit = (b, t0) => Math.round(b * 8 / ((performance.now() - t0) / 1000) / 1e5) / 10;
+      st('Замер: сервер → ПК…');
+      let got = 0; const ctl = new AbortController(); const t0 = performance.now(); const tm = setTimeout(() => ctl.abort(), 8000);
+      try { const r = await fetch(url + '/down?mb=1000', {signal: ctl.signal, cache: 'no-store'}); if (!r.ok) throw new Error(`сервер замера ответил ${r.status}`);
+        const rd = r.body.getReader(); for (;;) { const {done, value} = await rd.read(); if (done) break; got += value.length; } }
+      catch (err) { if (err.name !== 'AbortError') throw new Error('HTTPS: ' + err.message); }
+      clearTimeout(tm); const down = mbit(got, t0);
+      st('Замер: ПК → сервер…');
+      const blob = new Uint8Array(2 * 1024 * 1024); for (let i = 0; i < blob.length; i += 65536) crypto.getRandomValues(blob.subarray(i, i + 65536));
+      let sent = 0; const t1 = performance.now();
+      while (performance.now() - t1 < 8000) { const r = await fetch(url + '/up', {method: 'POST', body: blob, headers: {'Content-Type': 'text/plain'}, cache: 'no-store'}); if (!r.ok) throw new Error(`сервер замера ответил ${r.status}`); sent += blob.length; }
+      keep('https', {down, up: mbit(sent, t1)});
+    } finally { api('diag.https_stop').catch(() => {}); }
+  });
+  // iperf3: лаунчер запускает iperf3 на ПК (ставит при первом замере)
   const mbps = j => { const e = j.end || {}; const x = e.sum_received || e.sum || {}; return Math.round((x.bits_per_second || 0) / 1e5) / 10; };
-  const show = r => { const card = (n, l) => `<div class="card"><div class="n">${n}<small>Мбит/с</small></div><div class="l">${l}</div></div>`;
-    $('#dIr').innerHTML = `<div class="stres">${card(r.down, 'Сервер → ПК (загрузка)')}${card(r.up, 'ПК → сервер (отдача)')}</div>`; };
-  if (IPERF && IPERF.srv === SRV) show(IPERF.r);
+  let IPORT = 5201;
   const local = async dir => {
     const j = await fetch(`/app/iperf?t=${TOKEN}&s=${encodeURIComponent(SRV)}&dir=${dir}&port=${IPORT}`, {method: 'POST'}).then(r => r.json());
     if (!j.ok) { const e = new Error(j.error || 'iperf3: ошибка'); e.needInstall = j.need_install; throw e; }
     if (j.data.error) throw new Error('iperf3: ' + j.data.error);
     return mbps(j.data);
   };
-  let IPORT = 5201;
   const run = async () => {
-    const st = t => $('#dIr').innerHTML = `<div class="row"><span class="spin dark"></span><span class="muted">${t}</span></div>`;
     st('Запуск iperf3 на сервере…');
     const srv = await api('diag.iperf_start'); IPORT = srv.port || 5201;
-    try {
-      st('Замер: сервер → ПК…'); const down = await local('down');
-      st('Замер: ПК → сервер…'); const up = await local('up');
-      IPERF = {srv: SRV, r: {down, up}}; show(IPERF.r);
-    } finally { api('diag.iperf_stop').catch(() => {}); }
+    try { st('Замер: сервер → ПК…'); const down = await local('down'); st('Замер: ПК → сервер…'); const up = await local('up'); keep('iperf', {down, up}); }
+    finally { api('diag.iperf_stop').catch(() => {}); }
   };
   $('#dIs').onclick = e => busy(e.currentTarget, async () => {
     try { await run(); }
     catch (err) {
-      if (!err.needInstall) { $('#dIr').innerHTML = ''; throw err; }
+      if (!err.needInstall) { show(); throw err; }
       $('#dIr').innerHTML = `<div class="found"><span class="dot warn"></span><div style="flex:1"><b>На этом ПК нет iperf3</b><div class="muted">Лаунчер скачает iperf3 3.22 для Windows (около 1 МБ, github.com/ar51an/iperf3-win-builds), сверит контрольную сумму и положит в свою папку.</div></div><button class="btn primary" id="dInst">${ic('dl')} Установить iperf3</button></div>`;
       $('#dInst').onclick = ev => busy(ev.currentTarget, async () => {
         const j = await fetch(`/app/iperf_install?t=${TOKEN}`, {method: 'POST'}).then(r => r.json());
@@ -1010,10 +1182,10 @@ $('#themeBtn').onclick = () => setTheme(document.documentElement.dataset.theme =
 $('#srvBtn').onclick = e => { e.stopPropagation(); $('#srvMenu').classList.toggle('open'); };
 document.addEventListener('click', () => $('#srvMenu').classList.remove('open'));
 $('#burger').onclick = () => $('#aside').classList.toggle('open');
-$('#refresh').onclick = async () => { await loadServers().catch(() => {}); if (READY) { ping(); go(PAGE); } else connect(); };
+$('#refresh').onclick = async () => { await loadServers().catch(() => {}); if (PAGE === 'home') { Object.keys(CHECK).forEach(k => delete CHECK[k]); home(); } else if (READY) { ping(); go(PAGE); } else connect(); };
 events();
 renderNav();
-loadServers().then(() => go(PAGE), e => { $('#page').innerHTML = errorCard(e, 'location.reload()'); });
+loadServers().then(() => go('home'), e => { $('#page').innerHTML = errorCard(e, 'location.reload()'); });
 setInterval(() => { if (READY && !document.hidden) ping(); }, 30000);
 
 </script>

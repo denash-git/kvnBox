@@ -153,6 +153,21 @@ def cdn_health(settings: Settings) -> str:
 """
 
 
+def speed_route(settings: Settings) -> str:
+    """Замер скорости через 443 из веб-лаунчера: скрытый путь → временный сервер замера.
+    Пусто, пока замер ни разу не запускали (Caddyfile байт в байт как раньше)."""
+    if not settings.speedtest_path:
+        return ""
+    return f"""    # web launcher speed test (hidden path, backend runs only during a test)
+    handle_path /{settings.speedtest_path}/* {{
+        reverse_proxy {ports.LOCALHOST}:{ports.SPEED} {{
+            flush_interval -1
+        }}
+    }}
+
+"""
+
+
 def extra_hosts(settings: Settings) -> str:
     """Origin-поддомен CDN в адресе сайта → Caddy получает на него свой сертификат.
     Пусто, пока CDN не настроен (Caddyfile байт в байт как раньше)."""
@@ -212,7 +227,9 @@ def _render_caddyfile(settings: Settings, users: Sequence[User], paths: Paths) -
             "DOMAIN": settings.domain,
             "CADDY_TLS_EMAIL": f"email {email}" if email else "# anonymous ACME",
             "FORWARD_PROXY_BLOCK": forward_proxy_block(users),
-            "XRAY_ROUTES": cdn_health(settings) + xray_routes(settings, users, paths),
+            "XRAY_ROUTES": speed_route(settings)
+            + cdn_health(settings)
+            + xray_routes(settings, users, paths),
             "EXTRA_HOSTS": extra_hosts(settings),
             "FAKESITE_DIR": (paths.fakesite_dir / settings.site.template).as_posix(),
             "SUB_DIR": paths.sub_dir.as_posix(),

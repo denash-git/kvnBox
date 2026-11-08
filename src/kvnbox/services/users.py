@@ -186,6 +186,24 @@ class UserService:
         except NotifyError as e:
             raise ServiceError(str(e)) from e
 
+    def send_subscription(self, name: str) -> None:
+        """Только ссылка подписки и её QR-код."""
+        import tempfile
+
+        from kvnbox.services.notify import NotifyError
+
+        telegram = Telegram(self.app.settings.load().telegram)
+        user = self.get(name)
+        sub = self.subscription_url(user)
+        try:
+            telegram.send_message(f"🌀 <b>Подписка {user.name}:</b>\n<code>{sub}</code>")
+            with tempfile.TemporaryDirectory(dir=self.app.paths.root) as tmp:
+                telegram.send_photo(
+                    self.qr_png(sub, Path(tmp) / "qr.png"), f"QR-код подписки для {user.name}"
+                )
+        except NotifyError as e:
+            raise ServiceError(str(e)) from e
+
     def send_awg(self, telegram: Telegram, user: User, conn: Connection, tmp: Path) -> None:
         """AmneziaWG в Telegram: файл .conf, его QR-код, ключ vpn:// и его QR-код."""
         conf_path = tmp / awg_client.file_name(user)
