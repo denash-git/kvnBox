@@ -319,7 +319,7 @@ function Show-Header([string]$Title) {
 }
 
 function Get-Online($Servers) {
-    # доступность серверов: TCP до порта SSH, все сразу, не дольше ~0,8 с
+    # доступность серверов: TCP до порта SSH, все сразу, не дольше ~2 с (медленные каналы)
     $res = @{}
     $probes = @()
     foreach ($s in @($Servers)) {
@@ -327,7 +327,7 @@ function Get-Online($Servers) {
         $probes += @{ Alias = $s.Alias; Client = $c; Task = $c.ConnectAsync([string]$s.Host, [int]$s.Port) }
     }
     if ($probes.Count) {
-        try { [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($probes | ForEach-Object { $_.Task }), 800) | Out-Null } catch { }
+        try { [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($probes | ForEach-Object { $_.Task }), 2000) | Out-Null } catch { }
     }
     foreach ($p in $probes) {
         $res[$p.Alias] = ($p.Task.Status -eq 'RanToCompletion' -and $p.Client.Connected)

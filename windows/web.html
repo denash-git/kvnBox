@@ -226,7 +226,7 @@ textarea.input.ta{height:110px;padding:10px 12px;resize:vertical;font:12px "Casc
 .stres .card{padding:12px 14px;display:grid;gap:4px}.stres .n{font-size:24px;font-weight:650}.stres .n small{font-size:13px;color:var(--dim);font-weight:500;margin-left:4px}.stres .l{color:var(--dim);font-size:12.5px}
 .lockbtn.on .i{color:var(--green)}.lockbtn.off .i{color:var(--yellow)}
 .strips{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px}.strips:not(:has(.card)){display:none}
-.kvg{display:grid;grid-template-columns:1fr 1fr;gap:0 44px;margin-top:6px}.kvg div{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;border-bottom:1px solid var(--line);padding:7px 0;min-width:0}.kvg span{color:var(--dim)}.kvg b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kvg{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:0 44px;margin-top:6px}.kvg div{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;border-bottom:1px solid var(--line);padding:7px 0;min-width:0}.kvg span{color:var(--dim)}.kvg b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav-sep{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;padding:14px 12px 4px}
 .hosts .host{display:grid;gap:8px;min-width:0}.hosts .host .nm{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .hosts .host .foot{display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px;margin-top:4px}.hosts .btn{padding:5px 10px;font-size:12.5px}
@@ -239,6 +239,11 @@ textarea.input.ta{height:110px;padding:10px 12px;resize:vertical;font:12px "Casc
 .hosts .icon-btn.danger{color:var(--red)}
 .term .d{color:#7b8496}
 .pcb{display:grid;gap:12px}.pcr{min-height:64px}
+.grid.hosts{grid-template-columns:repeat(auto-fill,minmax(min(100%,460px),1fr))}
+.hosts .hrow{flex-wrap:wrap;row-gap:8px}.hosts .hrow .mono{flex:1 1 150px!important}
+@media (max-width:1250px){.g2{grid-template-columns:minmax(0,1fr)}}
+.tbl{overflow-x:auto}.acts{flex-wrap:wrap;justify-content:flex-end}
+.tbl td b.mono{word-break:break-all}
 @media (max-width:820px){.form2{grid-template-columns:1fr}}
 @media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:820px){.split{grid-template-columns:1fr}.g4,.g3,.g2{grid-template-columns:minmax(0,1fr)}}
