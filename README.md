@@ -1,58 +1,69 @@
-# kvnBox
+# 📦 kvnBox
 
-Панель управления прокси-сервером: Caddy + NaiveProxy, sing-box и Xray (VLESS), Mieru.
-Управление — меню в терминале и Telegram-бот.
+[![OS](https://img.shields.io/badge/OS-Debian%2013-blue.svg)](https://debian.org)
+[![Release](https://img.shields.io/github/v/tag/denash-git/kvnBox?label=version&color=green)](https://github.com/denash-git/kvnBox/tags)
 
-## Установка
+**kvnBox** — панель для личного VPN/прокси-сервера: 5 современных протоколов на одном сервере,
+управление из меню в терминале и через Telegram-бот.
 
-Debian 13 (amd64 / arm64), от root:
+---
+
+## ✨ Возможности
+
+- **Протоколы:** VLESS (WebSocket, gRPC, HTTPUpgrade, XHTTP), NaiveProxy, Mieru, AmneziaWG 3.1, NetBird
+- **Маскировка:** под сайт, выбор шаблона
+- **Пользователи:** ссылки, QR-коды и подписка для каждого; включение и отключение в один клик
+- **Telegram-бот**
+- **Диагностика:** журналы, ресурсы сервера, тест скорости
+- **Бэкап и восстановление**, в том числе перенос на другой сервер
+- **Безопасность:** вход по ключу SSH, защита от сканеров Fail2ban
+- **Обновление** панели и компонентов прямо из меню
+
+---
+
+## 💻 Требования
+
+- Чистый **Debian 13** (amd64 или arm64), доступ root, от 1 ГБ RAM
+- **Домен**, A-запись которого указывает на IP сервера (до установки)
+- Свободные порты **80** и **443**
+
+---
+
+## 🚀 Установка
+
+**1. На сервере**, от root:
 
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/denash-git/kvnBox/main/install.sh)
 ```
 
-На чистом Debian `curl` обычно нет, а `wget` есть. Если есть `curl`:
+Установщик спросит только домен. Меню управления — команда `menu`.
 
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/denash-git/kvnBox/main/install.sh)
+**2. На компьютере с Windows** (по желанию) — ярлык для входа в меню. В PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1 | iex
 ```
 
-Установщик спрашивает только домен (A-запись должна указывать на сервер).
-BBR по умолчанию выключен — включается в «Модули → BBR».
-Подробный журнал — `/var/log/kvnbox-install.log`.
+Нужно ввести только IP и порт SSH сервера и один раз пароль root. Скрипт сам создаст ключ SSH,
+добавит его на сервер и положит на рабочий стол ярлык **«kvnBox - IP»** — двойной клик
+открывает меню сервера без пароля.
 
-Управление — команда `menu`.
+---
 
-Повторный запуск установщика на установленной панели — восстановление:
-пользователи и настройки сохраняются.
+## 📱 Клиенты
 
-## Протоколы
+- **[Karing](https://github.com/KaringX/karing)** — Windows, macOS, Linux, Android, iOS
+- **[LxBox](https://github.com/Leadaxe/LxBox)** — Android
 
-| Протокол | Ядро |
-|---|---|
-| VLESS over WebSocket, gRPC, HTTPUpgrade | sing-box или Xray — выбирается при добавлении |
-| VLESS over XHTTP | Xray |
-| VLESS CDN (XHTTP через CDN) | Xray |
-| NaiveProxy | Caddy |
-| Mieru | mita |
+---
 
-- Ядро у существующего подключения не меняется: удалите протокол и добавьте заново.
-- Xray ставится установщиком на новых серверах. На обновлённом сервере —
-  «Модули → Xray → Установить Xray». Служба Xray работает, только пока есть подключения на нём.
-- Пути протоколов — «Модули → Настроить пути протоколов».
+## ❤️ Благодарности
 
-## Протокол CDN
-
-Трафик идёт только через CDN: клиент → `cdn.<домен>` (CDN) → origin-поддомен → сервер.
-
-1. В CDN: источник — origin-поддомен по HTTPS, заголовок Host = origin-поддомен.
-2. В DNS: A-запись origin-поддомена → IP сервера (на него Caddy сам получит сертификат).
-3. В панели: «Модули → Настройки CDN» — домен CDN и origin-поддомен.
-4. Проверка: «Диагностика → Тест CDN» (или в боте «Диагностика → Тест CDN»):
-   запрос с сервера через CDN обратно на сервер, время запроса и ответа.
-
-## Обновления
-
-- Панель: «↑ update» в шапке меню, когда вышла новая версия.
-- Ядра (sing-box, Xray, Mieru) и Caddy обновляются только из меню («Модули»),
-  с проверкой контрольной суммы и возвратом прежней версии при сбое.
+[Caddy](https://github.com/caddyserver/caddy) ·
+[sing-box](https://github.com/SagerNet/sing-box) ·
+[Xray](https://github.com/XTLS/Xray-core) ·
+[NaiveProxy](https://github.com/klzgrad/naiveproxy) ·
+[Mieru](https://github.com/enfein/mieru) ·
+[AmneziaWG](https://github.com/amnezia-vpn/amneziawg-go) ·
+[NetBird](https://github.com/netbirdio/netbird)
