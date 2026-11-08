@@ -7,7 +7,7 @@
 # Серверы: ключ SSH создаётся на ПК, добавляется на сервер (пароль root нужен один раз),
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 
-$KvnboxVersion = '2.1.1'
+$KvnboxVersion = '2.1.2'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
@@ -461,7 +461,6 @@ function Add-Server {
     while ($port -lt 1 -or $port -gt 65535) {
         [int]::TryParse((Read-Value 'Порт SSH' '22'), [ref]$port) | Out-Null
     }
-    $name = Read-Value 'Название' $server
 
     $alias = Get-Alias $server
     $key = Join-Path $SshDir $alias
@@ -471,10 +470,11 @@ function Add-Server {
     $pub = ([IO.File]::ReadAllText("$key.pub")).Trim()
 
     Write-Line
-    Write-Line "$($Col.Accent)Добавление ключа на сервер. Введите пароль root:$Rst"
+    Write-Line "$($Col.Cyan)Добавление ключа на сервер. Введите пароль root:$Rst"
     $remote = "umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; " +
         "grep -qxF '$pub' ~/.ssh/authorized_keys || echo '$pub' >> ~/.ssh/authorized_keys; " +
-        "command -v menu >/dev/null || echo KVNBOX_NOT_INSTALLED"
+        "command -v menu >/dev/null || echo KVNBOX_NOT_INSTALLED; " +
+        'echo "KVNBOX_FQDN=$(hostname -f 2>/dev/null || hostname)"'
     $ssh = Get-Tool 'ssh'
     $base = Get-SshBase
     $out = & $ssh @base -p $port -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 `
@@ -492,6 +492,12 @@ function Add-Server {
         Pause-Key
         return
     }
+    # название по умолчанию — FQDN сервера (как в меню сервера), иначе IP
+    $fqdn = ''
+    foreach ($line in @($out)) { if ($line -match '^KVNBOX_FQDN=(\S+)') { $fqdn = $Matches[1] } }
+    if (-not $fqdn -or $fqdn -eq 'localhost') { $fqdn = $server }
+    Write-Line
+    $name = Read-Value 'Название' $fqdn
     $list = @(Get-Servers | Where-Object { $_.Alias -ne $alias })
     $s = [pscustomobject]@{ Name = $name; Host = $server; Port = $port; Alias = $alias; Key = $key }
     $list += $s
@@ -507,6 +513,25 @@ function Add-Server {
     if (Read-YesNo 'Отключить вход по паролю сейчас?') { Set-PasswordLogin $s $false | Out-Null }
     $script:Notice = "Сервер «$name» добавлен."
     Pause-Key
+}
+
+function Get-ServerFqdn($s) {
+    $text = Invoke-Ssh $s.Alias 'hostname -f 2>/dev/null || hostname' 8
+    if ($text) {
+        $f = ($text -split "`n")[0].Trim()
+        if ($f -and $f -ne 'localhost') { return $f }
+    }
+    return ''
+}
+
+function Update-DefaultNames($Online) {
+    # серверы, названные по IP (добавлены первой версией), получают имя FQDN
+    foreach ($s in @(Get-Servers)) {
+        if ($s.Name -eq $s.Host -and $Online[$s.Alias]) {
+            $f = Get-ServerFqdn $s
+            if ($f) { $s.Name = $f; Update-Server $s }
+        }
+    }
 }
 
 function Get-ServerState($s) {
@@ -722,7 +747,8 @@ function Start-App {
     }
     $latest = Get-UpdateInfo
     $sel = 0
-    $online = $null
+    $online = Get-Online @(Get-Servers)
+    Update-DefaultNames $online
     try {
         while ($true) {
             $servers = @(Get-Servers)
@@ -788,7 +814,7 @@ function Start-Kvnbox([string[]]$CliArgs) {
     if (-not $installed) {
         # первый запуск (irm | iex) или файл скачан вручную — установка и сразу приложение
         Write-Line
-        Write-Line "$($Col.Accent)kvnBox — установка приложения...$Rst"
+        Write-Line "$($Col.Cyan)kvnBox — установка приложения...$Rst"
         $text = if ($self) { [IO.File]::ReadAllText($self, [Text.Encoding]::UTF8) } else { Get-RemoteScript }
         Install-App $text
         Write-Ok 'Ярлык «kvnBox» — на рабочем столе и в меню Пуск.'
