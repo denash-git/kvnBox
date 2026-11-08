@@ -7,7 +7,7 @@
 # Серверы: ключ SSH создаётся на ПК, добавляется на сервер (пароль root нужен один раз),
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 
-$KvnboxVersion = '2.0.0'
+$KvnboxVersion = '2.1.0'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
@@ -239,7 +239,7 @@ function Get-UpdateInfo([switch]$Force) {
     if (Test-Path $UpdateFile) {
         try { $state = ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($UpdateFile)) } catch { }
     }
-    $fresh = $state -and ([DateTime]::UtcNow - [DateTime]$state.Checked).TotalHours -lt 24
+    $fresh = $state -and ([DateTime]::UtcNow - [DateTime]$state.Checked).TotalHours -lt 6
     if (-not $Force -and $fresh) { return $state.Latest }
     try {
         $latest = Get-ScriptVersion (Get-RemoteScript 3)
@@ -254,92 +254,174 @@ function Test-Newer([string]$Latest) {
     try { return ([version]$Latest -gt [version]$KvnboxVersion) } catch { return $false }
 }
 
-# ═══ экран ═══════════════════════════════════════════════════════════════════
+# ═══ экран (оформление как у меню kvnBox на сервере) ═════════════════════════
 
 $script:Notice = ''
+$E = [char]27
+$R = "$E[0m"
+$C = @{
+    Blue = "$E[1;34m"; Green = "$E[1;32m"; Red = "$E[1;31m"; Yellow = "$E[1;33m"
+    Cyan = "$E[1;36m"; Dim = "$E[2m"; Bold = "$E[1m"
+}
+$Block = 60
+$BackLabels = @('Назад', 'Отмена', 'Выход')
+$MainTitle = "kvnBox v. $KvnboxVersion"
 
-function Show-Header([string]$Title, [string]$Badge = '') {
-    Clear-Host
-    $w = [Math]::Min([Console]::WindowWidth - 1, 72)
-    $right = "v$KvnboxVersion"
-    Write-Host ''
-    Write-Host '  kvnBox' -ForegroundColor Cyan -NoNewline
-    Write-Host "  ·  $Title" -NoNewline
-    $pad = $w - 2 - 'kvnBox'.Length - 5 - $Title.Length - $right.Length - $Badge.Length - 2
-    Write-Host (' ' * [Math]::Max(1, $pad)) -NoNewline
-    if ($Badge) { Write-Host $Badge -ForegroundColor Yellow -NoNewline; Write-Host '  ' -NoNewline }
-    Write-Host $right -ForegroundColor DarkGray
-    Write-Host ('  ' + ('─' * ($w - 2))) -ForegroundColor DarkGray
-    Write-Host ''
+function Get-Plain([string]$t) { return ($t -replace "$([char]27)\[[0-9;]*[A-Za-z]", '') }
+function Get-ScreenWidth { return [Console]::WindowWidth }
+function Get-BlockPad { return (' ' * [Math]::Max([Math]::Floor(((Get-ScreenWidth) - $Block) / 2), 2)) }
+
+function Get-Centered([string]$t) {
+    $pad = [Math]::Max([Math]::Floor(((Get-ScreenWidth) - (Get-Plain $t).Length) / 2), 0)
+    return (' ' * $pad) + $t
+}
+
+function Get-HeaderLines([string]$Title, [string[]]$Sub = @(), [bool]$Badge = $false) {
+    $t = $Title
+    if ($Badge) { $t = "$t $($C.Green)[↑ update]$R" }
+    $lines = @((Get-Centered "$($C.Blue)$('═' * $Block)$R"), (Get-Centered "$($C.Yellow)$t$R"))
+    foreach ($s in $Sub) { $lines += (Get-Centered $s) }
+    $lines += (Get-Centered "$($C.Blue)$('─' * $Block)$R")
+    $lines += ''
+    return $lines
+}
+
+function Show-Header([string]$Title, [string[]]$Sub = @()) {
+    # экран с текстом и вводом (добавление, удаление, обновление)
+    [Console]::CursorVisible = $true
+    [Console]::Write("$E[2J$E[H")
+    foreach ($l in (Get-HeaderLines $Title $Sub)) { [Console]::WriteLine($l) }
     if ($script:Notice) {
-        Write-Host "  $($script:Notice)" -ForegroundColor Green
-        Write-Host ''
+        [Console]::WriteLine((Get-Centered "$($C.Green)✓ $($script:Notice)$R"))
+        [Console]::WriteLine('')
         $script:Notice = ''
     }
 }
 
-function Select-Item {
-    # стрелки ↑↓, Enter; Esc → -1; ключи из $Keys → @{Key; Index}
-    param([string[]]$Items, [string]$Hint, [int]$Start = 0, [string[]]$Keys = @(), [int[]]$Dim = @())
-    $top = [Console]::CursorTop
-    $sel = [Math]::Max(0, [Math]::Min($Start, $Items.Count - 1))
-    $w = [Math]::Min([Console]::WindowWidth - 1, 72)
-    while ($true) {
-        [Console]::SetCursorPosition(0, $top)
-        for ($i = 0; $i -lt $Items.Count; $i++) {
-            $text = $Items[$i]
-            if ($text -eq '-') { Write-Host ''; continue }
-            $line = ("    $text").PadRight($w)
-            if ($i -eq $sel) {
-                Write-Host '  ' -NoNewline
-                Write-Host ("▶ $text ").PadRight($w - 2) -ForegroundColor Black -BackgroundColor Cyan
-            } elseif ($Dim -contains $i) {
-                Write-Host $line -ForegroundColor DarkGray
+function Get-OptionLines([string[]]$Options, [int]$Active) {
+    # как _draw_options на сервере: блок по центру, выбранный — инверсией,
+    # «Назад/Выход» — жёлтым и с пустой строкой перед, «Удалить» — красным
+    $plain = @($Options | ForEach-Object { Get-Plain $_ })
+    $max = ($plain | Measure-Object -Property Length -Maximum).Maximum
+    $indent = ' ' * [Math]::Max([Math]::Floor(((Get-ScreenWidth) - $max) / 2), 0)
+    $out = @()
+    for ($i = 0; $i -lt $Options.Count; $i++) {
+        $opt = $Options[$i]; $p = $plain[$i]
+        $isBack = $BackLabels -contains $p
+        $isDanger = $p -like '*Удалить*'
+        if ($isBack -and $i) { $out += '' }
+        if ($isBack -and $opt -notmatch "$([char]27)") { $opt = "$($C.Yellow)$opt$R" }
+        if ($isDanger -and $opt -notmatch "$([char]27)") { $opt = "$($C.Red)$opt$R" }
+        $gap = $max - $p.Length
+        if ($isBack) {
+            $l = ' ' * [Math]::Floor($gap / 2); $r = ' ' * ($gap - [Math]::Floor($gap / 2))
+            if ($i -eq $Active) { $out += "$indent$E[43;30m  $l$p$r  $E[0m" }
+            else { $out += "$indent  $l$opt$r  " }
+        } else {
+            $pad = ' ' * $gap
+            if ($i -eq $Active) {
+                $style = if ($isDanger) { "$E[41;30m" } else { "$E[7m" }
+                $out += "$indent$style  $p$pad  $E[0m"
             } else {
-                Write-Host $line
+                $out += "$indent  $opt$pad  "
             }
         }
-        Write-Host ''
-        Write-Host ("  $Hint").PadRight($w) -ForegroundColor DarkGray
+    }
+    return $out
+}
+
+function Select-Menu {
+    # меню стрелками: Enter → @{Key='Enter'; Index}; q/Esc → Index -1; 0 → Key='Exit'
+    param(
+        [string]$Title, [string[]]$Sub = @(), [bool]$Badge = $false, [string[]]$Info = @(),
+        [string[]]$Options, [string]$Hint = '', [int]$Start = 0, [string[]]$Keys = @()
+    )
+    if (-not $Hint) { $Hint = '↑↓ — выбор   Enter — выбрать   q — назад   0 — Выход' }
+    $n = $Options.Count
+    $active = [Math]::Max(0, [Math]::Min($Start, $n - 1))
+    $note = $script:Notice
+    $script:Notice = ''
+    [Console]::CursorVisible = $false
+    [Console]::Write("$E[2J$E[H")
+    while ($true) {
+        $lines = @(Get-HeaderLines $Title $Sub $Badge)
+        if ($note) { $lines += (Get-Centered "$($C.Green)✓ $note$R"); $lines += '' }
+        if ($Info.Count) {
+            $pad = Get-BlockPad
+            foreach ($l in $Info) { $lines += "$pad$l" }
+            $lines += ''
+        }
+        $lines += Get-OptionLines $Options $active
+        $height = [Console]::WindowHeight
+        $frame = "$E[H" + (($lines | ForEach-Object { "$_$E[K" }) -join "`n") + "$E[J" +
+            "$E[$height;1H$E[K" + (Get-Centered "$($C.Dim)$Hint$R")
+        [Console]::Write($frame)
         $k = [Console]::ReadKey($true)
+        $done = $null
         switch ($k.Key) {
-            'UpArrow' { do { $sel = ($sel - 1 + $Items.Count) % $Items.Count } while ($Items[$sel] -eq '-') }
-            'DownArrow' { do { $sel = ($sel + 1) % $Items.Count } while ($Items[$sel] -eq '-') }
-            'Home' { $sel = 0 }
-            'End' { $sel = $Items.Count - 1 }
-            'Enter' { return @{ Key = 'Enter'; Index = $sel } }
-            'Escape' { return @{ Key = 'Escape'; Index = -1 } }
-            default {
-                if ($Keys -contains [string]$k.Key) { return @{ Key = [string]$k.Key; Index = $sel } }
-            }
+            'UpArrow' { $active = ($active - 1 + $n) % $n }
+            'DownArrow' { $active = ($active + 1) % $n }
+            'Enter' { $done = @{ Key = 'Enter'; Index = $active } }
+            'Escape' { $done = @{ Key = 'Back'; Index = -1 } }
+            'Q' { $done = @{ Key = 'Back'; Index = -1 } }
+            'D0' { $done = @{ Key = 'Exit'; Index = -1 } }
+            'NumPad0' { $done = @{ Key = 'Exit'; Index = -1 } }
+            default { if ($Keys -contains [string]$k.Key) { $done = @{ Key = [string]$k.Key; Index = $active } } }
+        }
+        if ($done) {
+            [Console]::Write("$E[$height;1H$E[K$E[H")
+            [Console]::CursorVisible = $true
+            return $done
         }
     }
 }
 
 function Read-Value([string]$Prompt, [string]$Default = '') {
-    $text = if ($Default) { "  $Prompt [$Default]" } else { "  $Prompt" }
-    $v = (Read-Host $text).Trim()
+    $d = if ($Default) { " [$Default]" } else { '' }
+    [Console]::Write("$(Get-BlockPad)$Prompt$d`: ")
+    $v = ([Console]::ReadLine()).Trim()
     if ($v) { return $v }
     return $Default
 }
 
 function Read-YesNo([string]$Prompt, [bool]$Default = $false) {
     $hint = if ($Default) { 'Y/n' } else { 'y/N' }
-    $v = (Read-Host "  $Prompt [$hint]").Trim()
+    [Console]::Write("$(Get-BlockPad)$Prompt ($hint): ")
+    $v = ([Console]::ReadLine()).Trim()
     if (-not $v) { return $Default }
     return ($v -match '^[yYдД]')
 }
 
-function Pause-Key([string]$Text = 'Нажмите любую клавишу...') {
-    Write-Host ''
-    Write-Host "  $Text" -ForegroundColor DarkGray
+function Pause-Key {
+    [Console]::WriteLine('')
+    [Console]::WriteLine((Get-Centered "$($C.Dim)Нажмите любую клавишу для продолжения...$R"))
     [Console]::ReadKey($true) | Out-Null
 }
 
-function Write-Ok([string]$t) { Write-Host "  ✓ $t" -ForegroundColor Green }
-function Write-Warn([string]$t) { Write-Host "  ! $t" -ForegroundColor Yellow }
-function Write-Fail([string]$t) { Write-Host "  ✗ $t" -ForegroundColor Red }
-function Write-Step([string]$t) { Write-Host "  … $t" -ForegroundColor DarkGray }
+function Write-Line([string]$t = '') { [Console]::WriteLine("$(Get-BlockPad)$t") }
+function Write-Note([string]$t) { Write-Line "$($C.Dim)$t$R" }
+function Write-Ok([string]$t) { [Console]::WriteLine((Get-Centered "$($C.Green)✓ $t$R")) }
+function Write-Warn([string]$t) { [Console]::WriteLine((Get-Centered "$($C.Yellow)⚠ $t$R")) }
+function Write-Fail([string]$t) { [Console]::WriteLine((Get-Centered "$($C.Red)✗ $t$R")) }
+function Write-Step([string]$t) { [Console]::WriteLine((Get-Centered "$($C.Dim)[*] $t$R")) }
+
+function Get-Online($Servers) {
+    # доступность серверов: TCP до порта SSH, все сразу, не дольше ~0,8 с
+    $res = @{}
+    $probes = @()
+    foreach ($s in @($Servers)) {
+        $c = New-Object Net.Sockets.TcpClient
+        $probes += @{ Alias = $s.Alias; Client = $c; Task = $c.ConnectAsync([string]$s.Host, [int]$s.Port) }
+    }
+    if ($probes.Count) {
+        try { [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($probes | ForEach-Object { $_.Task }), 800) | Out-Null } catch { }
+    }
+    foreach ($p in $probes) {
+        $res[$p.Alias] = ($p.Task.Status -eq 'RanToCompletion' -and $p.Client.Connected)
+        $p.Client.Dispose()
+    }
+    return $res
+}
 
 # ═══ действия ════════════════════════════════════════════════════════════════
 
@@ -352,18 +434,18 @@ function Enter-Server($s) {
     $code = $LASTEXITCODE
     $Host.UI.RawUI.WindowTitle = 'kvnBox'
     if ($code -ne 0) {
-        Write-Host ''
+        Write-Line
         Write-Fail "Подключение к «$($s.Name)» завершилось с ошибкой (код $code)."
-        Write-Host '    Если на сервере меняли порт SSH — «Управление → Изменить порт SSH».'
+        Write-Note '  Если на сервере меняли порт SSH — «Управление → Изменить порт SSH».'
         Pause-Key
     }
 }
 
 function Add-Server {
-    Show-Header 'добавление сервера'
-    Write-Host '  Нужен сервер с установленным kvnBox и пароль root (вводится один раз).'
-    Write-Host '  Пустой ввод — отмена.' -ForegroundColor DarkGray
-    Write-Host ''
+    Show-Header 'Добавление сервера'
+    Write-Line 'Нужен сервер с установленным kvnBox и пароль root (вводится один раз).'
+    Write-Note 'Пустой ввод — отмена.'
+    Write-Line
     $server = Read-Value 'IP-адрес сервера'
     if (-not $server) { return }
     $port = 0
@@ -374,13 +456,13 @@ function Add-Server {
 
     $alias = Get-Alias $server
     $key = Join-Path $SshDir $alias
-    Write-Host ''
-    Write-Step 'Создание ключа SSH на этом компьютере'
+    Write-Line
+    Write-Step 'Создание ключа SSH на этом компьютере...'
     New-ServerKey $key
     $pub = ([IO.File]::ReadAllText("$key.pub")).Trim()
 
-    Write-Host ''
-    Write-Host '  Добавление ключа на сервер. Введите пароль root:' -ForegroundColor Cyan
+    Write-Line
+    Write-Line "$($C.Accent)Добавление ключа на сервер. Введите пароль root:$R"
     $remote = "umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; " +
         "grep -qxF '$pub' ~/.ssh/authorized_keys || echo '$pub' >> ~/.ssh/authorized_keys; " +
         "command -v menu >/dev/null || echo KVNBOX_NOT_INSTALLED"
@@ -389,7 +471,7 @@ function Add-Server {
     $out = & $ssh @base -p $port -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 `
         "root@$server" $remote
     if ($LASTEXITCODE -ne 0) {
-        Write-Host ''
+        Write-Line
         Write-Fail 'Не удалось подключиться: проверьте IP, порт и пароль.'
         Pause-Key
         return
@@ -410,9 +492,9 @@ function Add-Server {
         Write-Warn 'kvnBox на сервере не найден — установите панель, затем входите.'
     }
 
-    Write-Host ''
-    Write-Host '  Вход по паролю можно отключить: на сервер смогут войти только по ключу.'
-    Write-Host '  Ключ хранится на этом компьютере — не потеряйте его (папка .ssh).' -ForegroundColor DarkGray
+    Write-Line
+    Write-Line 'Вход по паролю можно отключить: на сервер смогут войти только по ключу.'
+    Write-Note 'Ключ хранится на этом компьютере — не потеряйте его (папка .ssh).'
     if (Read-YesNo 'Отключить вход по паролю сейчас?') { Set-PasswordLogin $s $false | Out-Null }
     $script:Notice = "Сервер «$name» добавлен."
     Pause-Key
@@ -430,7 +512,7 @@ function Get-ServerState($s) {
 
 function Set-PasswordLogin($s, [bool]$Enabled) {
     $mode = if ($Enabled) { 'password' } else { 'key' }
-    Write-Step 'Применение на сервере'
+    Write-Step 'Применение на сервере...'
     $text = Invoke-Ssh $s.Alias "kvnbox ssh auth $mode" 20
     if ($null -eq $text) {
         Write-Fail 'Не удалось изменить: сервер недоступен или команда не выполнена.'
@@ -441,10 +523,10 @@ function Set-PasswordLogin($s, [bool]$Enabled) {
 }
 
 function Remove-Server($s) {
-    Show-Header "удаление «$($s.Name)»"
+    Show-Header "Удаление сервера: $($s.Name)"
     if (-not (Read-YesNo "Удалить сервер «$($s.Name)» из списка?")) { return $false }
-    Write-Host ''
-    Write-Step 'Проверка сервера'
+    Write-Line
+    Write-Step 'Проверка сервера...'
     $state = Get-ServerState $s
     $pub = $null
     if (Test-Path "$($s.Key).pub") { $pub = ([IO.File]::ReadAllText("$($s.Key).pub")).Trim() }
@@ -452,7 +534,7 @@ function Remove-Server($s) {
         Write-Warn 'Сервер недоступен — ключ этого компьютера на нём останется.'
     } elseif ($state.Password -eq $false -and $state.Keys -le 1) {
         Write-Warn 'Ключ на сервере оставлен: он единственный, а вход по паролю отключён.'
-        Write-Host '    Иначе на сервер нельзя будет войти.' -ForegroundColor DarkGray
+        Write-Note '  Иначе на сервер нельзя будет войти.'
     } elseif ($pub) {
         $body = ($pub -split '\s+')[1]
         $cmd = 'f=~/.ssh/authorized_keys; grep -vF ''' + $body + ''' "$f" > "$f.kvnbox"; ' +
@@ -478,50 +560,63 @@ function Update-Server($s) {
     Save-Servers $list
 }
 
+function Get-InfoLine([string]$Label, [string]$Value) {
+    return ('{0,-16}' -f $Label) + "$($C.Bold)$Value$R"
+}
+
 function Show-ServerMenu($s) {
+    # 'exit' — выйти из приложения (клавиша 0)
     $state = $null
     $checked = $false
+    $online = $false
     $sel = 0
     while ($true) {
-        Show-Header "сервер «$($s.Name)»"
-        Write-Host "  Адрес: $($s.Host):$($s.Port)    Вход из терминала: ssh $($s.Alias)" -ForegroundColor DarkGray
+        $title = "Сервер: $($s.Name)"
         if (-not $checked) {
-            Write-Step 'Проверка сервера'
+            Show-Header $title
+            Write-Step 'Проверка сервера...'
             $state = Get-ServerState $s
+            $online = ($null -ne $state) -or (Get-Online @($s))[$s.Alias]
             $checked = $true
-            Show-Header "сервер «$($s.Name)»"
-            Write-Host "  Адрес: $($s.Host):$($s.Port)    Вход из терминала: ssh $($s.Alias)" -ForegroundColor DarkGray
         }
-        if ($null -eq $state) {
-            Write-Host '  Сервер не отвечает по ключу.' -ForegroundColor Yellow
-        } elseif ($null -ne $state.Password) {
-            $pwText = if ($state.Password) { 'включен' } else { 'отключен (только ключ)' }
-            Write-Host "  Вход по паролю: $pwText" -ForegroundColor DarkGray
+        $status = if ($null -ne $state) { "$($C.Green)● на связи$R" }
+        elseif ($online) { "$($C.Yellow)● не входит по ключу$R" }
+        else { "$($C.Red)● не отвечает$R" }
+        $info = @(
+            (Get-InfoLine 'Адрес:' "$($s.Host):$($s.Port)"),
+            (('{0,-16}' -f 'Состояние:') + $status)
+        )
+        if ($state -and $null -ne $state.Password) {
+            $pw = if ($state.Password) { "$($C.Yellow)включен$R" } else { "$($C.Green)отключен$R (только ключ)" }
+            $info += (('{0,-16}' -f 'Вход по паролю:') + $pw)
         }
-        Write-Host ''
+        $info += (Get-InfoLine 'Терминал:' "ssh $($s.Alias)")
         $pwItem = if ($state -and $state.Password -eq $false) { 'Включить вход по паролю' } else { 'Отключить вход по паролю' }
-        $lnkItem = if (Test-Path -LiteralPath (Get-ServerShortcut $s)) { 'Убрать ярлык с рабочего стола' } else { 'Ярлык этого сервера на рабочий стол' }
-        $items = @('Войти в меню сервера', $pwItem, 'Переименовать', 'Изменить порт SSH', $lnkItem, 'Удалить сервер', '-', 'Назад')
-        $r = Select-Item $items '↑↓ выбор   Enter открыть   Esc назад' $sel
-        if ($r.Key -eq 'Escape') { return }
+        $lnkItem = if (Test-Path -LiteralPath (Get-ServerShortcut $s)) { 'Убрать ярлык с рабочего стола' } else { 'Ярлык сервера на рабочий стол' }
+        $options = @('Войти в меню сервера', $pwItem, 'Переименовать', 'Изменить порт SSH', $lnkItem, 'Удалить сервер', 'Назад')
+        $r = Select-Menu -Title $title -Info $info -Options $options -Start $sel -Keys @('LeftArrow')
+        if ($r.Key -eq 'Exit') { return 'exit' }
+        if ($r.Key -ne 'Enter') { return '' }
         $sel = $r.Index
         switch ($r.Index) {
             0 { Enter-Server $s; $checked = $false }
             1 {
-                Show-Header "сервер «$($s.Name)»"
+                Show-Header $title
                 if ($null -eq $state) { Write-Fail 'Сервер не отвечает.'; Pause-Key; $checked = $false; break }
                 $enable = ($state.Password -eq $false)
                 if (-not $enable) {
-                    Write-Host '  После отключения войти на сервер можно будет только по ключу.'
-                    Write-Host '  Ключ этого компьютера уже работает.' -ForegroundColor DarkGray
+                    Write-Line 'После отключения войти на сервер можно будет только по ключу.'
+                    Write-Note 'Ключ этого компьютера уже работает.'
+                    Write-Line
                     if (-not (Read-YesNo 'Отключить вход по паролю?')) { break }
+                    Write-Line
                 }
                 Set-PasswordLogin $s $enable | Out-Null
                 Pause-Key
                 $checked = $false
             }
             2 {
-                Show-Header "сервер «$($s.Name)»"
+                Show-Header $title
                 $new = Read-Value 'Новое название' $s.Name
                 if ($new -and $new -ne $s.Name) {
                     $oldLnk = Get-ServerShortcut $s
@@ -536,10 +631,10 @@ function Show-ServerMenu($s) {
                 }
             }
             3 {
-                Show-Header "сервер «$($s.Name)»"
-                Write-Host '  Только запись на этом компьютере — если порт SSH уже сменили на сервере.'
-                Write-Host '  (Сменить порт на сервере: меню сервера → Настройки → Управление SSH.)' -ForegroundColor DarkGray
-                Write-Host ''
+                Show-Header $title
+                Write-Line 'Только запись на этом компьютере — если порт SSH уже сменили на сервере.'
+                Write-Note 'Сменить порт на сервере: меню сервера → Настройки → Управление SSH.'
+                Write-Line
                 $p = 0
                 [int]::TryParse((Read-Value 'Порт SSH' ([string]$s.Port)), [ref]$p) | Out-Null
                 if ($p -ge 1 -and $p -le 65535 -and $p -ne $s.Port) {
@@ -560,15 +655,15 @@ function Show-ServerMenu($s) {
                     $script:Notice = "Ярлык «$(Split-Path $lnk -Leaf)» на рабочем столе."
                 }
             }
-            5 { if (Remove-Server $s) { return } }
-            7 { return }
+            5 { if (Remove-Server $s) { return '' } }
+            6 { return '' }
         }
     }
 }
 
 function Update-App {
-    Show-Header 'обновление'
-    Write-Step 'Загрузка новой версии'
+    Show-Header 'Обновление приложения'
+    Write-Step 'Загрузка новой версии...'
     try {
         $text = Get-RemoteScript
         Install-App $text
@@ -587,48 +682,64 @@ function Start-App {
     $Host.UI.RawUI.WindowTitle = 'kvnBox'
     [Console]::OutputEncoding = [Text.UTF8Encoding]::new()
     if (-not (Get-Tool 'ssh') -or -not (Get-Tool 'ssh-keygen')) {
-        Show-Header 'серверы'
+        Show-Header $MainTitle @('лаунчер управления')
         Write-Fail 'Не найден клиент OpenSSH (ssh.exe).'
-        Write-Host '  Установите: Параметры → Система → Дополнительные компоненты → «Клиент OpenSSH».'
+        Write-Line 'Установите: Параметры → Система → Дополнительные компоненты → «Клиент OpenSSH».'
         Pause-Key
         return
     }
     $latest = Get-UpdateInfo
     $sel = 0
-    while ($true) {
-        $servers = @(Get-Servers)
-        $newer = Test-Newer $latest
-        $badge = if ($newer) { "↑ $latest" } else { '' }
-        Show-Header 'мои серверы' $badge
-        $items = @()
-        foreach ($s in $servers) { $items += ('{0,-28} {1}' -f $s.Name, "$($s.Host):$($s.Port)") }
-        if (-not $servers.Count) {
-            Write-Host '  Серверов пока нет — добавьте первый.' -ForegroundColor DarkGray
-            Write-Host ''
+    $online = $null
+    try {
+        while ($true) {
+            $servers = @(Get-Servers)
+            if ($null -eq $online) { $online = Get-Online $servers }
+            $newer = Test-Newer $latest
+            $nameW = 0
+            foreach ($s in $servers) { $nameW = [Math]::Max($nameW, ([string]$s.Name).Length) }
+            $options = @()
+            foreach ($s in $servers) {
+                $dot = if ($online[$s.Alias]) { "$($C.Green)●$R" } else { "$($C.Red)●$R" }
+                $options += "$dot " + ([string]$s.Name).PadRight($nameW + 3) + "$($s.Host):$($s.Port)"
+            }
+            $iAdd = $options.Count; $options += 'Добавить сервер'
+            $iUpd = -1
+            if ($newer) { $iUpd = $options.Count; $options += "Обновить приложение до $latest" }
+            $options += 'Выход'
+            $info = @()
+            if (-not $servers.Count) {
+                $info = @("$($C.Dim)Серверов пока нет — добавьте первый.$R")
+                if ($sel -eq 0) { $sel = $iAdd }
+            }
+            $hint = if ($servers.Count) { '↑↓ — выбор   Enter — войти   → — управление   q — выход' } else { '↑↓ — выбор   Enter — выбрать   q — выход' }
+            $r = Select-Menu -Title $MainTitle -Sub @('лаунчер управления') -Badge $newer -Info $info `
+                -Options $options -Hint $hint -Start $sel -Keys @('RightArrow')
+            if ($r.Key -in @('Back', 'Exit')) { break }
+            $sel = $r.Index
+            if ($r.Index -lt $servers.Count) {
+                if ($r.Key -eq 'RightArrow') {
+                    if ((Show-ServerMenu $servers[$r.Index]) -eq 'exit') { break }
+                } else {
+                    Enter-Server $servers[$r.Index]
+                }
+                $online = $null
+            } elseif ($r.Key -ne 'Enter') {
+                continue
+            } elseif ($r.Index -eq $iAdd) {
+                Add-Server
+                $online = $null
+                $sel = 0
+            } elseif ($r.Index -eq $iUpd) {
+                if (Update-App) { return }
+            } else {
+                break
+            }
         }
-        if ($servers.Count) { $items += '-' }
-        $iAdd = $items.Count; $items += '+ Добавить сервер'
-        $iUpd = -1
-        if ($newer) { $iUpd = $items.Count; $items += "↑ Обновить приложение до $latest" }
-        $iExit = $items.Count; $items += 'Выход'
-        $hint = if ($servers.Count) { '↑↓ выбор   Enter войти   → управление   Esc выход' } else { '↑↓ выбор   Enter   Esc выход' }
-        $r = Select-Item $items $hint $sel @('RightArrow')
-        if ($r.Key -eq 'Escape') { Clear-Host; return }
-        $sel = $r.Index
-        if ($r.Index -lt $servers.Count) {
-            if ($r.Key -eq 'RightArrow') { Show-ServerMenu $servers[$r.Index] }
-            else { Enter-Server $servers[$r.Index] }
-        } elseif ($r.Key -ne 'Enter') {
-            continue
-        } elseif ($r.Index -eq $iAdd) {
-            Add-Server
-        } elseif ($r.Index -eq $iUpd) {
-            if (Update-App) { return }
-        } elseif ($r.Index -eq $iExit) {
-            Clear-Host
-            return
-        }
+    } finally {
+        [Console]::CursorVisible = $true
     }
+    [Console]::Write("$E[2J$E[H")
 }
 
 # ═══ запуск ══════════════════════════════════════════════════════════════════
@@ -638,11 +749,11 @@ function Start-Kvnbox([string[]]$CliArgs) {
     $installed = $self -and ((Resolve-Path -LiteralPath $self).Path -eq [IO.Path]::GetFullPath($AppScript))
     if (-not $installed) {
         # первый запуск (irm | iex) или файл скачан вручную — установка и сразу приложение
-        Write-Host ''
-        Write-Host '  kvnBox — установка приложения...' -ForegroundColor Cyan
+        Write-Line
+        Write-Line "$($C.Accent)kvnBox — установка приложения...$R"
         $text = if ($self) { [IO.File]::ReadAllText($self, [Text.Encoding]::UTF8) } else { Get-RemoteScript }
         Install-App $text
-        Write-Host '  ✓ Ярлык «kvnBox» — на рабочем столе и в меню Пуск.' -ForegroundColor Green
+        Write-Ok 'Ярлык «kvnBox» — на рабочем столе и в меню Пуск.'
         Start-Sleep -Milliseconds 800
     }
     if ($CliArgs.Count -ge 2 -and $CliArgs[0] -eq '-Connect') {
