@@ -1139,40 +1139,80 @@ def logs_units(ctx: Ctx) -> Json:
     ]
 
 
+# службы, которые пишут свой журнал в файл (в journald у них только запуск/остановка)
+LOG_FILES = {
+    "fail2ban": "/var/log/fail2ban.log",
+    "netbird": "/var/log/netbird/client.log",
+}
+
+
+def _log_command(unit: str, lines: int, follow: bool) -> list[str]:
+    path = LOG_FILES.get(unit)
+    if path and Path(path).exists():
+        return ["tail", "-n", str(lines), *(["-F"] if follow else []), path]
+    return [
+        "journalctl",
+        "-u",
+        unit,
+        *(["-f"] if follow else []),
+        "-n",
+        str(lines),
+        "-o",
+        "short-iso",
+        "--no-pager",
+    ]
+
+
 @action("logs.tail")
 def logs_tail(ctx: Ctx) -> Json:
     unit = _unit(ctx)
     lines = max(10, min(ctx.num("lines", 200), 2000))
+    if unit in LOG_FILES and Path(LOG_FILES[unit]).exists():
+        res = ctx.app.runner.run(_log_command(unit, lines, False), timeout=30)
+        return {"unit": unit, "text": res.stdout}
     return {"unit": unit, "text": ctx.app.systemd.journal(unit, lines)}
 
 
 @action("logs.follow")
 def logs_follow(ctx: Ctx) -> Json:
     """Поток журнала (только в `api serve`): сначала последние строки, затем новые — в `emit`,
-    пока не придёт отмена (проверка раз в 0,5 с, даже если служба молчит)."""
+    пока не придёт отмена (проверка раз в 0,5 с, даже если служба молчит).
+    Чтение — os.read кусками: select по дескриптору не видит строки, уже забранные
+    в буфер файла Python, и после первой строки поток «замирал» (приёмка веб-меню)."""
+    import os
     import select
 
     unit = _unit(ctx)
     lines = max(0, min(ctx.num("lines", 100), 2000))
+    cmd = _log_command(unit, lines, True)
+    if cmd[0] == "journalctl":
+        # `journalctl -f` показывает только текущую загрузку — история отдельно, поток с нуля
+        hist = ctx.app.runner.run(_log_command(unit, lines, False), timeout=30)
+        for line in hist.stdout.splitlines():
+            if not line.startswith("-- "):
+                ctx.emit(line.rstrip())
+        cmd[cmd.index("-n") + 1] = "0"
     with subprocess.Popen(
-        ["journalctl", "-u", unit, "-f", "-n", str(lines), "-o", "short-iso", "--no-pager"],
+        cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
-        text=True,
-        bufsize=1,
     ) as proc:
         assert proc.stdout is not None
+        fd = proc.stdout.fileno()
+        tail = b""
         try:
             while not ctx.cancelled():
-                ready, _, _ = select.select([proc.stdout], [], [], 0.5)
+                ready, _, _ = select.select([fd], [], [], 0.5)
                 if not ready:
                     if proc.poll() is not None:
                         break
                     continue
-                line = proc.stdout.readline()
-                if not line:
+                chunk = os.read(fd, 65536)
+                if not chunk:
                     break
-                ctx.emit(line.rstrip())
+                *full, tail = (tail + chunk).split(b"\n")
+                for raw in full:
+                    ctx.emit(raw.decode("utf-8", "replace").rstrip())
         finally:
             proc.terminate()
     return {"message": "Поток журнала остановлен."}

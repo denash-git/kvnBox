@@ -9,7 +9,7 @@
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 # На чистый сервер kvnBox ставится прямо из лаунчера.
 
-$KvnboxVersion = '3.0.0'
+$KvnboxVersion = '3.0.1'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
@@ -496,10 +496,11 @@ function Remove-ServerWeb([string]$Alias) {
     return @{ ok = $true; note = $note }
 }
 
-function Open-ServerTerminal($s) {
-    # меню сервера в отдельном окне терминала
+function Open-ServerTerminal($s, [string]$Mode = 'shell') {
+    # окно терминала: командная строка сервера или меню kvnBox
     $ssh = Get-Tool 'ssh'
-    $cmd = "& '$ssh' -F '$SshConfig' -t $($s.Alias) menu"
+    $tail = if ($Mode -eq 'menu') { ' menu' } else { '' }
+    $cmd = "& '$ssh' -F '$SshConfig' -t $($s.Alias)$tail"
     $wt = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\wt.exe'
     if (Test-Path $wt) {
         Start-Process $wt -ArgumentList @('--title', "`"kvnBox - $($s.Name)`"", (Get-PowerShellExe), '-NoProfile', '-Command', $cmd)
@@ -518,10 +519,15 @@ function Enter-Server($s) {
 
 function Start-InstallJob($s, [string]$Domain) {
     # установка kvnBox на чистый сервер: установщик с GitHub, домен — переменной,
-    # вывод построчно (без терминала установщик пишет «[ok] этап»)
+    # вывод построчно (без терминала установщик пишет «[ok] этап»). Установщик работает на
+    # сервере в фоне (nohup): обрыв SSH его не прерывает; сюда идёт `tail` его вывода.
     $url = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/install.sh'
-    $remote = "set -o pipefail; command -v curl >/dev/null || (apt-get update -q && apt-get install -y -q curl) >/dev/null 2>&1; " +
-        "curl -fsSL --retry 3 $url -o ~/kvnbox-install.sh && KVNBOX_DOMAIN='$Domain' bash ~/kvnbox-install.sh 2>&1"
+    $remote = 'command -v curl >/dev/null || (apt-get update -q && apt-get install -y -q curl) >/dev/null 2>&1; ' +
+        "curl -fsSL --retry 3 '$url`?t=$([DateTime]::UtcNow.Ticks)' -o ~/kvnbox-install.sh || { echo 'Не удалось скачать установщик с GitHub.'; exit 2; }; " +
+        "grep -q KVNBOX_DOMAIN ~/kvnbox-install.sh || { echo 'Установщик на GitHub старой версии: он не умеет ставиться из лаунчера. Поставьте вручную: bash <(wget -qO- $url)'; exit 3; }; " +
+        "pgrep -fx 'bash .*/kvnbox-install.sh' >/dev/null && { echo 'На сервере уже идёт установка kvnBox.'; exit 4; }; " +
+        "KVNBOX_DOMAIN='$Domain' nohup bash ~/kvnbox-install.sh > ~/kvnbox-install.out 2>&1 < /dev/null & " +
+        'P=$!; tail -n +1 -f --pid=$P ~/kvnbox-install.out; wait $P'
     $psi = New-Object Diagnostics.ProcessStartInfo
     $psi.FileName = Get-Tool 'ssh'
     $extra = if ($KnownHosts) { "-o `"UserKnownHostsFile=$KnownHosts`" " } else { '' }
@@ -725,7 +731,7 @@ function Start-WebMenu {
                         try { [void]$j.Proc.WaitForExit(3000) } catch { }
                         $code = try { $j.Proc.ExitCode } catch { -1 }
                         $json = if ($code -eq 0) { '{"ok":true,"data":{"code":0}}' }
-                        else { '{"ok":false,"error":' + (ConvertTo-Json "Установка завершилась с ошибкой (код $code). Подробности — в выводе выше и в /var/log/kvnbox-install.log на сервере." -Compress) + '}' }
+                        else { '{"ok":false,"error":' + (ConvertTo-Json "Установка не завершена (код $code): причина — в выводе выше; журнал на сервере — /var/log/kvnbox-install.log." -Compress) + '}' }
                         Send-WebResponse $j.Ctx 200 'application/json; charset=utf-8' $json
                         break
                     }
@@ -830,11 +836,17 @@ function Start-WebMenu {
                         if ([string]$in.id -notmatch '^[A-Za-z0-9-]+$') { $res = @{ ok = $false; error = 'bad id' }; break }
                         try {
                             $p = Start-InstallJob $srvObj $dom
-                            $streamJobs.Add(@{ Ctx = $ctx; Proc = $p; Id = [string]$in.id; Read = $p.StandardOutput.ReadLineAsync() })
+                            $streamJobs.Add(@{ Ctx = $ctx; Proc = $p; Id = [string]$in.id; Alias = $srvObj.Alias; Read = $p.StandardOutput.ReadLineAsync() })
                         } catch { $res = @{ ok = $false; error = "Не удалось запустить ssh: $($_.Exception.Message)" } }
                     }
+                    '/app/server_install_abort' {
+                        if (-not $srvObj) { $res = @{ ok = $false; error = 'Сервер не найден.' }; break }
+                        [void](Invoke-Ssh $srvObj.Alias "pkill -TERM -fx 'bash .*/kvnbox-install.sh'; sleep 1; pgrep -fx 'bash .*/kvnbox-install.sh' >/dev/null && pkill -KILL -fx 'bash .*/kvnbox-install.sh'; true" 15)
+                        foreach ($j in $streamJobs.ToArray()) { if ($j.Alias -eq $srvObj.Alias) { try { $j.Proc.Kill() } catch { } } }
+                        $res = @{ ok = $true }
+                    }
                     '/app/terminal' {
-                        if ($srvObj) { Open-ServerTerminal $srvObj; $res = @{ ok = $true } } else { $res = @{ ok = $false; error = 'Сервер не найден.' } }
+                        if ($srvObj) { Open-ServerTerminal $srvObj ([string]$in.mode); $res = @{ ok = $true } } else { $res = @{ ok = $false; error = 'Сервер не найден.' } }
                     }
                     '/app/self_update' {
                         $err = Update-AppWeb

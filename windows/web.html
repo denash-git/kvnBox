@@ -233,6 +233,12 @@ textarea.input.ta{height:110px;padding:10px 12px;resize:vertical;font:12px "Casc
 .steps{display:grid;gap:4px;max-height:300px;overflow:auto}.stp{display:flex;align-items:center;gap:8px;font-size:13px}.stp .i{width:14px;height:14px}
 .dtitle{font-size:17px;font-weight:600}
 .cdnt{width:100%;border-collapse:collapse;font-size:12.5px}.cdnt th,.cdnt td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.cdnt th{color:var(--dim);font-weight:500}
+.nav-dis a{opacity:.4;pointer-events:none}
+.nav-quit{margin-top:28px;color:var(--red)!important}.nav-quit:hover{background:rgba(239,68,68,.08)!important}
+.hosts .host{padding:12px 14px;gap:6px}.hosts .hrow{display:flex;align-items:center;gap:8px;min-width:0}.hosts .hrow .nm{flex:1}
+.hosts .icon-btn.danger{color:var(--red)}
+.term .d{color:#7b8496}
+.pcb{display:grid;gap:12px}.pcr{min-height:64px}
 @media (max-width:820px){.form2{grid-template-columns:1fr}}
 @media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:820px){.split{grid-template-columns:1fr}.g4,.g3,.g2{grid-template-columns:minmax(0,1fr)}}
@@ -355,6 +361,8 @@ function openModal(html) { $('#modal').innerHTML = html; $('#modal').classList.a
 function closeAll() { ['#drawer', '#modal', '#scrim'].forEach(s => $(s).classList.remove('open')); }
 $('#scrim').onclick = () => { if (!$('#modal').dataset.locked) closeAll(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').dataset.locked) closeAll(); });
+/* подтверждение поверх открытого окна (не закрывает его) */
+const confirmBox2 = (title, text) => Promise.resolve(window.confirm(`${title}\n\n${text}`));
 function confirmBox(title, text, okText = 'Да', danger = false) {
   return new Promise(res => {
     openModal(`<div class="mh"><h2>${esc(title)}</h2></div><div class="mb"><div style="color:var(--text2);white-space:pre-line">${text}</div></div>
@@ -430,8 +438,11 @@ const HOME = ['home', 'Главное меню', 'grid', 'Серверы kvnBox 
 let PAGE = 'home', USERCOUNT = '';
 function renderNav() {
   const item = ([k, t, i]) => `<a class="${PAGE === k ? 'on' : ''}" data-nav="${k}">${ic(i)}${t}${k === 'users' && USERCOUNT !== '' ? `<span class="cnt">${USERCOUNT}</span>` : ''}</a>`;
-  $('#nav').innerHTML = item(HOME) + (SRV ? `<div class="nav-sep">Сервер</div>` + PAGES.map(item).join('') : '');
-  $$('#nav a').forEach(a => a.onclick = () => go(a.dataset.nav));
+  const none = SRV && LINK[SRV]?.none;
+  $('#nav').innerHTML = item(HOME) + (SRV ? `<div class="nav-sep">Сервер</div><div class="${none ? 'nav-dis' : ''}" title="${none ? 'kvnBox на сервере не установлен' : ''}">` + PAGES.map(item).join('') + '</div>' : '')
+    + `<a class="nav-quit" id="navQuit">${ic('power')}Закрыть kvnBox</a>`;
+  $$('#nav a[data-nav]').forEach(a => a.onclick = () => go(a.dataset.nav));
+  $('#navQuit').onclick = quitApp;
   $('.srv').style.display = SERVERS.length ? '' : 'none';
 }
 let STOP = null; // остановка потока журнала при уходе со страницы
@@ -471,7 +482,7 @@ function renderSrv() {
   $('#srvBtn').title = s ? (l.st === 'ok' ? `На связи${l.panel ? ' · панель ' + l.panel : ''}` : l.st === 'bad' ? 'Нет связи' : '') : '';
   $('#srvMenu').innerHTML = SERVERS.map(x => { const k = LINK[x.Alias] || {}; const on = k.st ? k.st === 'ok' : x.Online;
     return `<div class="srv-item ${x.Alias === SRV ? 'cur' : ''}" data-a="${esc(x.Alias)}"><span class="dot ${on ? 'ok' : 'bad'}"></span>
-      <span class="st"><b>${esc(x.Name)}</b><small>${addrOf(x)}${k.panel ? ` · панель ${esc(k.panel)}` : ''}</small></span>${x.Alias === SRV ? `<span class="ck">${ic('check')}</span>` : ''}</div>`; }).join('')
+      <span class="st"><b>${esc(x.Name)}</b><small>${addrOf(x)}${k.panel ? ` · панель ${esc(k.panel)}` : k.none || CHECK[x.Alias]?.installed === false ? ' · kvnBox не установлен' : ''}</small></span>${x.Alias === SRV ? `<span class="ck">${ic('check')}</span>` : ''}</div>`; }).join('')
     + `<div class="srv-item" data-home="1"><span class="st"><b style="font-weight:500">${ic('grid')} Главное меню</b><small>добавить, изменить, удалить сервер</small></span></div>`;
   $$('.srv-item[data-a]').forEach(el => el.onclick = e => { e.stopPropagation(); $('#srvMenu').classList.remove('open'); if (el.dataset.a !== SRV) switchSrv(el.dataset.a, PAGE === 'home' ? 'overview' : PAGE); else if (PAGE === 'home') go('overview'); });
   $$('.srv-item[data-home]').forEach(el => el.onclick = e => { e.stopPropagation(); $('#srvMenu').classList.remove('open'); go('home'); });
@@ -491,11 +502,21 @@ async function connect() {
     go(PAGE);
   } catch (e) {
     if (alias !== SRV) return;
-    READY = false; setConn('bad');
-    const old = /Нет такого действия|invalid choice|api/i.test(e.message) && !/потеряно|timed out|refused|Permission/i.test(e.message);
-    $('#page').innerHTML = old
-      ? `<div class="card empty" style="padding:60px 20px"><span style="color:var(--yellow)">${ic('up')}</span><b style="font-size:16px;color:var(--text)">Панель на сервере устарела</b><span>Веб-меню работает с панелью kvnBox 0.5.0 и новее. Обновите панель: в лаунчере выберите сервер (Enter) → Настройки → Проверить обновления панели.</span><button class="btn" onclick="connect()">${ic('refresh')} Проверить снова</button></div>`
-      : `<div class="card empty" style="padding:60px 20px"><span style="color:var(--red)">${ic('alert')}</span><b style="font-size:16px;color:var(--text)">${esc(s ? s.Name : '')} не отвечает</b><span>${esc(e.message)}</span><button class="btn" onclick="connect()">${ic('refresh')} Повторить</button></div>`;
+    READY = false;
+    const none = /command not found|kvnbox: not found/i.test(e.message);
+    const old = !none && /Нет такого действия|invalid choice|api/i.test(e.message) && !/потеряно|timed out|refused|Permission/i.test(e.message);
+    if (none || old) { LINK[SRV] = {...(LINK[SRV] || {}), st: 'ok', none, panel: ''}; renderSrv(); renderNav(); } else setConn('bad');
+    const name = esc(s ? s.Name : '');
+    $('#page').innerHTML = none
+      ? `<div class="card empty" style="padding:60px 20px"><span style="color:var(--yellow)">${ic('box')}</span><b style="font-size:16px;color:var(--text)">На ${name} kvnBox не установлен</b><span>Сервер на связи, вход по ключу работает. Установите kvnBox — понадобится только домен.</span>
+          <div class="row" style="justify-content:center"><button class="btn primary" id="nInst">${ic('dl')} Установить kvnBox</button><button class="btn" id="nTerm">${ic('log')} Терминал</button></div></div>`
+      : old
+      ? `<div class="card empty" style="padding:60px 20px"><span style="color:var(--yellow)">${ic('up')}</span><b style="font-size:16px;color:var(--text)">Панель на сервере устарела</b><span>Веб-меню работает с kvnBox 0.5.0 и новее. Обновите панель: кнопка «Меню» → Настройки → Проверить обновления панели.</span>
+          <div class="row" style="justify-content:center"><button class="btn primary" id="nMenu">${ic('log')} Меню</button><button class="btn" onclick="connect()">${ic('refresh')} Проверить снова</button></div></div>`
+      : `<div class="card empty" style="padding:60px 20px"><span style="color:var(--red)">${ic('alert')}</span><b style="font-size:16px;color:var(--text)">${name} не отвечает</b><span>${esc(e.message)}</span><button class="btn" onclick="connect()">${ic('refresh')} Повторить</button></div>`;
+    if ($('#nInst')) $('#nInst').onclick = () => installServer(s);
+    if ($('#nTerm')) $('#nTerm').onclick = ev => busy(ev.currentTarget, () => lpost('/app/terminal', {alias, mode: 'shell'}));
+    if ($('#nMenu')) $('#nMenu').onclick = ev => busy(ev.currentTarget, () => lpost('/app/terminal', {alias, mode: 'menu'}));
   }
 }
 function setConn(st) { LINK[SRV] = {...(LINK[SRV] || {}), st}; renderSrv(); }
@@ -521,6 +542,11 @@ async function lpost(path, body = {}, onLine) {
 const apiOn = (alias, action, args = {}) => fetch(`/app/call?t=${TOKEN}&s=${encodeURIComponent(alias)}`, {method: 'POST', body: JSON.stringify({id: 'h' + (++SEQ) + '-' + Date.now().toString(36), action, args})})
   .then(r => r.json()).then(j => { if (!j.ok) throw new Error(j.error || 'Ошибка'); return j.data; });
 const CHECK = {}; // alias → {installed, version} | {error}
+async function quitApp() {
+  if (!await confirmBox('Закрыть kvnBox?', 'Окно PowerShell закроется, эта страница перестанет работать. Снова открыть — ярлыком «kvnBox».', 'Закрыть')) return;
+  await lpost('/app/quit').catch(() => {});
+  document.body.innerHTML = `<div class="empty" style="height:100vh;display:grid;place-content:center;gap:10px;text-align:center">${ic('power')}<b style="font-size:17px">kvnBox закрыт</b><span class="muted">Вкладку можно закрыть. Открыть снова — ярлыком «kvnBox».</span></div>`;
+}
 async function home(fresh = false) {
   if (fresh) await loadServers().catch(() => {});
   $('#page').innerHTML = `
@@ -532,11 +558,9 @@ async function home(fresh = false) {
     : `<div class="card empty" style="padding:64px 20px">${ic('box')}<b style="font-size:17px;color:var(--text)">Серверов пока нет</b>
         <span>Добавьте сервер: нужны его IP и пароль root (один раз — дальше вход по ключу).<br>На чистый сервер kvnBox установится прямо отсюда.</span>
         <button class="btn primary" id="hAdd">${ic('plus')} Добавить сервер</button></div>`}
-    <div class="row wrap muted" style="font-size:12.5px"><span>Ключи SSH и список серверов хранятся на этом компьютере. Окно PowerShell — связь страницы с серверами.</span><span class="sp" style="flex:1"></span>
-      <button class="btn ghost danger" id="hQuit">${ic('power')} Закрыть kvnBox</button></div>`;
+    <div class="muted" style="font-size:12.5px">Ключи SSH и список серверов хранятся на этом компьютере. Окно PowerShell — backend страницы с серверами.</div>`;
   $('#hAdd').onclick = () => addServer();
-  $('#hQuit').onclick = async () => { if (!await confirmBox('Закрыть kvnBox?', 'Окно PowerShell закроется, эта страница перестанет работать. Снова открыть — ярлыком «kvnBox».', 'Закрыть')) return;
-    await lpost('/app/quit').catch(() => {}); document.body.innerHTML = `<div class="empty" style="height:100vh;display:grid;place-content:center;gap:10px;text-align:center">${ic('power')}<b style="font-size:17px">kvnBox закрыт</b><span class="muted">Вкладку можно закрыть. Открыть снова — ярлыком «kvnBox».</span></div>`; };
+
   if ($('#hUpd')) $('#hUpd').onclick = e => busy(e.currentTarget, async () => { await lpost('/app/self_update');
     document.body.innerHTML = `<div class="empty" style="height:100vh;display:grid;place-content:center;gap:10px;text-align:center">${ic('check')}<b style="font-size:17px">Лаунчер обновлён</b><span class="muted">Новая версия откроется в новой вкладке, эту можно закрыть.</span></div>`; });
   $$('#page [data-h]').forEach(b => b.onclick = e => hostAction(e.currentTarget, b.dataset.h, b.dataset.a));
@@ -551,14 +575,15 @@ function hostCard(s) {
     : '<span class="pill" style="color:var(--yellow);border-color:rgba(234,179,8,.4)">kvnBox не установлен</span>';
   const b = (a, t, i, cls = '') => `<button class="btn ${cls}" data-h="${esc(s.Alias)}" data-a="${a}">${i ? ic(i) : ''} ${t}</button>`;
   const main = c && c.installed === false ? b('install', 'Установить kvnBox', 'dl', 'primary') : b('open', 'Открыть', 'arrow', 'primary');
-  return `<div class="card host"><div class="row"><span class="dot ${s.Online ? 'ok' : 'bad'}"></span><b class="nm" title="${esc(s.Name)}">${esc(s.Name)}</b></div>
-    <div class="muted mono" style="font-size:12.5px">${addrOf(s)}</div><div>${st}</div>
-    <div class="foot">${main}${b('term', 'Терминал', 'log', 'ghost')}${b('edit', 'Изменить', 'gear', 'ghost')}${b('del', 'Удалить', 'trash', 'ghost danger')}</div></div>`;
+  const ib = (a, t, i, cls = '') => `<button class="icon-btn sm ${cls}" title="${t}" data-h="${esc(s.Alias)}" data-a="${a}">${ic(i)}</button>`;
+  return `<div class="card host"><div class="hrow"><span class="dot ${s.Online ? 'ok' : 'bad'}"></span><b class="nm" title="${esc(s.Name)}">${esc(s.Name)}</b>${st}</div>
+    <div class="hrow"><span class="muted mono" style="font-size:12.5px;flex:1">${addrOf(s)}</span>${main}${b('term', 'Терминал', '', 'ghost')}${b('menu', 'Меню', '', 'ghost')}${ib('edit', 'Изменить', 'gear')}${ib('del', 'Удалить', 'trash', 'danger')}</div></div>`;
 }
 async function hostAction(btn, alias, a) {
   const s = SERVERS.find(x => x.Alias === alias); if (!s) return;
   if (a === 'open') return switchSrv(alias, 'overview');
-  if (a === 'term') return busy(btn, async () => { await lpost('/app/terminal', {alias}); toast('Меню сервера открыто в окне терминала'); });
+  if (a === 'term') return busy(btn, async () => { await lpost('/app/terminal', {alias, mode: 'shell'}); toast('Командная строка сервера — в новом окне терминала'); });
+  if (a === 'menu') return busy(btn, async () => { await lpost('/app/terminal', {alias, mode: 'menu'}); toast('Меню kvnBox — в новом окне терминала'); });
   if (a === 'install') return installServer(s);
   if (a === 'edit') {
     const v = await formBox(`Сервер: ${s.Name}`, [{label: 'Название', value: s.Name}, {label: 'Порт SSH', type: 'number', value: String(s.Port), hint: 'только запись на этом ПК — если порт уже сменили на сервере (Настройки → SSH)'}], 'Сохранить');
@@ -603,9 +628,13 @@ async function installServer(s) {
   const dom = v[0].trim().toLowerCase();
   if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/.test(dom)) { toast('Неверный домен', 'bad'); return; }
   openModal(`<div class="mh"><h2>Установка kvnBox на ${esc(s.Name)}</h2></div><div class="mb"><div class="row"><span class="spin dark"></span><span id="lstat" style="color:var(--text2)">Установка… 5–15 минут, не закрывайте страницу</span></div>
-    <div class="steps" id="isteps"></div><div class="term small" id="lout" style="max-height:180px"></div></div><div class="mf"><button class="btn" id="lclose" disabled>Закрыть</button></div>`);
+    <div class="steps" id="isteps"></div><div class="term small" id="lout" style="max-height:180px"></div></div><div class="mf"><button class="btn ghost danger" id="lstop">Прервать</button><button class="btn" id="lclose" disabled>Закрыть</button></div>`);
   $('#modal').dataset.locked = '1';
   const out = $('#lout'), steps = $('#isteps');
+  let last = '', same = 0, stopped = false;
+  const abort = async why => { if (stopped) return; stopped = true; $('#lstop').disabled = true; $('#lstat').textContent = why || 'Прерывание…';
+    await lpost('/app/server_install_abort', {alias: s.Alias}).catch(() => {}); };
+  $('#lstop').onclick = async () => { if (await confirmBox2('Прервать установку?', 'Установщик на сервере будет остановлен. Начать заново можно позже.')) abort('Прерывание…'); };
   const add = t => {
     const m = t.match(/^\[(\.\.|ok|!!|FAIL)\]\s*(.*)$/);
     if (m) {
@@ -615,6 +644,8 @@ async function installServer(s) {
       steps.insertAdjacentHTML('beforeend', `<div class="stp" data-run="${k === '..' ? 1 : 0}">${ico}<span>${esc(name)}</span></div>`);
       return;
     }
+    if (t === last) { if (++same >= 20) abort('Установщик повторяет одну и ту же строку — остановлен.'); return; }
+    last = t; same = 0;
     out.insertAdjacentHTML('beforeend', `<div>${esc(t)}</div>`); out.scrollTop = out.scrollHeight;
   };
   try {
@@ -623,8 +654,8 @@ async function installServer(s) {
     CHECK[s.Alias] = undefined;
   } catch (e) { $('#lstat').innerHTML = `<b style="color:var(--red)">✗ ${esc(e.message)}</b>`; }
   finally {
-    $('.spin.dark')?.remove(); delete $('#modal').dataset.locked;
-    $('#lclose').disabled = false; $('#lclose').onclick = () => { closeAll(); home(); };
+    $('.spin.dark')?.remove(); delete $('#modal').dataset.locked; $('#lstop')?.remove();
+    $('#lclose').disabled = false; $('#lclose').onclick = () => { closeAll(); delete LINK[s.Alias]; home(true); };
   }
 }
 
@@ -1020,9 +1051,14 @@ async function logs() {
   $$('[data-l]').forEach(b => b.onclick = () => { LOGUNIT = b.dataset.l; go('logs'); });
   const term = $('#term'); const all = []; let paused = false;
   const show = l => { if ($('#lq').value && !l.toLowerCase().includes($('#lq').value.toLowerCase())) return;
-    const cls = /error|fail|fatal|panic|ошибк/i.test(l) ? 'e' : /warn/i.test(l) ? 'w' : '';
-    const m = l.match(/^(\S+)\s+\S+\s+([^:]+):\s?(.*)$/);
-    term.insertAdjacentHTML('beforeend', m ? `<div class="${cls}"><span class="ts">${esc(m[1].slice(11, 19))}</span> ${esc(m[3])}</div>` : `<div class="${cls}">${esc(l)}</div>`);
+    const dep = /is deprecated, not recommended/.test(l);
+    const cls = dep ? 'd' : /error|fail|fatal|panic|ошибк/i.test(l) ? 'e' : /warn/i.test(l) ? 'w' : '';
+    // journald: «2026-11-08T09:23:23+00:00 host unit[pid]: текст»; файлы (fail2ban, NetBird): «2026-11-08 17:14:59,924 текст»
+    const j = l.match(/^\d{4}-\d\d-\d\dT(\d\d:\d\d:\d\d)\S*\s+\S+\s+[^\s:]+:\s?(.*)$/);
+    const f = !j && l.match(/^\d{4}-\d\d-\d\d[T ](\d\d:\d\d:\d\d)\S*\s+(.*)$/);
+    const m = j || f;
+    const note = dep ? ' <span class="ts">· предупреждение Xray, не ошибка</span>' : '';
+    term.insertAdjacentHTML('beforeend', m ? `<div class="${cls}"><span class="ts">${esc(m[1])}</span> ${esc(m[2])}${note}</div>` : `<div class="${cls}">${esc(l)}${note}</div>`);
     if (!paused) term.scrollTop = term.scrollHeight; };
   $('#lq').oninput = () => { term.innerHTML = ''; all.forEach(show); };
   $('#lpause').onclick = e => { paused = !paused; e.target.textContent = paused ? 'Продолжить' : 'Пауза'; $('#lst').className = 'pill ' + (paused ? '' : 'ok'); };
@@ -1116,35 +1152,39 @@ async function diagCdn() {
 let PCRES = null;
 function diagPc() {
   const s = SERVERS.find(x => x.Alias === SRV);
-  $('#dbody').innerHTML = `<div class="row wrap"><div style="flex:1"><div class="dtitle">Скорость между этим ПК и сервером</div>
-      <div class="muted">Два замера по ~8 секунд в каждую сторону: <b>HTTPS через порт 443</b> — как ходят VPN-клиенты (шифрование, маршрут до сайта);
-      <b>iperf3 через порт 5201</b> — «чистый» канал, порт открывается только на время замера.</div></div>
-      <button class="btn primary" id="dPh">${ic('refresh')} HTTPS (443)</button><button class="btn" id="dIs">${ic('refresh')} iperf3 (5201)</button></div>
-    <div id="dIr" style="margin-top:16px"></div>
-    <div class="muted" style="margin-top:18px;font-size:12.5px">Вручную: на ПК <code>iperf3 -c ${esc(s ? s.Host : 'IP')} -p 5201 -R</code> (с -R — сервер → ПК, без -R — ПК → сервер), пока замер iperf3 запущен отсюда.</div>`;
-  const show = () => { if (!PCRES || PCRES.srv !== SRV) return; const r = PCRES;
-    $('#dIr').innerHTML = `<div class="stres">${r.https ? nCard(r.https.down, 'Мбит/с', 'HTTPS 443: сервер → ПК') + nCard(r.https.up, 'Мбит/с', 'HTTPS 443: ПК → сервер') : ''}${r.iperf ? nCard(r.iperf.down, 'Мбит/с', 'iperf3: сервер → ПК') + nCard(r.iperf.up, 'Мбит/с', 'iperf3: ПК → сервер') : ''}</div>`; };
-  const st = t => $('#dIr').innerHTML = `<div class="row"><span class="spin dark"></span><span class="muted">${t}</span></div>`;
+  const block = (id, title, sub, btn) => `<div class="card pcb"><div class="row"><div style="flex:1"><div class="dtitle">${title}</div><div class="muted">${sub}</div></div>
+    <button class="btn primary" id="${id}B">${ic('refresh')} ${btn}</button></div><div id="${id}R" class="pcr"><span class="muted">ещё не замеряли</span></div></div>`;
+  $('#dbody').innerHTML = `<div class="dtitle" style="margin-bottom:4px">Скорость между этим ПК и сервером</div><div class="muted" style="margin-bottom:14px">Каждый замер — около 8 секунд в каждую сторону.</div>
+    <div class="grid g2">
+      ${block('dH', 'HTTPS через порт 443', 'Как работают VPN-клиенты: шифрование, тот же маршрут, что у сайта.', 'Замерить')}
+      ${block('dI', 'iperf3 через порт 5201', 'Чистая скорость канала. Порт открывается только на время замера.', 'Замерить')}
+    </div>
+    <div class="muted" style="margin-top:12px;font-size:12.5px">Вручную (iperf3 на ПК, пока идёт замер): <code>iperf3 -c ${esc(s ? s.Host : 'IP')} -p 5201 -R</code> — сервер → ПК; без <code>-R</code> — ПК → сервер.</div>`;
+  const pair = (r) => `<div class="stres">${nCard(r.down, 'Мбит/с', '↓ Сервер → ПК')}${nCard(r.up, 'Мбит/с', '↑ ПК → сервер')}</div>`;
+  const show = () => { if (!PCRES || PCRES.srv !== SRV) return; if (PCRES.https) $('#dHR').innerHTML = pair(PCRES.https); if (PCRES.iperf) $('#dIR').innerHTML = pair(PCRES.iperf); };
+  const st = (id, t) => $(`#${id}R`).innerHTML = `<div class="row"><span class="spin dark"></span><span class="muted">${t}</span></div>`;
   const keep = (k, v) => { if (!PCRES || PCRES.srv !== SRV) PCRES = {srv: SRV}; PCRES[k] = v; show(); };
   show();
-  // HTTPS через 443: страница сама качает с сервера и отправляет на него (как браузер/клиент)
-  $('#dPh').onclick = e => busy(e.currentTarget, async () => {
-    st('Подготовка сервера замера…');
-    const {url} = await api('diag.https_start');
+  // HTTPS через 443: страница сама качает с сервера и отправляет на него (как клиент)
+  $('#dHB').onclick = e => busy(e.currentTarget, async () => {
+    st('dH', 'Подготовка сервера замера…');
     try {
-      const mbit = (b, t0) => Math.round(b * 8 / ((performance.now() - t0) / 1000) / 1e5) / 10;
-      st('Замер: сервер → ПК…');
-      let got = 0; const ctl = new AbortController(); const t0 = performance.now(); const tm = setTimeout(() => ctl.abort(), 8000);
-      try { const r = await fetch(url + '/down?mb=1000', {signal: ctl.signal, cache: 'no-store'}); if (!r.ok) throw new Error(`сервер замера ответил ${r.status}`);
-        const rd = r.body.getReader(); for (;;) { const {done, value} = await rd.read(); if (done) break; got += value.length; } }
-      catch (err) { if (err.name !== 'AbortError') throw new Error('HTTPS: ' + err.message); }
-      clearTimeout(tm); const down = mbit(got, t0);
-      st('Замер: ПК → сервер…');
-      const blob = new Uint8Array(2 * 1024 * 1024); for (let i = 0; i < blob.length; i += 65536) crypto.getRandomValues(blob.subarray(i, i + 65536));
-      let sent = 0; const t1 = performance.now();
-      while (performance.now() - t1 < 8000) { const r = await fetch(url + '/up', {method: 'POST', body: blob, headers: {'Content-Type': 'text/plain'}, cache: 'no-store'}); if (!r.ok) throw new Error(`сервер замера ответил ${r.status}`); sent += blob.length; }
-      keep('https', {down, up: mbit(sent, t1)});
-    } finally { api('diag.https_stop').catch(() => {}); }
+      const {url} = await api('diag.https_start');
+      try {
+        const mbit = (b, t0) => Math.round(b * 8 / ((performance.now() - t0) / 1000) / 1e5) / 10;
+        st('dH', 'Сервер → ПК…');
+        let got = 0; const ctl = new AbortController(); const t0 = performance.now(); const tm = setTimeout(() => ctl.abort(), 8000);
+        try { const r = await fetch(url + '/down?mb=1000', {signal: ctl.signal, cache: 'no-store'}); if (!r.ok) throw new Error(`сервер замера ответил ${r.status}`);
+          const rd = r.body.getReader(); for (;;) { const {done, value} = await rd.read(); if (done) break; got += value.length; } }
+        catch (err) { if (err.name !== 'AbortError') throw new Error('HTTPS: ' + err.message); }
+        clearTimeout(tm); const down = mbit(got, t0);
+        st('dH', 'ПК → сервер…');
+        const blob = new Uint8Array(2 * 1024 * 1024); for (let i = 0; i < blob.length; i += 65536) crypto.getRandomValues(blob.subarray(i, i + 65536));
+        let sent = 0; const t1 = performance.now();
+        while (performance.now() - t1 < 8000) { const r = await fetch(url + '/up', {method: 'POST', body: blob, headers: {'Content-Type': 'text/plain'}, cache: 'no-store'}); if (!r.ok) throw new Error(`сервер замера ответил ${r.status}`); sent += blob.length; }
+        keep('https', {down, up: mbit(sent, t1)});
+      } finally { api('diag.https_stop').catch(() => {}); }
+    } catch (err) { $('#dHR').innerHTML = `<span style="color:var(--red)">${esc(err.message)}</span>`; throw err; }
   });
   // iperf3: лаунчер запускает iperf3 на ПК (ставит при первом замере)
   const mbps = j => { const e = j.end || {}; const x = e.sum_received || e.sum || {}; return Math.round((x.bits_per_second || 0) / 1e5) / 10; };
@@ -1156,16 +1196,16 @@ function diagPc() {
     return mbps(j.data);
   };
   const run = async () => {
-    st('Запуск iperf3 на сервере…');
+    st('dI', 'Запуск iperf3 на сервере…');
     const srv = await api('diag.iperf_start'); IPORT = srv.port || 5201;
-    try { st('Замер: сервер → ПК…'); const down = await local('down'); st('Замер: ПК → сервер…'); const up = await local('up'); keep('iperf', {down, up}); }
+    try { st('dI', 'Сервер → ПК…'); const down = await local('down'); st('dI', 'ПК → сервер…'); const up = await local('up'); keep('iperf', {down, up}); }
     finally { api('diag.iperf_stop').catch(() => {}); }
   };
-  $('#dIs').onclick = e => busy(e.currentTarget, async () => {
+  $('#dIB').onclick = e => busy(e.currentTarget, async () => {
     try { await run(); }
     catch (err) {
-      if (!err.needInstall) { show(); throw err; }
-      $('#dIr').innerHTML = `<div class="found"><span class="dot warn"></span><div style="flex:1"><b>На этом ПК нет iperf3</b><div class="muted">Лаунчер скачает iperf3 3.22 для Windows (около 1 МБ, github.com/ar51an/iperf3-win-builds), сверит контрольную сумму и положит в свою папку.</div></div><button class="btn primary" id="dInst">${ic('dl')} Установить iperf3</button></div>`;
+      if (!err.needInstall) { $('#dIR').innerHTML = `<span style="color:var(--red)">${esc(err.message)}</span>`; throw err; }
+      $('#dIR').innerHTML = `<div class="found"><span class="dot warn"></span><div style="flex:1"><b>На этом ПК нет iperf3</b><div class="muted">Лаунчер скачает iperf3 3.22 для Windows (около 1 МБ, github.com/ar51an/iperf3-win-builds), сверит контрольную сумму и положит в свою папку.</div></div><button class="btn primary" id="dInst">${ic('dl')} Установить iperf3</button></div>`;
       $('#dInst').onclick = ev => busy(ev.currentTarget, async () => {
         const j = await fetch(`/app/iperf_install?t=${TOKEN}`, {method: 'POST'}).then(r => r.json());
         if (!j.ok) throw new Error(j.error || 'Не удалось установить iperf3');
