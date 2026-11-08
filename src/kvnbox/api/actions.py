@@ -677,6 +677,9 @@ def modules_update(ctx: Ctx) -> Json:
     mid = ctx.text("id")
     tag = ctx.opt_str("version")
     app = ctx.app
+    if tag and mid in ("singbox", "xray", "mieru") and tag[0].isdigit():
+        # modules.latest отдаёт номер без «v», а теги релизов на GitHub — с «v»
+        tag = "v" + tag
     if mid == "singbox":
         return outcome(SingboxModule(app).safe_update(tag))
     if mid == "xray":
