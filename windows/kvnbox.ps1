@@ -7,11 +7,12 @@
 # Серверы: ключ SSH создаётся на ПК, добавляется на сервер (пароль root нужен один раз),
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 
-$KvnboxVersion = '2.2.0'
+$KvnboxVersion = '3.0.0'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
 $IconUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ico'
+$WebUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/web.html'
 
 function Get-EnvOr([string]$Name, [string]$Default) {
     $v = [Environment]::GetEnvironmentVariable($Name)
@@ -26,6 +27,7 @@ $DesktopDir = Get-EnvOr 'KVNBOX_DESKTOP' ([Environment]::GetFolderPath('Desktop'
 $StartMenuDir = Get-EnvOr 'KVNBOX_STARTMENU' ([Environment]::GetFolderPath('Programs'))
 $AppScript = Join-Path $AppDir 'kvnbox.ps1'
 $AppIcon = Join-Path $AppDir 'kvnbox.ico'
+$AppWeb = Join-Path $AppDir 'web.html'
 $ServersFile = Join-Path $AppDir 'servers.json'
 $UpdateFile = Join-Path $AppDir 'update.json'
 $SshConfig = Join-Path $SshDir 'config'
@@ -256,6 +258,7 @@ function Install-App([string]$Text, [string]$SourceDir = '') {
     # UTF-8 с BOM: Windows PowerShell 5.1 иначе читает файл в кодировке ANSI
     Write-Utf8 $AppScript $Text $true
     Install-Icon $SourceDir
+    Install-WebPage $SourceDir
     New-Shortcut (Join-Path $DesktopDir 'kvnBox.lnk') 'kvnBox'
     New-Shortcut (Join-Path $StartMenuDir 'kvnBox.lnk') 'kvnBox'
     Import-OldServers
@@ -795,6 +798,8 @@ function Start-App {
             $iAdd = $options.Count; $options += 'Добавить сервер'
             $iMng = -1
             if ($servers.Count) { $iMng = $options.Count; $options += 'Изменить / удалить сервер' }
+            $iWeb = -1
+            if ($servers.Count) { $iWeb = $options.Count; $options += 'Веб-меню (в браузере)' }
             $iUpd = -1
             if ($newer) { $iUpd = $options.Count; $options += "Обновить приложение до $latest" }
             $options += 'Выход'
@@ -824,6 +829,9 @@ function Start-App {
             } elseif ($r.Index -eq $iMng) {
                 if ((Show-ManageMenu $online) -eq 'exit') { break }
                 $online = $null
+            } elseif ($r.Index -eq $iWeb) {
+                Start-WebMenu
+                $online = $null
             } elseif ($r.Index -eq $iUpd) {
                 if (Update-App) { return }
             } else {
@@ -834,6 +842,227 @@ function Start-App {
         Set-Cursor $true
     }
     [Console]::Write("$Esc[2J$Esc[H")
+}
+
+# ═══ веб-меню ════════════════════════════════════════════════════════════════
+# Страница в браузере ↔ этот PowerShell (127.0.0.1, одноразовый ключ) ↔ один SSH-канал на сервер
+# (`kvnbox api serve`). На сервере ничего не слушает. Строки долгих операций и журналов — в
+# браузер потоком (EventSource). Всё в одном потоке: ожидание сразу HTTP и ответов серверов.
+
+function Install-WebPage([string]$SourceDir = '') {
+    try {
+        $local = if ($SourceDir) { Join-Path $SourceDir 'web.html' } else { '' }
+        if ($local -and (Test-Path $local) -and ([IO.Path]::GetFullPath($local) -ne [IO.Path]::GetFullPath($AppWeb))) {
+            $text = [IO.File]::ReadAllText($local, [Text.Encoding]::UTF8)
+        } else {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            $wc = New-Object Net.WebClient
+            $wc.Encoding = [Text.Encoding]::UTF8
+            $text = $wc.DownloadString("$WebUrl`?t=" + [DateTime]::UtcNow.Ticks)
+        }
+        if ($text -match '<!doctype html>' -and $text -match 'kvnBox' -and $text -match '</html>') {
+            Write-Utf8 $AppWeb $text
+        }
+    } catch { }
+}
+
+function ConvertTo-AsciiJson([string]$s) {
+    # в stdin ssh — только ASCII: кодировка консоли не важна
+    return [regex]::Replace($s, '[^\x00-\x7F]', { param($m) '\u{0:x4}' -f [int][char]$m.Value })
+}
+
+function Open-ApiSession([string]$Alias) {
+    $psi = New-Object Diagnostics.ProcessStartInfo
+    $psi.FileName = Get-Tool 'ssh'
+    $extra = if ($KnownHosts) { "-o `"UserKnownHostsFile=$KnownHosts`" " } else { '' }
+    $psi.Arguments = "-F `"$SshConfig`" -o BatchMode=yes -o ConnectTimeout=10 -o ServerAliveInterval=20 " +
+        "$extra$Alias kvnbox api serve"
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.RedirectStandardInput = $true
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.StandardOutputEncoding = [Text.UTF8Encoding]::new($false)
+    $psi.StandardErrorEncoding = [Text.UTF8Encoding]::new($false)
+    $p = [Diagnostics.Process]::Start($psi)
+    return @{
+        Alias = $Alias; Proc = $p; Pending = @{}
+        Read = $p.StandardOutput.ReadLineAsync(); Err = $p.StandardError.ReadToEndAsync()
+    }
+}
+
+function Close-ApiSession($Sess, [string]$Why) {
+    try { $Sess.Proc.StandardInput.Close() } catch { }
+    try { if (-not $Sess.Proc.WaitForExit(1500)) { $Sess.Proc.Kill() } } catch { }
+    $err = ''
+    try { if ($Sess.Err.Wait(500)) { $err = ($Sess.Err.Result -split "`n" | Where-Object { $_.Trim() } | Select-Object -Last 2) -join ' ' } } catch { }
+    foreach ($id in @($Sess.Pending.Keys)) {
+        $text = "Соединение с сервером потеряно. $Why $err".Trim()
+        $json = '{"id":"' + $id + '","ok":false,"error":' + (ConvertTo-Json $text -Compress) + '}'
+        Send-WebResponse $Sess.Pending[$id] 200 'application/json; charset=utf-8' $json
+    }
+    $Sess.Pending.Clear()
+}
+
+function Send-WebResponse($Ctx, [int]$Code, [string]$Type, [string]$Text) {
+    try {
+        $bytes = [Text.Encoding]::UTF8.GetBytes($Text)
+        $Ctx.Response.StatusCode = $Code
+        $Ctx.Response.ContentType = $Type
+        $Ctx.Response.Headers['Cache-Control'] = 'no-store'
+        $Ctx.Response.Headers['X-Content-Type-Options'] = 'nosniff'
+        $Ctx.Response.OutputStream.Write($bytes, 0, $bytes.Length)
+        $Ctx.Response.Close()
+    } catch { }
+}
+
+function Send-WebEvent($Streams, [string]$Data) {
+    $bytes = [Text.Encoding]::UTF8.GetBytes("data: $Data`n`n")
+    foreach ($st in $Streams.ToArray()) {
+        try { $st.Response.OutputStream.Write($bytes, 0, $bytes.Length); $st.Response.OutputStream.Flush() }
+        catch { [void]$Streams.Remove($st) }
+    }
+}
+
+function Start-WebMenu {
+    if (-not (Test-Path $AppWeb)) { Install-WebPage $PSScriptRoot }
+    if (-not (Test-Path $AppWeb)) {
+        Show-Header 'Веб-меню'
+        Write-Fail 'Страница веб-меню не найдена и не скачалась. Проверьте интернет и повторите.'
+        Pause-Key
+        return
+    }
+    $page = [IO.File]::ReadAllText($AppWeb, [Text.Encoding]::UTF8)
+    $token = -join ((1..32) | ForEach-Object { '{0:x}' -f (Get-Random -Maximum 16) })
+    $listener = $null
+    foreach ($try in 1..30) {
+        $port = Get-Random -Minimum 47000 -Maximum 48999
+        $l = New-Object Net.HttpListener
+        $l.Prefixes.Add("http://127.0.0.1:$port/")
+        try { $l.Start(); $listener = $l; break } catch { $l.Close() }
+    }
+    if (-not $listener) { Show-Header 'Веб-меню'; Write-Fail 'Не удалось запустить веб-сервер на ПК.'; Pause-Key; return }
+    $url = "http://127.0.0.1:$port/?t=$token"
+    $hostOk = "127.0.0.1:$port"
+
+    Show-Header 'Веб-меню'
+    Write-Line 'Веб-меню открыто в браузере. Это окно — его связь с серверами:'
+    Write-Line 'пока оно открыто, страница работает.'
+    Write-Line
+    Write-Line "Адрес: $($Col.Cyan)$url$Rst"
+    Write-Note 'Адрес одноразовый: после закрытия окна он перестаёт работать.'
+    Write-Line
+    Write-Line "$($Col.Yellow)q$Rst — остановить и вернуться в лаунчер"
+    Write-Line
+    if (-not $env:KVNBOX_WEB_NOBROWSER) { Start-Process $url }
+
+    $sessions = @{}
+    $streams = New-Object System.Collections.Generic.List[object]
+    $httpTask = $listener.GetContextAsync()
+    $lastPing = [DateTime]::UtcNow
+    $webLog = Join-Path $AppDir 'web.log'
+    try {
+        while ($true) {
+          try {
+            try { if ([Console]::KeyAvailable) { $k = [Console]::ReadKey($true); if ($k.Key -in @('Q', 'Escape', 'D0')) { break } } } catch { }
+            $tasks = New-Object System.Collections.Generic.List[Threading.Tasks.Task]
+            $tasks.Add($httpTask)
+            foreach ($s in $sessions.Values) { $tasks.Add($s.Read) }
+            [void][Threading.Tasks.Task]::WaitAny($tasks.ToArray(), 250)
+
+            # ответы серверов
+            foreach ($alias in @($sessions.Keys)) {
+                $s = $sessions[$alias]
+                while ($s.Read.IsCompleted) {
+                    $line = $null
+                    try { $line = $s.Read.Result } catch { }
+                    if ($null -eq $line) { Close-ApiSession $s ''; $sessions.Remove($alias); break }
+                    $s.Read = $s.Proc.StandardOutput.ReadLineAsync()
+                    if ($line -match '^\{"id": "([^"]*)", "event"') {
+                        Send-WebEvent $streams ('{"s":' + (ConvertTo-Json $alias -Compress) + ',"m":' + $line + '}')
+                    } elseif ($line -match '^\{"id": "([^"]+)", "ok"') {
+                        $id = $Matches[1]
+                        if ($s.Pending.ContainsKey($id)) {
+                            Send-WebResponse $s.Pending[$id] 200 'application/json; charset=utf-8' $line
+                            $s.Pending.Remove($id)
+                        }
+                    }
+                }
+            }
+
+            # поддержка потока событий (прокси и браузер не рвут молчащее соединение)
+            if (([DateTime]::UtcNow - $lastPing).TotalSeconds -ge 15) {
+                $lastPing = [DateTime]::UtcNow
+                $bytes = [Text.Encoding]::UTF8.GetBytes(": ping`n`n")
+                foreach ($st in $streams.ToArray()) { try { $st.Response.OutputStream.Write($bytes, 0, $bytes.Length); $st.Response.OutputStream.Flush() } catch { [void]$streams.Remove($st) } }
+            }
+
+            if (-not $httpTask.IsCompleted) { continue }
+            $ctx = $null
+            try { $ctx = $httpTask.Result } catch { }
+            $httpTask = $listener.GetContextAsync()
+            if (-not $ctx) { continue }
+            $req = $ctx.Request
+            $path = $req.Url.AbsolutePath
+            if ($req.Headers['Host'] -ne $hostOk -or $req.QueryString['t'] -ne $token) {
+                Send-WebResponse $ctx 403 'text/plain; charset=utf-8' 'Откройте адрес из окна лаунчера kvnBox.'
+                continue
+            }
+            if ($path -eq '/' -and $req.HttpMethod -eq 'GET') {
+                Send-WebResponse $ctx 200 'text/html; charset=utf-8' $page
+            } elseif ($path -eq '/app/servers') {
+                $list = @(Get-Servers)
+                $on = Get-Online $list
+                $srv = @($list | ForEach-Object { [pscustomobject]@{ Alias = $_.Alias; Name = $_.Name; Host = $_.Host; Port = $_.Port; Online = [bool]$on[$_.Alias] } })
+                $json = ConvertTo-Json -InputObject @{ launcher = $KvnboxVersion; servers = $srv } -Depth 4 -Compress
+                Send-WebResponse $ctx 200 'application/json; charset=utf-8' $json
+            } elseif ($path -eq '/app/events') {
+                $ctx.Response.ContentType = 'text/event-stream; charset=utf-8'
+                $ctx.Response.Headers['Cache-Control'] = 'no-store'
+                $ctx.Response.SendChunked = $true
+                $b = [Text.Encoding]::UTF8.GetBytes(": ok`n`n")
+                try { $ctx.Response.OutputStream.Write($b, 0, $b.Length); $ctx.Response.OutputStream.Flush(); $streams.Add($ctx) } catch { }
+            } elseif ($path -eq '/app/call' -and $req.HttpMethod -eq 'POST') {
+                $alias = [string]$req.QueryString['s']
+                $body = (New-Object IO.StreamReader($req.InputStream, [Text.Encoding]::UTF8)).ReadToEnd()
+                if (-not ($body -match '^\s*\{\s*"id"\s*:\s*"([A-Za-z0-9-]+)"')) {
+                    Send-WebResponse $ctx 400 'application/json' '{"ok":false,"error":"bad request"}'; continue
+                }
+                $id = $Matches[1]
+                if (-not (@(Get-Servers) | Where-Object { $_.Alias -eq $alias })) {
+                    Send-WebResponse $ctx 200 'application/json; charset=utf-8' ('{"id":"' + $id + '","ok":false,"error":"Сервер не найден в лаунчере."}'); continue
+                }
+                if (-not $sessions.ContainsKey($alias) -or $sessions[$alias].Proc.HasExited) {
+                    if ($sessions.ContainsKey($alias)) { Close-ApiSession $sessions[$alias] ''; $sessions.Remove($alias) }
+                    try { $sessions[$alias] = Open-ApiSession $alias }
+                    catch { Send-WebResponse $ctx 200 'application/json; charset=utf-8' ('{"id":"' + $id + '","ok":false,"error":"Не удалось запустить ssh."}'); continue }
+                }
+                $s = $sessions[$alias]
+                $s.Pending[$id] = $ctx
+                try {
+                    $s.Proc.StandardInput.Write((ConvertTo-AsciiJson ($body -replace "[\r\n]+", ' ')) + "`n")
+                    $s.Proc.StandardInput.Flush()
+                } catch {
+                    Close-ApiSession $s 'Канал SSH закрыт.'; $sessions.Remove($alias)
+                }
+            } elseif ($path -eq '/app/close' -and $req.HttpMethod -eq 'POST') {
+                $alias = [string]$req.QueryString['s']
+                if ($sessions.ContainsKey($alias)) { Close-ApiSession $sessions[$alias] 'Переподключение.'; $sessions.Remove($alias) }
+                Send-WebResponse $ctx 200 'application/json' '{"ok":true}'
+            } else {
+                Send-WebResponse $ctx 404 'text/plain' 'not found'
+            }
+          } catch {
+            # ошибка одного запроса не останавливает веб-меню; подробности — в web.log
+            $detail = "$([DateTime]::Now.ToString('s')) $($_.Exception.Message)`n$($_.InvocationInfo.PositionMessage)`n"
+            try { [IO.File]::AppendAllText($webLog, $detail, [Text.UTF8Encoding]::new($false)) } catch { }
+          }
+        }
+    } finally {
+        foreach ($s in @($sessions.Values)) { Close-ApiSession $s 'Веб-меню остановлено.' }
+        foreach ($st in $streams.ToArray()) { try { $st.Response.Close() } catch { } }
+        try { $listener.Stop(); $listener.Close() } catch { }
+    }
 }
 
 # ═══ запуск ══════════════════════════════════════════════════════════════════
@@ -851,6 +1080,7 @@ function Start-Kvnbox([string[]]$CliArgs) {
         Write-Ok 'Ярлык «kvnBox» — на рабочем столе и в меню Пуск.'
         Start-Sleep -Milliseconds 800
     }
+    if ($CliArgs.Count -ge 1 -and $CliArgs[0] -eq '-Web') { Start-WebMenu; return }
     if ($CliArgs.Count -ge 2 -and $CliArgs[0] -eq '-Connect') {
         $s = @(Get-Servers | Where-Object { $_.Alias -eq $CliArgs[1] })
         if ($s.Count) { Enter-Server $s[0]; return }

@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>kvnBox</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M32 6 56 19 32 32 8 19Z' fill='%2322c55e'/%3E%3Cpath d='M8 19 32 32v26L8 45Z' fill='%23ef4444'/%3E%3Cpath d='M56 19 32 32v26l24-13Z' fill='%233b82f6'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0b1020;--bg2:#0f1629;--card:#131c33;--card2:#18233f;--line:#22304f;--line2:#2c3c60;
+  --text:#e7ecf5;--text2:#a7b2c8;--dim:#6f7c96;
+  --blue:#3b82f6;--blue2:#2563eb;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--violet:#8b5cf6;--cyan:#06b6d4;--orange:#f97316;
+  --accent:var(--blue);--shadow:0 10px 30px rgba(0,0,0,.35);--r:12px;--r2:8px;
+}
+[data-theme=light]{
+  --bg:#f3f5f9;--bg2:#ffffff;--card:#ffffff;--card2:#f6f8fc;--line:#e3e8f1;--line2:#d5dce8;
+  --text:#0f172a;--text2:#475569;--dim:#8a96ab;--shadow:0 10px 30px rgba(15,23,42,.08);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:14px/1.5 "Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+
+/* ── боковая панель ── */
+aside{background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 14px;gap:18px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px}
+.brand b{font-size:17px;letter-spacing:.2px}.brand small{color:var(--dim);display:block;font-size:11px;margin-top:-2px}
+.srv{position:relative}
+.srv-btn{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r2);cursor:pointer;text-align:left}
+.srv-btn:hover{border-color:var(--line2)}
+.srv-btn .t{flex:1;min-width:0}.srv-btn .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.srv-btn .t span{color:var(--dim);font-size:12px}
+.srv-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--card);border:1px solid var(--line2);border-radius:var(--r2);box-shadow:var(--shadow);padding:6px;display:none;z-index:30}
+.srv-menu.open{display:block}
+.srv-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer}.srv-item:hover{background:var(--card2)}
+.srv-item small{color:var(--dim);margin-left:auto;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex:none;display:inline-block}
+.dot.ok{background:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.15)}.dot.bad{background:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,.15)}.dot.warn{background:var(--yellow)}
+nav{display:flex;flex-direction:column;gap:2px}
+nav a{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:var(--r2);color:var(--text2);text-decoration:none;cursor:pointer;position:relative}
+nav a:hover{background:var(--card);color:var(--text)}
+nav a.on{background:linear-gradient(90deg,rgba(59,130,246,.18),rgba(59,130,246,.04));color:var(--text)}
+nav a.on::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--blue)}
+nav a .cnt{margin-left:auto;font-size:11px;background:var(--card2);border:1px solid var(--line);padding:0 7px;border-radius:10px;color:var(--text2)}
+.aside-foot{margin-top:auto;display:flex;align-items:center;gap:8px;color:var(--dim);font-size:12px;padding:0 6px}
+.icon-btn{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:var(--r2);border:1px solid var(--line);background:var(--card);cursor:pointer;color:var(--text2)}
+.icon-btn:hover{color:var(--text);border-color:var(--line2)}
+.icon-btn.sm{width:30px;height:30px}
+
+/* ── основная часть ── */
+main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:14px;padding:18px 32px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(8px);position:sticky;top:0;z-index:20}
+.top h1{margin:0;font-size:20px;font-weight:600}.top .sub{color:var(--dim);font-size:13px}
+.top .sp{flex:1}
+.conn{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);background:var(--card);border:1px solid var(--line);padding:6px 10px;border-radius:20px}
+.page{padding:26px 32px 60px;display:grid;gap:22px;max-width:1280px;width:100%}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:var(--r2);border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--line2);background:var(--card2)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn.primary:hover{background:var(--blue2)}
+.btn.danger{color:var(--red)}.btn.danger:hover{border-color:var(--red)}
+.btn.ghost{background:transparent;border-color:transparent}.btn.ghost:hover{background:var(--card2)}
+.btn[disabled]{opacity:.6;pointer-events:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.card h3{margin:0 0 4px;font-size:15px;font-weight:600}.card .muted{color:var(--dim);font-size:13px}
+.row{display:flex;align-items:center;gap:12px}.row .sp{flex:1}
+.grid{display:grid;gap:16px}.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+.kpi{display:flex;flex-direction:column;gap:10px}
+.kpi .lbl{display:flex;align-items:center;gap:8px;color:var(--text2);font-size:13px}
+.kpi .ico{width:32px;height:32px;border-radius:8px;display:grid;place-items:center}
+.kpi .val{font-size:26px;font-weight:650;letter-spacing:-.3px}.kpi .val small{font-size:13px;color:var(--dim);font-weight:500;margin-left:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:2px 9px;border-radius:20px;border:1px solid var(--line);color:var(--text2);background:var(--card2)}
+.pill.ok{color:var(--green);border-color:rgba(34,197,94,.35);background:rgba(34,197,94,.08)}
+.pill.bad{color:var(--red);border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.08)}
+.pill.warn{color:var(--yellow);border-color:rgba(234,179,8,.35);background:rgba(234,179,8,.08)}
+.pill.info{color:var(--blue);border-color:rgba(59,130,246,.35);background:rgba(59,130,246,.08)}
+.bar{height:8px;border-radius:6px;background:var(--card2);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--blue),var(--cyan))}
+.res{display:grid;gap:14px}.res .r{display:grid;gap:6px}.res .r .row{font-size:13px}.res .r .row b{font-weight:600}
+.list{display:grid}
+.li{display:flex;align-items:center;gap:12px;padding:11px 2px;border-top:1px solid var(--line)}.li:first-child{border-top:0}
+.li .t{flex:1;min-width:0}.li .t b{font-weight:550}.li .t small{display:block;color:var(--dim);font-size:12px}
+
+/* ── пользователи ── */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:var(--r2);padding:0 12px;height:38px;min-width:260px;color:var(--dim)}
+.search input{border:0;outline:0;background:transparent;height:100%;flex:1;color:var(--text)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:6px 11px;border-radius:20px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:12.5px;color:var(--text2)}
+.chip.on{border-color:var(--blue);color:var(--text);background:rgba(59,130,246,.14)}
+table{width:100%;border-collapse:separate;border-spacing:0}
+.tbl{padding:0;overflow:hidden}
+th{font-weight:500;color:var(--dim);font-size:12px;text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:12px 18px;background:var(--card2);border-bottom:1px solid var(--line)}
+td{padding:12px 18px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer;transition:background .12s}tbody tr:hover{background:var(--card2)}
+.av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:650;color:#fff;font-size:13px;flex:none}
+.uname{display:flex;align-items:center;gap:12px}.uname small{display:block;color:var(--dim);font-size:12px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:500;margin:2px 4px 2px 0;border:1px solid}
+.badge i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.badge.off{opacity:.45;text-decoration:line-through}
+.sw{position:relative;width:38px;height:22px;border-radius:12px;background:var(--line2);border:0;cursor:pointer;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw.on{background:var(--green)}.sw.on::after{left:19px}
+.acts{display:flex;gap:6px;justify-content:flex-end}
+
+/* ── выдвижная панель и окна ── */
+.scrim{position:fixed;inset:0;background:rgba(3,7,18,.55);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--bg2);border-left:1px solid var(--line);box-shadow:var(--shadow);transform:translateX(100%);transition:transform .25s ease;z-index:50;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.dh{display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line)}
+.db{padding:18px 22px;overflow:auto;display:grid;gap:16px;align-content:start}
+.sect{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;margin:6px 0 -6px}
+.conn-card{border:1px solid var(--line);border-radius:var(--r2);background:var(--card);padding:12px 14px;display:grid;gap:8px}
+.conn-card code{font:12px/1.4 "Cascadia Mono",Consolas,monospace;color:var(--text2);background:var(--card2);border:1px solid var(--line);border-radius:6px;padding:8px 10px;word-break:break-all;max-height:56px;overflow:hidden}
+.qrbox{display:grid;place-items:center;padding:16px;background:#fff;border-radius:var(--r2);margin-top:4px}
+.qrbox canvas{width:220px;height:220px;image-rendering:pixelated}
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.98);opacity:0;pointer-events:none;width:min(620px,calc(100% - 32px));background:var(--bg2);border:1px solid var(--line2);border-radius:16px;box-shadow:var(--shadow);transition:all .2s;z-index:60}
+.modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%)}
+.mh{display:flex;align-items:center;padding:18px 22px 6px}.mh h2{margin:0;font-size:18px}.mb{padding:10px 22px 4px;display:grid;gap:16px}.mf{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px 20px}
+label.f{display:grid;gap:6px;font-size:13px;color:var(--text2)}
+.input{height:40px;border-radius:var(--r2);border:1px solid var(--line);background:var(--card);padding:0 12px;outline:0;color:var(--text)}
+.input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+.protos{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.pc{border:1px solid var(--line);border-radius:var(--r2);padding:11px 12px;cursor:pointer;background:var(--card);display:flex;gap:10px;align-items:flex-start}
+.pc:hover{border-color:var(--line2)}.pc.on{border-color:var(--blue);background:rgba(59,130,246,.1)}
+.pc b{display:block;font-weight:600;font-size:13.5px}.pc small{color:var(--dim);font-size:12px;line-height:1.35;display:block}
+.pc .pi{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;flex:none;color:#fff;font-size:11px;font-weight:700}
+.seg{display:inline-flex;background:var(--card2);border:1px solid var(--line);border-radius:var(--r2);padding:3px}
+.seg button{border:0;background:transparent;padding:6px 14px;border-radius:6px;cursor:pointer;color:var(--text2)}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.2)}
+
+/* ── модули, настройки, журналы ── */
+.mod{display:grid;gap:14px}
+.mod .head{display:flex;align-items:center;gap:12px}
+.mod .lg{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
+.mod .meta{display:flex;gap:16px;color:var(--dim);font-size:12.5px;flex-wrap:wrap}.mod .meta b{color:var(--text2);font-weight:550}
+.mod .foot{display:flex;gap:8px;border-top:1px solid var(--line);padding-top:12px;margin-top:2px}
+.tpls{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.tpl{border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;cursor:pointer;background:var(--card)}
+.tpl.on{border-color:var(--blue);box-shadow:0 0 0 2px rgba(59,130,246,.35)}
+.tpl .pv{height:84px;display:grid;place-items:center;font-weight:700;color:#fff;font-size:13px}
+.tpl div:last-child{padding:8px 10px;font-size:12.5px;display:flex;align-items:center;justify-content:space-between}
+.form{display:grid;gap:14px;max-width:560px}
+.term{background:#070b16;border:1px solid var(--line);border-radius:var(--r);font:12.5px/1.6 "Cascadia Mono",Consolas,monospace;color:#c8d3e6;padding:14px 16px;height:460px;overflow:auto}
+[data-theme=light] .term{background:#0b1020}
+.term .ts{color:#5c6b88}.term .w{color:#eab308}.term .e{color:#f87171}.term .ok{color:#4ade80}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:transparent;padding:10px 14px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--text);border-color:var(--blue)}
+.empty{display:grid;place-items:center;text-align:center;padding:50px 20px;color:var(--dim);gap:8px}
+
+/* ── уведомления, загрузка ── */
+#toasts{position:fixed;right:22px;bottom:22px;display:grid;gap:10px;z-index:80}
+.toast{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:11px 14px;box-shadow:var(--shadow);min-width:280px;animation:tin .2s ease}
+.toast .ti{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;flex:none}
+@keyframes tin{from{transform:translateY(8px);opacity:0}}
+.sk{border-radius:6px;background:linear-gradient(90deg,var(--card2),var(--line),var(--card2));background-size:200% 100%;animation:sk 1.2s infinite linear}
+@keyframes sk{to{background-position:-200% 0}}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── узкий экран ── */
+.burger{display:none}
+@media (max-width:1100px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  aside{position:fixed;left:0;top:0;bottom:0;width:270px;transform:translateX(-100%);transition:transform .25s;z-index:45;box-shadow:var(--shadow)}
+  aside.open{transform:none}
+  .burger{display:inline-grid}
+  .top{padding:14px 16px}.page{padding:18px 16px 50px}
+  .g4,.g3,.g2,.protos{grid-template-columns:1fr}
+  .hide-m{display:none}
+  .search{min-width:0;flex:1}
+  td,th{padding:10px 12px}
+}
+
+.nw{white-space:nowrap}.mono{font-family:"Cascadia Mono",Consolas,monospace}
+.row.wrap{flex-wrap:wrap}.hint{color:var(--dim);font-size:12px}
+.btn.red{background:var(--red);border-color:var(--red)}.btn.red:hover{background:#dc2626}
+.btn.ghost.danger{color:var(--red)}
+.kico{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;flex:none}
+.banner{display:flex;align-items:center;gap:14px;border-color:rgba(234,179,8,.35);background:linear-gradient(90deg,rgba(234,179,8,.08),transparent)}
+.spin.dark{border-color:rgba(127,127,127,.35);border-top-color:var(--blue)}
+.term.small{height:auto;max-height:300px;font-size:12px}
+.pc.dis{opacity:.45;cursor:not-allowed}
+.icon-btn sup{font-size:8px;margin-left:-2px}
+.srv-hint{padding:8px 10px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);margin-top:4px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.paths .li{gap:10px}.paths .input{flex:1}
+.peers{margin-top:-4px;max-height:180px;overflow:auto}
+.bans{max-height:420px;overflow:auto}
+textarea.input.ta{height:110px;padding:10px 12px;resize:vertical;font:12px "Cascadia Mono",Consolas,monospace}
+.tabs{padding:0 14px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}.tabs button{white-space:nowrap}
+.qrbox svg{width:240px;height:240px;display:block}
+.conn-card code{max-height:none;max-height:76px;overflow:auto}
+.mod .foot{flex-wrap:wrap}.mod{min-width:0}.grid>*{min-width:0}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.uname small{white-space:nowrap}
+@media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:820px){.split{grid-template-columns:1fr}.g4,.g3,.g2{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="aside">
+    <div class="brand"><svg width="34" height="34" viewBox="0 0 64 64"><path d="M32 6 56 19 32 32 8 19Z" fill="#22c55e"/><path d="M8 19 32 32v26L8 45Z" fill="#ef4444"/><path d="M56 19 32 32v26l24-13Z" fill="#3b82f6"/><path d="M32 6 56 19v26L32 58 8 45V19Z M8 19 32 32 56 19 M32 32v26" fill="none" stroke="#0e1a2e" stroke-width="2.4" stroke-linejoin="round"/></svg><div><b>kvnBox</b><small id="lver">веб-меню</small></div></div>
+    <div class="srv">
+      <button class="srv-btn" id="srvBtn"><span class="dot" id="srvDot"></span><span class="t"><b id="srvName">…</b><span id="srvAddr"></span></span><svg class="i"><use href="#i-chev"/></svg></button>
+      <div class="srv-menu" id="srvMenu"></div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="aside-foot"><button class="icon-btn" id="themeBtn"></button><span>Подключение по SSH · ключ</span></div>
+  </aside>
+  <main>
+    <div class="top">
+      <button class="icon-btn burger" id="burger"><svg class="i"><use href="#i-menu"/></svg></button>
+      <div><h1 id="title"></h1><div class="sub" id="subtitle"></div></div>
+      <div class="sp"></div>
+      <span class="conn hide-m" id="conn"></span>
+      <button class="icon-btn" title="Обновить" id="refresh"><svg class="i"><use href="#i-refresh"/></svg></button>
+    </div>
+    <div class="page" id="page"></div>
+  </main>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer"></div>
+<div class="modal" id="modal"></div>
+<div id="toasts"></div>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.8"/><path d="M16.5 14.6c2.6.2 4.4 1.9 5 5.4"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M12 2.8 20.5 7.5v9L12 21.2 3.5 16.5v-9z"/><path d="m3.5 7.5 8.5 4.7 8.5-4.7M12 12.2v9"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-log" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 17h5"/></symbol>
+  <symbol id="i-arch" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5L20 16M20 20v-4h-4"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20zM12 10v4M12 17v.01"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8M6.3 6.5a8 8 0 1 0 11.4 0"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.2 8 9 4.6-.8 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M21 3 3 10.5l7 2.5 2.5 7z"/><path d="m10 13 4-4"/></symbol>
+
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 9.2-9.2M17 6l3 3M14 9l2 2"/></symbol>
+</svg>
+<script>
+/* kvnBox — веб-меню. Страницу отдаёт лаунчер (127.0.0.1), запросы идут в PowerShell,
+   оттуда — по постоянному SSH-каналу в `kvnbox api serve` на выбранном сервере. */
+'use strict';
+const TOKEN = new URLSearchParams(location.search).get('t') || '';
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const ic = n => `<svg class="i"><use href="#i-${n}"/></svg>`;
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PROTOS = {
+  'vless-ws': {n:'VLESS WS', c:'#3b82f6', d:'WebSocket через сайт-маскировку'},
+  'vless-grpc': {n:'VLESS gRPC', c:'#6366f1', d:'gRPC, хорошо держит мобильные сети'},
+  'vless-httpupgrade': {n:'VLESS HTTPUpgrade', c:'#0ea5e9', d:'Лёгкий HTTP Upgrade'},
+  'vless-xhttp': {n:'VLESS XHTTP', c:'#8b5cf6', d:'XHTTP, только Xray'},
+  'vless-cdn': {n:'VLESS CDN', c:'#06b6d4', d:'Через CDN, IP сервера скрыт'},
+  'naive': {n:'NaiveProxy', c:'#f97316', d:'HTTPS как у браузера Chrome'},
+  'mieru': {n:'Mieru', c:'#eab308', d:'Свой протокол, отдельный порт'},
+  'awg': {n:'AmneziaWG', c:'#22c55e', d:'WireGuard с маскировкой 3.1'},
+};
+const AVC = ['#3b82f6','#8b5cf6','#06b6d4','#f97316','#22c55e','#ef4444','#eab308','#6366f1'];
+const avc = n => AVC[[...n].reduce((a, c) => a + c.charCodeAt(0), 0) % AVC.length];
+const badge = (p, on = true) => { const v = PROTOS[p] || {n:p, c:'#64748b'};
+  return `<span class="badge ${on ? '' : 'off'}" style="color:${v.c};border-color:${v.c}55;background:${v.c}14"><i></i>${esc(v.n)}</span>`; };
+const stateText = s => s === 'active' ? 'работает' : s === 'not_installed' ? 'не установлен' : s === 'inactive' ? 'остановлен' : s === 'failed' ? 'ошибка' : s;
+const stateCls = s => s === 'active' ? 'ok' : s === 'not_installed' || s === 'inactive' ? '' : 'bad';
+const fmtBytes = b => b > 1e9 ? (b / 1e9).toFixed(1) + ' ГБ' : b > 1e6 ? (b / 1e6).toFixed(1) + ' МБ' : Math.round(b / 1e3) + ' КБ';
+
+/* ═══ связь с лаунчером ═══ */
+let SERVERS = [], SRV = localStorage.getItem('kvn-srv') || '', SEQ = 0, LAUNCHER = '';
+const LINE = new Map();
+function call(action, args = {}, onLine) {
+  const id = 'w' + (++SEQ) + '-' + Date.now().toString(36);
+  if (onLine) LINE.set(id, onLine);
+  const promise = fetch(`/app/call?t=${TOKEN}&s=${encodeURIComponent(SRV)}`, {method:'POST', body: JSON.stringify({id, action, args})})
+    .then(r => r.json())
+    .then(j => { if (!j.ok) throw new Error(j.error || 'Ошибка'); return j.data; })
+    .finally(() => LINE.delete(id));
+  return {id, promise};
+}
+const api = (action, args, onLine) => call(action, args, onLine).promise;
+function events() {
+  const es = new EventSource(`/app/events?t=${TOKEN}`);
+  es.onmessage = e => { try { const {m} = JSON.parse(e.data); const h = LINE.get(m.id); if (h) h(m.data); } catch (_) {} };
+  es.onerror = () => { es.close(); setTimeout(events, 2000); };
+}
+
+/* ═══ интерфейс: уведомления, окна ═══ */
+function toast(text, kind = 'ok') {
+  const t = document.createElement('div'); t.className = 'toast';
+  const col = kind === 'ok' ? 'var(--green)' : kind === 'bad' ? 'var(--red)' : 'var(--blue)';
+  t.innerHTML = `<span class="ti" style="background:${col}22;color:${col}">${ic(kind === 'ok' ? 'check' : kind === 'bad' ? 'alert' : 'refresh')}</span><span>${esc(text)}</span>`;
+  $('#toasts').append(t); setTimeout(() => t.remove(), kind === 'bad' ? 9000 : 4000);
+}
+function openModal(html) { $('#modal').innerHTML = html; $('#modal').classList.add('open'); $('#scrim').classList.add('open'); }
+function closeAll() { ['#drawer', '#modal', '#scrim'].forEach(s => $(s).classList.remove('open')); }
+$('#scrim').onclick = () => { if (!$('#modal').dataset.locked) closeAll(); };
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').dataset.locked) closeAll(); });
+function confirmBox(title, text, okText = 'Да', danger = false) {
+  return new Promise(res => {
+    openModal(`<div class="mh"><h2>${esc(title)}</h2></div><div class="mb"><div style="color:var(--text2);white-space:pre-line">${text}</div></div>
+      <div class="mf"><button class="btn" id="mno">Отмена</button><button class="btn primary ${danger ? 'red' : ''}" id="myes">${esc(okText)}</button></div>`);
+    $('#mno').onclick = () => { closeAll(); res(false); };
+    $('#myes').onclick = () => { closeAll(); res(true); };
+  });
+}
+function formBox(title, fields, okText = 'Сохранить', note = '') {
+  return new Promise(res => {
+    openModal(`<div class="mh"><h2>${esc(title)}</h2><span style="flex:1"></span><button class="icon-btn" id="mx">${ic('x')}</button></div>
+      <div class="mb">${note ? `<div style="color:var(--text2);font-size:13px">${note}</div>` : ''}${fields.map((f, i) => f.type === 'textarea'
+        ? `<label class="f">${esc(f.label)}<textarea class="input ta" id="mf${i}" placeholder="${esc(f.ph || '')}">${esc(f.value || '')}</textarea></label>`
+        : `<label class="f">${esc(f.label)}<input class="input" id="mf${i}" type="${f.type || 'text'}" value="${esc(f.value ?? '')}" placeholder="${esc(f.ph || '')}">${f.hint ? `<span class="hint">${esc(f.hint)}</span>` : ''}</label>`).join('')}</div>
+      <div class="mf"><button class="btn" id="mno">Отмена</button><button class="btn primary" id="myes">${esc(okText)}</button></div>`);
+    const done = v => { closeAll(); res(v); };
+    $('#mx').onclick = $('#mno').onclick = () => done(null);
+    $('#myes').onclick = () => done(fields.map((_, i) => $('#mf' + i).value.trim()));
+    setTimeout(() => $('#mf0')?.focus(), 50);
+    $$('#modal input').forEach(inp => inp.onkeydown = e => { if (e.key === 'Enter') $('#myes').click(); });
+  });
+}
+/* долгая операция: окно с живым выводом, закрыть нельзя до конца */
+async function longOp(title, action, args = {}) {
+  openModal(`<div class="mh"><h2>${esc(title)}</h2></div><div class="mb"><div class="row"><span class="spin dark"></span><span id="lstat" style="color:var(--text2)">Выполняется… не закрывайте страницу</span></div>
+    <div class="term small" id="lout"></div></div><div class="mf"><button class="btn" id="lclose" disabled>Закрыть</button></div>`);
+  $('#modal').dataset.locked = '1';
+  const out = $('#lout');
+  const add = t => { out.insertAdjacentHTML('beforeend', `<div>${esc(t)}</div>`); out.scrollTop = out.scrollHeight; };
+  try {
+    const data = await api(action, args, add);
+    $('#lstat').innerHTML = `<b style="color:var(--green)">✓ ${esc(data?.message || 'Готово')}</b>`;
+    (data?.log || []).forEach(add);
+    return data;
+  } catch (e) {
+    $('#lstat').innerHTML = `<b style="color:var(--red)">✗ ${esc(e.message)}</b>`;
+    throw e;
+  } finally {
+    $('.spin.dark')?.remove();
+    delete $('#modal').dataset.locked;
+    $('#lclose').disabled = false; $('#lclose').onclick = closeAll;
+  }
+}
+/* кнопка «в работе» на время запроса */
+async function busy(btn, fn) {
+  if (btn) { btn.disabled = true; btn.dataset.old = btn.innerHTML; btn.innerHTML = `<span class="spin"></span>${btn.classList.contains('icon-btn') ? '' : ' Выполняется…'}`; }
+  try { return await fn(); }
+  catch (e) { toast(e.message, 'bad'); }
+  finally { if (btn && btn.isConnected) { btn.disabled = false; btn.innerHTML = btn.dataset.old; } }
+}
+const msg = d => toast(d?.message || 'Готово');
+function download(name, data, type = 'application/octet-stream') {
+  const blob = data instanceof Blob ? data : new Blob([data], {type});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+const b64blob = (b64, type) => new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], {type});
+function copyText(t) { navigator.clipboard.writeText(t).then(() => toast('Скопировано'), () => toast('Не удалось скопировать', 'bad')); }
+const skeleton = () => `<div class="grid g4">${'<div class="card"><div class="sk" style="height:14px;width:50%"></div><div class="sk" style="height:28px;width:70%;margin-top:14px"></div></div>'.repeat(4)}</div><div class="card"><div class="sk" style="height:220px"></div></div>`;
+const errorCard = (e, retry) => `<div class="card empty"><span style="color:var(--red)">${ic('alert')}</span><b>Не удалось загрузить</b><span>${esc(e.message)}</span><button class="btn" onclick="${retry}">${ic('refresh')} Повторить</button></div>`;
+
+/* ═══ навигация ═══ */
+const PAGES = [
+  ['overview', 'Обзор', 'home', 'Состояние сервера и служб'],
+  ['users', 'Пользователи', 'users', 'Подключения и ссылки для клиентов'],
+  ['modules', 'Модули', 'box', 'Ядра и компоненты сервера'],
+  ['settings', 'Настройки', 'gear', 'Домен, сайт, пути, CDN, бот, SSH, защита'],
+  ['logs', 'Журналы', 'log', 'Журналы служб в реальном времени'],
+  ['backups', 'Бэкапы', 'arch', 'Резервные копии настроек и пользователей'],
+  ['diag', 'Диагностика', 'cpu', 'IP, скорость, iperf3'],
+];
+let PAGE = localStorage.getItem('kvn-page') || 'overview', USERCOUNT = '';
+function renderNav() {
+  $('#nav').innerHTML = PAGES.map(([k, t, i]) => `<a class="${PAGE === k ? 'on' : ''}" data-p="${k}">${ic(i)}${t}${k === 'users' && USERCOUNT !== '' ? `<span class="cnt">${USERCOUNT}</span>` : ''}</a>`).join('');
+  $$('#nav a').forEach(a => a.onclick = () => go(a.dataset.p));
+}
+let STOP = null; // остановка потока журнала при уходе со страницы
+function go(p) {
+  if (STOP) { STOP(); STOP = null; }
+  PAGE = p; localStorage.setItem('kvn-page', p); renderNav(); $('#aside').classList.remove('open');
+  const pg = PAGES.find(x => x[0] === p) || PAGES[0];
+  $('#title').textContent = pg[1]; $('#subtitle').textContent = pg[3];
+  if (!SRV) { $('#page').innerHTML = noServers(); return; }
+  if (!READY) { connect(); return; }
+  ({overview, users, modules, settings, logs, backups, diag})[p]();
+  window.scrollTo(0, 0);
+}
+
+/* ═══ серверы и подключение ═══ */
+let READY = false, PANEL = '';
+async function loadServers() {
+  const r = await fetch(`/app/servers?t=${TOKEN}`).then(r => r.json());
+  SERVERS = r.servers || []; LAUNCHER = r.launcher || '';
+  $('#lver').textContent = LAUNCHER ? `веб-меню · лаунчер ${LAUNCHER}` : 'веб-меню';
+  if (!SERVERS.some(s => s.Alias === SRV)) SRV = SERVERS[0]?.Alias || '';
+  renderSrv();
+}
+function renderSrv() {
+  const s = SERVERS.find(x => x.Alias === SRV);
+  $('#srvName').textContent = s ? s.Name : 'нет серверов';
+  $('#srvAddr').textContent = s ? `${s.Host} · ${s.Port}` : 'добавьте в лаунчере';
+  $('#srvDot').className = 'dot ' + (s ? (s.Online ? 'ok' : 'bad') : '');
+  $('#srvMenu').innerHTML = SERVERS.map(x => `<div class="srv-item" data-a="${esc(x.Alias)}"><span class="dot ${x.Online ? 'ok' : 'bad'}"></span><b>${esc(x.Name)}</b><small>${esc(x.Host)}</small></div>`).join('')
+    + `<div class="srv-hint">Добавить сервер — в лаунчере kvnBox (окно PowerShell)</div>`;
+  $$('.srv-item[data-a]').forEach(el => el.onclick = e => { e.stopPropagation(); $('#srvMenu').classList.remove('open'); switchSrv(el.dataset.a); });
+}
+function switchSrv(alias) { SRV = alias; localStorage.setItem('kvn-srv', alias); READY = false; renderSrv(); go(PAGE); }
+const noServers = () => `<div class="card empty" style="padding:70px 20px">${ic('box')}<b style="font-size:16px;color:var(--text)">Серверов пока нет</b><span>Добавьте сервер в лаунчере kvnBox: пункт «Добавить сервер» в окне PowerShell.</span></div>`;
+async function connect() {
+  $('#page').innerHTML = skeleton();
+  setConn('wait', 'подключение…');
+  const s = SERVERS.find(x => x.Alias === SRV);
+  try {
+    const t0 = performance.now();
+    const v = await api('api.version');
+    PANEL = v.panel; READY = true;
+    setConn('ok', `на связи · панель ${PANEL}`);
+    ping(t0);
+    go(PAGE);
+  } catch (e) {
+    READY = false; setConn('bad', 'нет связи');
+    const old = /Нет такого действия|invalid choice|api/i.test(e.message) && !/потеряно|timed out|refused|Permission/i.test(e.message);
+    $('#page').innerHTML = old
+      ? `<div class="card empty" style="padding:60px 20px"><span style="color:var(--yellow)">${ic('up')}</span><b style="font-size:16px;color:var(--text)">Панель на сервере устарела</b><span>Веб-меню работает с панелью kvnBox 0.5.0 и новее. Обновите панель: в лаунчере выберите сервер (Enter) → Настройки → Проверить обновления панели.</span><button class="btn" onclick="connect()">${ic('refresh')} Проверить снова</button></div>`
+      : `<div class="card empty" style="padding:60px 20px"><span style="color:var(--red)">${ic('alert')}</span><b style="font-size:16px;color:var(--text)">${esc(s ? s.Name : '')} не отвечает</b><span>${esc(e.message)}</span><button class="btn" onclick="connect()">${ic('refresh')} Повторить</button></div>`;
+  }
+}
+function setConn(cls, text) { $('#conn').innerHTML = `<span class="dot ${cls === 'wait' ? 'warn' : cls}"></span>${esc(text)}`; }
+async function ping(t0) {
+  try { const a = t0 || performance.now(); if (!t0) await api('api.version'); const ms = Math.round(performance.now() - a);
+    setConn('ok', `на связи · ${ms} мс · панель ${PANEL}`); } catch (_) { setConn('bad', 'нет связи'); }
+}
+
+/* ═══ Обзор ═══ */
+async function overview() {
+  $('#page').innerHTML = skeleton();
+  try {
+    const [ov, svc, res] = await Promise.all([api('status.overview'), api('status.services'), api('status.resources')]);
+    USERCOUNT = ov.users; renderNav();
+    const running = svc.filter(s => s.installed && s.state === 'active').length, inst = svc.filter(s => s.installed).length;
+    const memPct = res.memory.exact_percent, diskPct = Math.round(res.disk.used * 100 / Math.max(1, res.disk.used + res.disk.free));
+    $('#page').innerHTML = `
+    ${ov.update_available ? `<div class="card banner"><span class="kico" style="background:rgba(234,179,8,.15);color:var(--yellow)">${ic('up')}</span>
+      <div style="flex:1"><b>Доступна версия панели ${esc(ov.latest_version)}</b><div class="muted">Сейчас ${esc(ov.version)}. Обновление около минуты, VPN на это время прервётся.</div></div>
+      <button class="btn" id="bUpd">${ic('up')} Обновить</button></div>` : ''}
+    <div class="grid g4">
+      <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(59,130,246,.15);color:var(--blue)">${ic('users')}</span>Пользователи</span><span class="val">${ov.users}<small>${ov.users_active} активных</small></span></div>
+      <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(34,197,94,.15);color:var(--green)">${ic('power')}</span>Службы</span><span class="val">${running}<small>из ${inst} работают</small></span></div>
+      <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(139,92,246,.15);color:var(--violet)">${ic('shield')}</span>Защита</span><span class="val" style="font-size:18px;padding-top:6px">${ov.security ? '<span class="pill ok">Fail2ban активна</span>' : '<span class="pill bad">отключена</span>'}</span></div>
+      <div class="card kpi"><span class="lbl"><span class="kico" style="background:rgba(6,182,212,.15);color:var(--cyan)">${ic('cpu')}</span>Аптайм</span><span class="val" style="font-size:20px">${esc(res.uptime)}</span></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><div class="row"><h3>Службы</h3><span class="sp"></span><button class="btn ghost" id="bRall">${ic('refresh')} Перезапустить все</button></div>
+        <div class="list" style="margin-top:8px">${svc.map(s => `<div class="li"><span class="dot ${stateCls(s.installed ? s.state : 'not_installed')}"></span><div class="t"><b>${esc(s.label)}</b><small>${esc(s.unit)}</small></div>
+          <span class="pill ${stateCls(s.installed ? s.state : 'not_installed')}">${stateText(s.installed ? s.state : 'not_installed')}</span>
+          ${s.installed ? `<button class="icon-btn sm" title="Перезапустить" data-r="${s.unit}">${ic('refresh')}</button>` : '<span style="width:30px"></span>'}</div>`).join('')}</div></div>
+      <div class="grid">
+        <div class="card"><div class="row"><h3>Ресурсы</h3><span class="sp"></span><span class="muted">нагрузка ${res.load.map(x => x.toFixed(2)).join(' · ')}</span></div><div class="res" style="margin-top:12px">
+          ${[['CPU', res.cpu_percent + '%', res.cpu_percent], ['Память', `${res.memory.used_mb} / ${res.memory.total_mb} МБ`, memPct], ['Диск', `${(res.disk.used / 1e9).toFixed(1)} / ${(res.disk.total / 1e9).toFixed(1)} ГБ`, diskPct]]
+            .map(([a, b, c]) => `<div class="r"><div class="row"><span>${a}</span><span class="sp"></span><b>${b}</b></div><div class="bar"><i style="width:${Math.min(100, c)}%;${c > 85 ? 'background:var(--red)' : ''}"></i></div></div>`).join('')}
+          <div class="row muted" style="font-size:12.5px">Сеть ${esc(res.iface)}: ↓ ${fmtBytes(res.rx_per_s)}/с · ↑ ${fmtBytes(res.tx_per_s)}/с</div></div></div>
+        <div class="card"><h3>Сервер</h3><div class="list" style="margin-top:6px">
+          ${[['Домен', esc(ov.domain)], ['FQDN VPS', esc(ov.fqdn)], ['Сайт-маскировка', esc(ov.site_template)], ['TCP BBR', ov.bbr ? '<span class="pill ok">активен</span>' : '<span class="pill">отключен</span>'], ['Панель', esc(ov.version)]]
+            .map(([a, b]) => `<div class="li"><div class="t"><small style="font-size:13px">${a}</small></div><b>${b}</b></div>`).join('')}</div>
+          <div class="row wrap" style="margin-top:12px"><button class="btn" id="bChk">${ic('up')} Проверить обновления</button><button class="btn" id="bRec">${ic('refresh')} Пересоздать конфигурации</button><button class="btn danger" id="bReb">${ic('power')} Перезагрузить сервер</button></div></div>
+      </div>
+    </div>`;
+    $$('[data-r]').forEach(b => b.onclick = () => busy(b, async () => msg(await api('service.restart', {unit: b.dataset.r}))));
+    $('#bRall').onclick = e => busy(e.currentTarget, async () => msg(await api('service.restart_all')));
+    $('#bChk').onclick = e => busy(e.currentTarget, async () => { const c = await api('panel.check_update');
+      if (c.newer) { if (await confirmBox('Обновить панель?', `Доступна версия ${c.latest} (сейчас ${c.current}). VPN прервётся примерно на минуту.`, 'Обновить')) panelUpdate(c.latest); }
+      else toast(`Установлена последняя версия ${c.current}`); });
+    if ($('#bUpd')) $('#bUpd').onclick = async () => { if (await confirmBox('Обновить панель?', `Обновление до ${ov.latest_version}. VPN прервётся примерно на минуту.`, 'Обновить')) panelUpdate(ov.latest_version); };
+    $('#bRec').onclick = async e => { if (await confirmBox('Пересоздать конфигурации?', 'Конфигурации всех служб будут собраны заново и службы перезапущены.', 'Пересоздать')) busy(e.target.closest('button'), async () => msg(await api('config.recreate'))); };
+    $('#bReb').onclick = async () => { if (await confirmBox('Перезагрузить сервер?', 'VPN и веб-меню будут недоступны 1–2 минуты.', 'Перезагрузить', true)) {
+      try { msg(await api('server.reboot')); } catch (e) { toast(e.message, 'bad'); } READY = false; setTimeout(() => go('overview'), 60000); } };
+  } catch (e) { $('#page').innerHTML = errorCard(e, 'overview()'); }
+}
+async function panelUpdate(version) {
+  try { await longOp('Обновление панели', 'panel.update', {version}); } catch (_) { return; }
+  READY = false; await fetch(`/app/close?t=${TOKEN}&s=${encodeURIComponent(SRV)}`, {method:'POST'}).catch(() => {});
+  setTimeout(() => go('overview'), 1500);
+}
+
+/* ═══ Пользователи ═══ */
+let USERS = [], FILTER = 'all', QUERY = '';
+async function users() {
+  $('#page').innerHTML = `<div class="toolbar">
+    <div class="search">${ic('search')}<input id="q" placeholder="Поиск по имени" value="${esc(QUERY)}"></div>
+    <div class="chips">${[['all', 'Все'], ['on', 'Активные'], ['off', 'Выключенные'], ['awg', 'AmneziaWG'], ['vless', 'VLESS']].map(([k, t]) => `<span class="chip ${FILTER === k ? 'on' : ''}" data-f="${k}">${t}</span>`).join('')}</div>
+    <span style="flex:1"></span><button class="btn primary" id="bAdd">${ic('plus')} Добавить пользователя</button></div>
+    <div class="card tbl"><table><thead><tr><th>Пользователь</th><th class="hide-m">Протоколы</th><th>Вкл.</th><th></th></tr></thead><tbody id="ub"><tr><td colspan="4"><div class="sk" style="height:120px"></div></td></tr></tbody></table></div>`;
+  $('#q').oninput = e => { QUERY = e.target.value; fillUsers(); };
+  $$('.chip').forEach(c => c.onclick = () => { FILTER = c.dataset.f; $$('.chip').forEach(x => x.classList.toggle('on', x === c)); fillUsers(); });
+  $('#bAdd').onclick = () => addUser();
+  try { USERS = await api('users.list'); USERCOUNT = USERS.length; renderNav(); fillUsers(); }
+  catch (e) { $('#ub').innerHTML = `<tr><td colspan="4">${errorCard(e, 'users()')}</td></tr>`; }
+}
+const plural = (n, a, b, c) => n % 10 === 1 && n % 100 !== 11 ? a : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? b : c;
+function fillUsers() {
+  const q = QUERY.toLowerCase();
+  const list = USERS.filter(u => u.name.includes(q)).filter(u => FILTER === 'all' || (FILTER === 'on' && u.active) || (FILTER === 'off' && !u.active)
+    || (FILTER === 'awg' && u.connections.some(c => c.slot === 'awg')) || (FILTER === 'vless' && u.connections.some(c => c.slot.startsWith('vless'))));
+  $('#ub').innerHTML = list.length ? list.map(u => `<tr data-u="${esc(u.name)}">
+    <td><div class="uname"><span class="av" style="background:${avc(u.name)}">${esc(u.name[0].toUpperCase())}</span><div><b class="nw">${esc(u.name)}</b><small>${u.connections.length} ${plural(u.connections.length, 'подключение', 'подключения', 'подключений')}</small></div></div></td>
+    <td class="hide-m">${u.connections.map(c => badge(c.slot, c.enabled && u.active)).join('')}</td>
+    <td><button class="sw ${u.enabled ? 'on' : ''}" data-sw="1" title="${u.enabled ? 'Выключить' : 'Включить'}"></button></td>
+    <td><div class="acts"><button class="icon-btn sm" title="Ссылки и QR" data-open="1">${ic('qr')}</button><button class="icon-btn sm" title="Удалить" data-del="1">${ic('trash')}</button></div></td></tr>`).join('')
+    : `<tr><td colspan="4"><div class="empty">${ic('search')}<b>${USERS.length ? 'Никого не нашли' : 'Пользователей пока нет'}</b><span>${USERS.length ? 'Измените поиск или фильтр' : 'Нажмите «Добавить пользователя»'}</span></div></td></tr>`;
+  $$('#ub tr[data-u]').forEach(tr => tr.onclick = e => {
+    const u = USERS.find(x => x.name === tr.dataset.u); const b = e.target.closest('button');
+    if (b?.dataset.sw) return busy(b, async () => { const en = !u.enabled; await api('users.set_enabled', {name: u.name, enabled: en}); toast(`${u.name}: ${en ? 'включён' : 'выключен'}`); USERS = await api('users.list'); fillUsers(); });
+    if (b?.dataset.del) return delUser(u.name);
+    openUser(u.name);
+  });
+}
+async function delUser(name) {
+  if (!await confirmBox(`Удалить ${name}?`, 'Все подключения пользователя перестанут работать. Это действие нельзя отменить.', 'Удалить', true)) return;
+  try { await api('users.remove', {name}); toast(`${name} удалён`); closeAll(); USERS = await api('users.list'); USERCOUNT = USERS.length; renderNav(); if (PAGE === 'users') fillUsers(); }
+  catch (e) { toast(e.message, 'bad'); }
+}
+async function openUser(name) {
+  $('#drawer').innerHTML = `<div class="dh"><b style="font-size:17px;flex:1">${esc(name)}</b><button class="icon-btn" onclick="closeAll()">${ic('x')}</button></div><div class="db"><div class="sk" style="height:90px"></div><div class="sk" style="height:140px"></div></div>`;
+  $('#drawer').classList.add('open'); $('#scrim').classList.add('open');
+  let u;
+  try { u = await api('users.get', {name}); } catch (e) { $('#drawer .db').innerHTML = errorCard(e, `openUser('${esc(name)}')`); return; }
+  $('#drawer').innerHTML = `
+    <div class="dh"><span class="av" style="background:${avc(u.name)};width:42px;height:42px;font-size:16px">${esc(u.name[0].toUpperCase())}</span>
+      <div style="flex:1"><b style="font-size:17px">${esc(u.name)}</b><div style="font-size:12.5px;color:var(--dim)">${u.active ? '<span class="pill ok">активен</span>' : '<span class="pill bad">выключен</span>'} · ${u.connections.length} подкл.</div></div>
+      <button class="sw ${u.enabled ? 'on' : ''}" id="uSw" title="Пользователь целиком"></button><button class="icon-btn" onclick="closeAll()">${ic('x')}</button></div>
+    <div class="db">
+      <div class="conn-card" style="border-color:rgba(59,130,246,.4)"><div class="row"><b>Подписка</b><span class="pill info">всё, кроме AmneziaWG</span><span class="sp"></span>
+        <button class="icon-btn sm" title="Копировать" data-copy="${esc(u.subscription)}">${ic('copy')}</button><button class="icon-btn sm" title="QR" data-qr="${esc(u.subscription)}">${ic('qr')}</button></div><code>${esc(u.subscription)}</code><div class="qrslot"></div></div>
+      <div class="sect">Подключения</div>
+      ${u.connections.map((c, i) => `<div class="conn-card" data-i="${i}"><div class="row">${badge(c.slot, true)}${c.core === 'xray' && c.slot.startsWith('vless') ? '<span class="pill">Xray</span>' : ''}<span class="sp"></span>
+        <button class="sw ${c.enabled ? 'on' : ''}" data-csw="${i}" title="${c.enabled ? 'Выключить' : 'Включить'}"></button>
+        <button class="icon-btn sm" title="Копировать" data-copy="${esc(c.link)}">${ic('copy')}</button>
+        <button class="icon-btn sm" title="QR" data-qr="${esc(c.link)}">${ic('qr')}</button>
+        ${c.conf ? `<button class="icon-btn sm" title="Скачать .conf" data-conf="${i}">${ic('dl')}</button><button class="icon-btn sm" title="QR конфига (приложение AmneziaWG)" data-qrc="${i}">${ic('qr')}<sup>conf</sup></button>` : ''}
+        ${c.mieru ? `<button class="icon-btn sm" title="sing-box JSON (Karing)" data-mieru="${i}">${ic('copy')}<sup>json</sup></button>` : ''}
+        <button class="icon-btn sm" title="Удалить подключение" data-cdel="${i}">${ic('trash')}</button></div>
+        <code>${esc(c.link)}</code><div class="qrslot"></div></div>`).join('')}
+      <div class="row wrap"><button class="btn" id="uAdd">${ic('plus')} Добавить протокол</button><button class="btn" id="uTg">${ic('send')} Отправить в Telegram</button><button class="btn danger" id="uDel">${ic('trash')} Удалить пользователя</button></div>
+    </div>`;
+  const refresh = async () => { USERS = await api('users.list'); if (PAGE === 'users') fillUsers(); openUser(name); };
+  $('#uSw').onclick = e => busy(e.currentTarget, async () => { await api('users.set_enabled', {name, enabled: !u.enabled}); toast(`${name}: ${!u.enabled ? 'включён' : 'выключен'}`); refresh(); });
+  $$('#drawer [data-copy]').forEach(b => b.onclick = () => copyText(b.dataset.copy));
+  $$('#drawer [data-qr]').forEach(b => b.onclick = () => qrIn(b, b.dataset.qr));
+  $$('#drawer [data-qrc]').forEach(b => b.onclick = () => qrIn(b, u.connections[+b.dataset.qrc].conf));
+  $$('#drawer [data-conf]').forEach(b => b.onclick = () => { const c = u.connections[+b.dataset.conf]; download(c.conf_name, c.conf, 'text/plain'); toast(`${c.conf_name} сохранён в «Загрузки»`); });
+  $$('#drawer [data-mieru]').forEach(b => b.onclick = () => copyText(u.connections[+b.dataset.mieru].mieru.singbox));
+  $$('#drawer [data-csw]').forEach(b => b.onclick = () => busy(b, async () => { const c = u.connections[+b.dataset.csw];
+    await api('users.set_enabled', {name, slot: c.slot, enabled: !c.enabled}); toast(`${c.label}: ${!c.enabled ? 'включён' : 'выключен'}`); refresh(); }));
+  $$('#drawer [data-cdel]').forEach(b => b.onclick = async () => { const c = u.connections[+b.dataset.cdel];
+    if (!await confirmBox(`Удалить ${c.label} у ${name}?`, 'Ссылка этого подключения перестанет работать.', 'Удалить', true)) return openUser(name);
+    try { await api('users.remove', {name, slot: c.slot}); toast(`${c.label} удалён`); if (u.connections.length === 1) { closeAll(); USERS = await api('users.list'); fillUsers(); } else refresh(); } catch (e) { toast(e.message, 'bad'); } });
+  $('#uAdd').onclick = () => addUser(name);
+  $('#uTg').onclick = e => busy(e.currentTarget, async () => msg(await api('users.send_telegram', {name})));
+  $('#uDel').onclick = () => delUser(name);
+}
+async function qrIn(btn, text) {
+  const box = btn.closest('.conn-card').querySelector('.qrslot');
+  if (box.dataset.text === text && box.innerHTML) { box.innerHTML = ''; box.dataset.text = ''; return; }
+  await busy(btn, async () => { const d = await api('users.qr', {text}); box.innerHTML = `<div class="qrbox">${d.svg.replace(/<\?xml[^>]*>/, '')}</div>`; box.dataset.text = text; });
+}
+let PICK = '', CORE = '';
+async function addUser(existing) {
+  openModal(`<div class="mh"><h2>${existing ? `Новый протокол для ${esc(existing)}` : 'Новый пользователь'}</h2></div><div class="mb"><div class="sk" style="height:260px"></div></div>`);
+  let slots;
+  try { slots = await api('users.slots'); } catch (e) { toast(e.message, 'bad'); closeAll(); return; }
+  const have = existing ? (USERS.find(u => u.name === existing)?.connections || []).map(c => c.slot) : [];
+  if (!PICK || !slots.find(s => s.slot === PICK && s.available && !have.includes(s.slot))) PICK = (slots.find(s => s.available && !have.includes(s.slot)) || {}).slot || '';
+  const draw = () => {
+    const cur = slots.find(s => s.slot === PICK);
+    if (cur && !cur.cores.includes(CORE)) CORE = cur.cores[0] || '';
+    openModal(`<div class="mh"><h2>${existing ? `Новый протокол для ${esc(existing)}` : 'Новый пользователь'}</h2><span style="flex:1"></span><button class="icon-btn" id="mx">${ic('x')}</button></div>
+    <div class="mb">${existing ? '' : `<label class="f">Имя<input class="input" id="nn" placeholder="например, alice-phone" value="${esc($('#nn')?.value || '')}"><span class="hint">латиница, цифры, «-» и «_»</span></label>`}
+      <div class="f" style="display:grid;gap:8px"><span style="font-size:13px;color:var(--text2)">Протокол</span>
+      <div class="protos">${slots.map(s => { const v = PROTOS[s.slot]; const dis = !s.available || have.includes(s.slot);
+        return `<div class="pc ${PICK === s.slot ? 'on' : ''} ${dis ? 'dis' : ''}" data-p="${s.slot}" title="${esc(have.includes(s.slot) ? 'уже есть у пользователя' : s.reason)}"><span class="pi" style="background:${v.c}">${v.n.replace('VLESS ', '').slice(0, 2).toUpperCase()}</span><div><b>${v.n}</b><small>${esc(have.includes(s.slot) ? 'уже есть' : s.available ? v.d : s.reason)}</small></div></div>`; }).join('')}</div></div>
+      ${cur && cur.cores.length > 1 ? `<div class="row"><span style="font-size:13px;color:var(--text2)">Ядро</span><div class="seg">${cur.cores.map(c => `<button class="${CORE === c ? 'on' : ''}" data-c="${c}">${c === 'singbox' ? 'sing-box' : 'Xray'}</button>`).join('')}</div></div>` : ''}
+    </div><div class="mf"><button class="btn" id="mno">Отмена</button><button class="btn primary" id="mok" ${PICK ? '' : 'disabled'}>${ic('plus')} ${existing ? 'Добавить протокол' : 'Создать'}</button></div>`);
+    $('#mx').onclick = $('#mno').onclick = closeAll;
+    $$('.pc:not(.dis)').forEach(c => c.onclick = () => { PICK = c.dataset.p; draw(); });
+    $$('.seg button').forEach(b => b.onclick = () => { CORE = b.dataset.c; draw(); });
+    $('#nn')?.focus();
+    $('#mok').onclick = e => { const name = existing || $('#nn').value.trim().toLowerCase();
+      if (!/^[a-z0-9_-]{1,32}$/.test(name)) { $('#nn').style.borderColor = 'var(--red)'; toast('Имя: латиница, цифры, «-» и «_»', 'bad'); return; }
+      busy(e.currentTarget, async () => { await api('users.add', {name, slot: PICK, core: CORE}); closeAll(); toast(`${name}: добавлен ${PROTOS[PICK].n}`);
+        USERS = await api('users.list'); USERCOUNT = USERS.length; renderNav(); if (PAGE === 'users') fillUsers(); openUser(name); }); };
+  };
+  draw();
+}
+
+/* ═══ Модули ═══ */
+const MODC = {singbox: ['SB', '#3b82f6'], xray: ['XR', '#8b5cf6'], caddy: ['CD', '#f97316'], mieru: ['MI', '#eab308'], awg: ['AW', '#22c55e'], netbird: ['NB', '#64748b']};
+async function modules() {
+  $('#page').innerHTML = skeleton();
+  try {
+    const [mods, bbr] = await Promise.all([api('modules.list'), api('bbr.status')]);
+    $('#page').innerHTML = `<div class="grid g3">${mods.map(m => modCard(m)).join('')}</div>
+      <div class="card row"><span class="kico" style="background:rgba(6,182,212,.15);color:var(--cyan)">${ic('cpu')}</span><div style="flex:1"><h3>TCP BBR</h3><span class="muted">Ускоряет TCP на загруженных каналах</span></div><button class="sw ${bbr.active ? 'on' : ''}" id="bbr"></button></div>`;
+    $('#bbr').onclick = e => busy(e.currentTarget, async () => { msg(await api('bbr.set', {enabled: !bbr.active})); modules(); });
+    $$('[data-m]').forEach(b => b.onclick = () => modAction(b, b.dataset.m, b.dataset.a, mods.find(x => x.id === b.dataset.m)));
+  } catch (e) { $('#page').innerHTML = errorCard(e, 'modules()'); }
+}
+function modCard(m) {
+  const [s, c] = MODC[m.id]; const st = m.installed ? m.state : 'not_installed';
+  const sw = ['xray', 'mieru', 'awg'].includes(m.id) && (m.installed || m.id === 'awg');
+  const btn = (a, t, i, cls = '') => `<button class="btn ${cls}" data-m="${m.id}" data-a="${a}">${i ? ic(i) : ''} ${t}</button>`;
+  const acts = [];
+  if (!m.installed && ['xray', 'mieru', 'netbird'].includes(m.id)) acts.push(btn('install', 'Установить', 'dl', 'primary'));
+  if (m.installed && m.id !== 'netbird') acts.push(btn('update', 'Проверить обновление', 'up'));
+  if (m.id === 'awg' && m.update_available) acts.push(btn('update', `Обновить до ${esc(m.target_version)}`, 'up', 'primary'));
+  if (m.installed && ['singbox', 'caddy', 'xray', 'mieru', 'awg'].includes(m.id) && st === 'active') acts.push(btn('restart', 'Перезапустить', 'refresh', 'ghost'));
+  if (m.id === 'mieru' && m.installed) acts.push(btn('port', 'Порт', '', 'ghost'));
+  if (m.id === 'awg' && m.enabled) acts.push(btn('port', 'Порт', '', 'ghost'), btn('regen', 'Новая маскировка', '', 'ghost'));
+  if (m.id === 'netbird' && m.installed) acts.push(btn('key', 'Setup Key', '', 'ghost'), btn('url', 'Management URL', '', 'ghost'), btn('up', 'Подключить', '', 'ghost'), btn('nbstat', 'Статус', '', 'ghost'), btn('nbupd', 'Обновить', 'up', 'ghost'));
+  if (m.installed && ['xray', 'mieru', 'netbird'].includes(m.id)) acts.push(btn('uninstall', 'Удалить', 'trash', 'ghost danger'));
+  if (m.installed) acts.push(`<button class="btn ghost" onclick="LOGUNIT='${m.unit}';go('logs')">${ic('log')} Журнал</button>`);
+  return `<div class="card mod"><div class="head"><span class="lg" style="background:${c}">${s}</span><div style="flex:1;min-width:0"><h3>${esc(m.name)}</h3><span class="pill ${stateCls(st)}"><span class="dot ${stateCls(st)}"></span>${stateText(st)}</span></div>
+    ${sw ? `<button class="sw ${m.enabled ? 'on' : ''}" data-m="${m.id}" data-a="toggle" title="${m.enabled ? 'Выключить' : 'Включить'}"></button>` : ''}</div>
+    <div class="muted">${esc(m.note || '')}</div><div class="meta">${m.version ? `<span>Версия <b>${esc(m.version)}</b></span>` : ''}${m.ip ? `<span>IP <b>${esc(m.ip)}</b></span>` : ''}${m.peers && m.id === 'netbird' ? `<span>${esc(m.peers)}</span>` : ''}</div>
+    ${m.id === 'awg' && m.peers?.length ? `<div class="list peers">${m.peers.map(p => `<div class="li"><span class="dot ${p.last_handshake && Date.now() / 1000 - p.last_handshake < 180 ? 'ok' : ''}"></span><div class="t"><b>${esc(p.user)}</b><small>${esc(p.address)}</small></div><small class="muted">${p.last_handshake ? new Date(p.last_handshake * 1000).toLocaleString('ru') : 'ещё не подключался'}</small></div>`).join('')}</div>` : ''}
+    <div class="foot">${acts.join('')}</div></div>`;
+}
+async function modAction(btn, id, a, m) {
+  try {
+    if (a === 'toggle') {
+      if (m.enabled && !await confirmBox(`Выключить ${m.name}?`, 'Подключения пользователей на нём перестанут работать до включения.', 'Выключить', true)) return;
+      if (id === 'awg' && !m.enabled && !m.installed) { await longOp('Включение AmneziaWG (сборка 1–2 минуты)', 'modules.set_enabled', {id, enabled: true}); return modules(); }
+      return busy(btn, async () => { msg(await api('modules.set_enabled', {id, enabled: !m.enabled})); modules(); });
+    }
+    if (a === 'install') { await longOp(`Установка ${m.name}`, 'modules.install', {id}); return modules(); }
+    if (a === 'uninstall') { if (await confirmBox(`Удалить ${m.name}?`, 'Подключения пользователей на нём будут удалены или перестанут работать.', 'Удалить', true)) { await longOp(`Удаление ${m.name}`, 'modules.uninstall', {id}); modules(); } return; }
+    if (a === 'restart') return busy(btn, async () => msg(await api('service.restart', {unit: m.unit})));
+    if (a === 'update') {
+      if (id === 'awg' && m.update_available) { await longOp('Обновление AmneziaWG', 'modules.update', {id}); return modules(); }
+      const l = await busy(btn, () => api('modules.latest', {id})); if (!l) return;
+      const same = m.version && l.latest.replace(/^v/, '') === m.version.replace(/^v/, '');
+      if (!await confirmBox(same ? `${m.name}: последняя версия` : `Обновить ${m.name}?`, same ? `Установлена ${m.version}. Переустановить её?` : `Сейчас ${m.version || '—'}, доступна ${l.latest}.${id === 'caddy' ? '\nСборка Caddy займёт до 5 минут.' : ''}`, same ? 'Переустановить' : 'Обновить')) return;
+      await longOp(`Обновление ${m.name}`, 'modules.update', {id, version: l.latest}); return modules();
+    }
+    if (a === 'port') { const v = await formBox(`${m.name}: порт`, [{label: 'Порт', value: String(m.port || ''), type: 'number'}], 'Сменить', id === 'awg' ? 'После смены порта клиентам AmneziaWG нужны новые конфиги.' : 'После смены порта клиентам Mieru нужны новые ссылки.'); if (!v) return;
+      return busy(btn, async () => { msg(await api(id === 'awg' ? 'awg.set_port' : 'mieru.set_port', {port: +v[0]})); modules(); }); }
+    if (a === 'regen') { if (await confirmBox('Новая маскировка AmneziaWG?', 'Новые ключ сервера и параметры. Все выданные конфиги AmneziaWG перестанут работать — выдайте их заново.', 'Сменить', true)) busy(btn, async () => msg(await api('awg.regenerate'))); return; }
+    if (a === 'key') { const v = await formBox('NetBird: Setup Key', [{label: 'Setup Key', ph: 'XXXXXXXX-XXXX-…'}]); if (v) busy(btn, async () => msg(await api('netbird.set_setup_key', {key: v[0]}))); return; }
+    if (a === 'url') { const v = await formBox('NetBird: Management URL', [{label: 'Адрес', value: m.management_url || '', ph: 'https://netbird.example.com'}]); if (v) busy(btn, async () => msg(await api('netbird.set_management_url', {url: v[0]}))); return; }
+    if (a === 'up') { await longOp('Подключение NetBird', 'netbird.up'); return modules(); }
+    if (a === 'nbupd') { await longOp('Обновление NetBird', 'modules.update', {id: 'netbird'}); return modules(); }
+    if (a === 'nbstat') { const d = await busy(btn, () => api('netbird.status')); if (d) openModal(`<div class="mh"><h2>NetBird: статус</h2></div><div class="mb"><div class="term small">${esc(d.detail || d.state)}</div></div><div class="mf"><button class="btn" onclick="closeAll()">Закрыть</button></div>`); }
+  } catch (e) { toast(e.message, 'bad'); }
+}
+
+/* ═══ Настройки ═══ */
+let STAB = 'site';
+async function settings() {
+  const tabs = [['site', 'Сайт и домен'], ['paths', 'Пути'], ['cdn', 'CDN'], ['bot', 'Telegram-бот'], ['ssh', 'SSH'], ['sec', 'Защита']];
+  $('#page').innerHTML = `<div class="card" style="padding:0"><div class="tabs">${tabs.map(([k, t]) => `<button class="${STAB === k ? 'on' : ''}" data-s="${k}">${t}</button>`).join('')}</div><div id="sbody" style="padding:20px"><div class="sk" style="height:200px"></div></div></div>`;
+  $$('.tabs button[data-s]').forEach(b => b.onclick = () => { STAB = b.dataset.s; settings(); });
+  try { await ({site: setSite, paths: setPaths, cdn: setCdn, bot: setBot, ssh: setSsh, sec: setSec})[STAB](); }
+  catch (e) { $('#sbody').innerHTML = errorCard(e, 'settings()'); }
+}
+const field = (id, label, value, hint = '', type = 'text') => `<label class="f">${label}<input class="input" id="${id}" type="${type}" value="${esc(value ?? '')}">${hint ? `<span class="hint">${hint}</span>` : ''}</label>`;
+async function setSite() {
+  const s = await api('settings.get');
+  const pal = ['#0082c9', '#f4a12c', '#2c3e50', '#4250af', '#041e42', '#7c3aed', '#0f766e', '#be123c', '#334155', '#1d4ed8'];
+  $('#sbody').innerHTML = `<div class="split"><div class="form">${field('fDom', 'Домен', s.domain, 'A-запись должна указывать на сервер')}${field('fMail', 'Email для сертификатов', s.admin_email)}
+      <div class="row"><button class="btn primary" id="sDom">Сохранить домен</button></div></div>
+    <div class="form">${field('fFq', 'FQDN VPS (имя хоста)', s.fqdn)}<div class="row"><button class="btn" id="sFq">Сохранить имя</button></div></div></div>
+    <div style="display:grid;gap:10px;margin-top:22px"><b>Сайт-маскировка</b><span class="muted">Что видит посторонний, открывший ваш домен в браузере</span>
+    <div class="tpls">${s.site.templates.map((t, i) => `<div class="tpl ${s.site.template === t.id ? 'on' : ''}" data-t="${t.id}"><div class="pv" style="background:linear-gradient(135deg,${pal[i % pal.length]},${pal[i % pal.length]}aa)">${esc(t.label.split(':').pop().split('(')[0].trim())}</div><div><span>${esc(t.label)}</span>${s.site.template === t.id ? `<span style="color:var(--blue)">${ic('check')}</span>` : ''}</div></div>`).join('')}</div></div>`;
+  $('#sDom').onclick = e => busy(e.currentTarget, async () => msg(await api('settings.set_domain', {domain: $('#fDom').value, email: $('#fMail').value})));
+  $('#sFq').onclick = e => busy(e.currentTarget, async () => msg(await api('settings.set_fqdn', {fqdn: $('#fFq').value})));
+  $$('.tpl').forEach(t => t.onclick = () => { if (t.classList.contains('on')) return; t.style.opacity = .5;
+    api('settings.set_site_template', {template: t.dataset.t}).then(d => { msg(d); setSite(); }, e => { toast(e.message, 'bad'); t.style.opacity = 1; }); });
+}
+async function setPaths() {
+  const s = await api('settings.get');
+  const rows = [['vless', 'ws_path', 'sing-box: WebSocket'], ['vless', 'grpc_service', 'sing-box: gRPC (имя сервиса)'], ['vless', 'httpupgrade_path', 'sing-box: HTTPUpgrade'],
+    ['xray', 'ws_path', 'Xray: WebSocket'], ['xray', 'grpc_service', 'Xray: gRPC (имя сервиса)'], ['xray', 'httpupgrade_path', 'Xray: HTTPUpgrade'], ['xray', 'xhttp_path', 'Xray: XHTTP'], ['xray', 'cdn_path', 'Xray: CDN']];
+  $('#sbody').innerHTML = `<div class="muted" style="margin-bottom:14px">После смены пути клиентам нужны новые ссылки (подписка обновится сама).</div>
+    <div class="paths">${rows.map(([c, f, l], i) => `<div class="li"><div class="t"><b>${l}</b></div><input class="input" id="p${i}" value="${esc(s[c][f] || '')}" style="max-width:280px"><button class="btn" data-p="${i}">Сохранить</button></div>`).join('')}</div>`;
+  $$('[data-p]').forEach(b => b.onclick = () => { const [c, f] = rows[+b.dataset.p]; busy(b, async () => msg(await api('settings.set_path', {core: c, field: f, value: $('#p' + b.dataset.p).value.trim()}))); });
+}
+async function setCdn() {
+  const s = await api('settings.get');
+  $('#sbody').innerHTML = `<div class="form">${field('cDom', 'Домен CDN (в ссылках клиентов)', s.cdn.domain, 'например, cdn.example.com')}${field('cOri', 'Origin-поддомен (с ним приходит CDN)', s.cdn.origin_host, 'A-запись → IP сервера; на него Caddy получит сертификат')}
+    <div class="muted">Путь CDN: <code>${esc(s.cdn.path || 'создастся при сохранении')}</code></div>
+    <div class="row wrap"><button class="btn primary" id="cSave">Сохранить</button><button class="btn" id="cTest" ${s.cdn.configured ? '' : 'disabled'}>${ic('refresh')} Тест CDN</button><button class="btn ghost danger" id="cOff" ${s.cdn.configured ? '' : 'disabled'}>Отключить CDN</button></div>
+    <div id="cRes"></div></div>`;
+  $('#cSave').onclick = e => busy(e.currentTarget, async () => { msg(await api('cdn.set', {domain: $('#cDom').value, origin_host: $('#cOri').value})); setCdn(); });
+  $('#cOff').onclick = async e => { if (await confirmBox('Отключить CDN?', 'Домен CDN и origin будут очищены. Если есть подключения CDN — сначала удалите их.', 'Отключить', true)) busy(e.target.closest('button'), async () => { msg(await api('cdn.set', {domain: '', origin_host: ''})); setCdn(); }); };
+  $('#cTest').onclick = e => busy(e.currentTarget, async () => { const r = await api('cdn.test'); $('#cRes').innerHTML = `<div class="term small" style="height:auto;max-height:340px"><div style="color:${r.ok ? '#4ade80' : '#f87171'}">${r.ok ? '✓' : '✗'} ${esc(r.lines[0])}</div>${r.lines.slice(1).map(l => `<div>${esc(l)}</div>`).join('')}</div>`; });
+}
+async function setBot() {
+  const [st, s] = await Promise.all([api('telegram.state'), api('settings.get')]);
+  $('#sbody').innerHTML = `<div class="form">${field('tTok', 'Токен бота', '', st.configured ? `задан: ${s.telegram.token} — оставьте пустым, чтобы не менять` : 'получите у @BotFather', 'password')}${field('tChat', 'Chat ID', st.chat_id, 'ваш ID в Telegram (узнать — у @userinfobot)')}
+    <div class="row"><button class="btn primary" id="tSave">Сохранить</button><button class="btn" id="tTest" ${st.configured ? '' : 'disabled'}>${ic('send')} Тестовое сообщение</button></div>
+    <div class="li"><div class="t"><b>Бот включён</b><small>${st.running ? 'служба работает' : 'служба не запущена'}</small></div><button class="sw ${st.enabled ? 'on' : ''}" id="tEn" ${st.configured ? '' : 'disabled'}></button></div>
+    <div class="li"><div class="t"><b>Оповещения о проблемах</b><small>службы, сертификат, обновления</small></div><button class="sw ${st.alerts ? 'on' : ''}" id="tAl" ${st.configured ? '' : 'disabled'}></button></div></div>`;
+  $('#tSave').onclick = e => busy(e.currentTarget, async () => { const tok = $('#tTok').value.trim();
+    if (!tok && st.configured) { toast('Токен не изменён: для смены Chat ID введите токен ещё раз', 'info'); return; }
+    msg(await api('telegram.configure', {token: tok, chat_id: $('#tChat').value.trim()})); setBot(); });
+  $('#tTest').onclick = e => busy(e.currentTarget, async () => msg(await api('telegram.test')));
+  $('#tEn').onclick = e => busy(e.currentTarget, async () => { msg(await api('telegram.set_enabled', {enabled: !st.enabled})); setBot(); });
+  $('#tAl').onclick = e => busy(e.currentTarget, async () => { msg(await api('telegram.set_alerts', {enabled: !st.alerts})); setBot(); });
+}
+async function setSsh() {
+  const st = await api('ssh.status');
+  $('#sbody').innerHTML = `<div class="form">
+    <div class="li"><div class="t"><b>Вход по паролю</b><small>${st.password_allowed ? 'включён — безопаснее отключить, вход по ключу этого ПК уже работает' : 'отключён: вход только по ключу'}</small></div><button class="sw ${st.password_allowed ? 'on' : ''}" id="sPw"></button></div>
+    <div class="li"><div class="t"><b>Порт SSH</b><small>сейчас ${st.port}</small></div><button class="btn" id="sPort">Сменить порт</button></div>
+    <div class="sect" style="margin-top:8px">Ключи на сервере (${st.keys.length})</div>
+    <div class="list">${st.keys.map(k => `<div class="li"><span class="kico" style="background:var(--card2)">${ic('key')}</span><div class="t"><b>${esc(k.comment || k.type)}</b><small>${esc(k.fingerprint)}</small></div><button class="icon-btn sm" title="Удалить ключ" data-k="${k.index}">${ic('trash')}</button></div>`).join('') || '<span class="muted">ключей нет</span>'}</div>
+    <div class="row wrap"><button class="btn" id="sAdd">${ic('plus')} Добавить открытый ключ</button><button class="btn" id="sGen">${ic('key')} Создать ключ на сервере</button></div></div>`;
+  $('#sPw').onclick = async e => { const on = !st.password_allowed;
+    if (!on && !await confirmBox('Отключить вход по паролю?', 'Войти на сервер можно будет только по ключу. Ключ этого ПК уже работает.', 'Отключить')) return;
+    busy(e.target, async () => { msg(await api('ssh.set_auth', {mode: on ? 'password' : 'key'})); setSsh(); }); };
+  $('#sPort').onclick = async () => { const v = await formBox('Порт SSH', [{label: 'Новый порт', type: 'number', value: ''}], 'Сменить', 'Сначала новый порт откроется в фаерволе, затем sshd переключится. После смены обновите порт сервера в лаунчере (Изменить / удалить сервер → Изменить порт SSH).'); if (!v) return;
+    try { const r = await api('ssh.set_port', {port: +v[0]});
+      if (await confirmBox('Проверьте вход', `SSH переведён на порт ${v[0]}. Поменяйте порт в лаунчере и проверьте вход. Закрыть старый порт ${r.old_port}?`, 'Закрыть старый порт')) msg(await api('ssh.confirm_port', {old_port: r.old_port}));
+      setSsh(); } catch (e) { toast(e.message, 'bad'); } };
+  $$('[data-k]').forEach(b => b.onclick = async () => { if (await confirmBox('Удалить ключ?', 'Вход по этому ключу перестанет работать. Не удаляйте ключ этого ПК, если вход по паролю отключён.', 'Удалить', true)) busy(b, async () => { msg(await api('ssh.delete_key', {index: +b.dataset.k})); setSsh(); }); });
+  $('#sAdd').onclick = async () => { const v = await formBox('Добавить открытый ключ', [{label: 'Открытый ключ', type: 'textarea', ph: 'ssh-ed25519 AAAA… user@pc'}], 'Добавить'); if (v) busy(null, async () => { msg(await api('ssh.add_key', {public_key: v[0]})); setSsh(); }); };
+  $('#sGen').onclick = async e => { if (!await confirmBox('Создать ключ на сервере?', 'Новая пара ключей: открытый добавится на сервер, закрытый скачается на этот ПК. Храните его как пароль.', 'Создать')) return;
+    busy(e.target.closest('button'), async () => { const r = await api('ssh.generate_key'); download(r.name, r.private_key, 'text/plain'); msg(r); setSsh(); }); };
+}
+async function setSec() {
+  const st = await api('security.status');
+  $('#sbody').innerHTML = `<div class="form">
+    <div class="li"><div class="t"><b>Защита от сканеров (Fail2ban)</b><small>${st.installed ? (st.active ? 'активна' : 'отключена') : 'не установлена'}</small></div><button class="sw ${st.active ? 'on' : ''}" id="fEn" ${st.installed ? '' : 'disabled'}></button></div>
+    <div class="row"><div class="sect" style="margin:0">Заблокированные IP (${st.banned_ips.length})</div><span class="sp"></span>${st.banned_ips.length ? '<button class="btn ghost" id="fAll">Разблокировать все</button>' : ''}</div>
+    <div class="search" style="min-width:0">${ic('search')}<input id="fQ" placeholder="Найти IP"></div>
+    <div class="list bans" id="fList"></div></div>`;
+  const fill = () => { const q = $('#fQ').value.trim(); const l = st.banned_ips.filter(ip => ip.includes(q));
+    $('#fList').innerHTML = l.slice(0, 300).map(ip => `<div class="li"><span class="dot bad"></span><div class="t"><b class="mono">${esc(ip)}</b></div><button class="btn ghost" data-ip="${esc(ip)}">Разблокировать</button></div>`).join('') + (l.length > 300 ? `<div class="muted">… и ещё ${l.length - 300}</div>` : '') || '<span class="muted">Никто не заблокирован</span>';
+    $$('[data-ip]').forEach(b => b.onclick = () => busy(b, async () => { msg(await api('security.unban', {ip: b.dataset.ip})); st.banned_ips = st.banned_ips.filter(x => x !== b.dataset.ip); fill(); })); };
+  $('#fQ').oninput = fill; fill();
+  $('#fEn').onclick = e => busy(e.currentTarget, async () => { msg(await api('security.set_enabled', {enabled: !st.active})); setSec(); });
+  if ($('#fAll')) $('#fAll').onclick = e => busy(e.currentTarget, async () => { msg(await api('security.unban')); setSec(); });
+}
+
+/* ═══ Журналы ═══ */
+let LOGUNIT = 'caddy';
+async function logs() {
+  let units;
+  $('#page').innerHTML = `<div class="card"><div class="sk" style="height:300px"></div></div>`;
+  try { units = await api('logs.units'); } catch (e) { $('#page').innerHTML = errorCard(e, 'logs()'); return; }
+  if (!units.some(u => u.unit === LOGUNIT)) LOGUNIT = units[0]?.unit || 'caddy';
+  $('#page').innerHTML = `<div class="card" style="padding:0"><div class="tabs">${units.map(u => `<button class="${LOGUNIT === u.unit ? 'on' : ''}" data-l="${u.unit}">${esc(u.label)}</button>`).join('')}</div>
+    <div style="padding:14px;display:grid;gap:12px"><div class="row wrap"><div class="search" style="min-width:0;flex:1">${ic('search')}<input id="lq" placeholder="Фильтр строк"></div>
+      <span class="pill ok" id="lst"><span class="dot ok"></span>в реальном времени</span><button class="btn ghost" id="lpause">Пауза</button><button class="btn ghost" id="ldl">${ic('dl')} Скачать</button></div>
+    <div class="term" id="term"></div></div></div>`;
+  $$('[data-l]').forEach(b => b.onclick = () => { LOGUNIT = b.dataset.l; go('logs'); });
+  const term = $('#term'); const all = []; let paused = false;
+  const show = l => { if ($('#lq').value && !l.toLowerCase().includes($('#lq').value.toLowerCase())) return;
+    const cls = /error|fail|fatal|panic|ошибк/i.test(l) ? 'e' : /warn/i.test(l) ? 'w' : '';
+    const m = l.match(/^(\S+)\s+\S+\s+([^:]+):\s?(.*)$/);
+    term.insertAdjacentHTML('beforeend', m ? `<div class="${cls}"><span class="ts">${esc(m[1].slice(11, 19))}</span> ${esc(m[3])}</div>` : `<div class="${cls}">${esc(l)}</div>`);
+    if (!paused) term.scrollTop = term.scrollHeight; };
+  $('#lq').oninput = () => { term.innerHTML = ''; all.forEach(show); };
+  $('#lpause').onclick = e => { paused = !paused; e.target.textContent = paused ? 'Продолжить' : 'Пауза'; $('#lst').className = 'pill ' + (paused ? '' : 'ok'); };
+  $('#ldl').onclick = () => download(`${LOGUNIT}.log`, all.join('\n'), 'text/plain');
+  const c = call('logs.follow', {unit: LOGUNIT, lines: 300}, l => { all.push(l); if (all.length > 5000) all.shift(); show(l); });
+  STOP = () => api('api.cancel', {target: c.id}).catch(() => {});
+  c.promise.catch(e => { if (PAGE === 'logs') term.insertAdjacentHTML('beforeend', `<div class="e">${esc(e.message)}</div>`); });
+}
+
+/* ═══ Бэкапы ═══ */
+async function backups() {
+  $('#page').innerHTML = `<div class="card"><div class="sk" style="height:200px"></div></div>`;
+  let b;
+  try { b = await api('backup.list'); } catch (e) { $('#page').innerHTML = errorCard(e, 'backups()'); return; }
+  $('#page').innerHTML = `<div class="row wrap"><span class="muted">Пользователи, ключи и настройки. Пароль бэкапов: ${b.password_set ? '<span class="pill ok">задан</span>' : '<span class="pill">не задан</span>'}</span><span class="sp"></span>
+      <button class="btn" id="bPw">${ic('key')} Пароль</button><label class="btn">${ic('up')} Загрузить с ПК<input type="file" id="bUp" accept=".zip" hidden></label><button class="btn primary" id="bNew">${ic('plus')} Создать бэкап</button></div>
+    <div class="card row wrap"><div style="flex:1"><h3>Автоматический бэкап</h3><span class="muted">${b.schedule.enabled ? `каждый день в ${String(b.schedule.hour).padStart(2, '0')}:${String(b.schedule.minute).padStart(2, '0')}` : 'выключен'}</span></div>
+      <input class="input" id="bTime" type="time" value="${String(b.schedule.hour).padStart(2, '0')}:${String(b.schedule.minute).padStart(2, '0')}" style="width:120px"><button class="sw ${b.schedule.enabled ? 'on' : ''}" id="bSch"></button></div>
+    <div class="card tbl"><table><thead><tr><th>Файл</th><th>Дата</th><th class="hide-m">Размер</th><th></th></tr></thead><tbody>${b.files.map(f => `<tr><td><div class="uname"><span class="av" style="background:var(--card2);color:var(--text2)">${ic('arch')}</span><div><b class="mono" style="font-size:12.5px">${esc(f.name)}</b><small>${f.encrypted ? 'зашифрован' : 'без пароля'}</small></div></div></td>
+      <td class="nw">${new Date(f.date).toLocaleString('ru', {dateStyle: 'medium', timeStyle: 'short'})}</td><td class="hide-m">${fmtBytes(f.size)}</td>
+      <td><div class="acts"><button class="icon-btn sm" title="Скачать на ПК" data-dl="${esc(f.name)}">${ic('dl')}</button><button class="btn" data-rs="${esc(f.name)}" data-enc="${f.encrypted ? 1 : ''}">Восстановить</button><button class="icon-btn sm" title="Удалить" data-rm="${esc(f.name)}">${ic('trash')}</button></div></td></tr>`).join('')
+      || `<tr><td colspan="4"><div class="empty">${ic('arch')}<b>Бэкапов пока нет</b></div></td></tr>`}</tbody></table></div>`;
+  $('#bNew').onclick = e => busy(e.currentTarget, async () => { msg(await api('backup.create')); backups(); });
+  $('#bPw').onclick = async () => { const v = await formBox('Пароль бэкапов', [{label: 'Пароль', type: 'password', hint: 'пусто — убрать пароль'}], 'Сохранить', 'Новые бэкапы будут зашифрованы этим паролем.'); if (v) busy(null, async () => { msg(await api('backup.set_password', {password: v[0]})); backups(); }); };
+  const sched = en => { const [h, m] = $('#bTime').value.split(':').map(Number); return api('backup.set_schedule', {enabled: en, hour: h, minute: m}).then(d => { msg(d); backups(); }, e => toast(e.message, 'bad')); };
+  $('#bSch').onclick = () => sched(!b.schedule.enabled);
+  $('#bTime').onchange = () => { if (b.schedule.enabled) sched(true); };
+  $('#bUp').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader();
+    r.onload = () => busy(null, async () => { msg(await api('backup.upload', {name: f.name.replace(/[^A-Za-z0-9._-]/g, '_'), base64: r.result.split(',')[1]})); backups(); }); r.readAsDataURL(f); };
+  $$('[data-dl]').forEach(x => x.onclick = () => busy(x, async () => { const d = await api('backup.download', {name: x.dataset.dl}); download(d.name, b64blob(d.base64, 'application/zip')); toast(`${d.name} сохранён в «Загрузки»`); }));
+  $$('[data-rm]').forEach(x => x.onclick = async () => { if (await confirmBox('Удалить бэкап?', x.dataset.rm, 'Удалить', true)) busy(x, async () => { msg(await api('backup.delete', {name: x.dataset.rm})); backups(); }); });
+  $$('[data-rs]').forEach(x => x.onclick = async () => {
+    let password = '';
+    if (x.dataset.enc) { const v = await formBox('Пароль бэкапа', [{label: 'Пароль', type: 'password'}], 'Восстановить', 'Бэкап зашифрован.'); if (!v) return; password = v[0]; }
+    else if (!await confirmBox('Восстановить из бэкапа?', `${x.dataset.rs}\nТекущие пользователи и настройки будут заменены (перед этим сохранится резервная копия).`, 'Восстановить', true)) return;
+    try { await longOp('Восстановление из бэкапа', 'backup.restore', {name: x.dataset.rs, password}); } catch (_) {}
+  });
+}
+
+/* ═══ Диагностика ═══ */
+async function diag() {
+  $('#page').innerHTML = `<div class="grid g2">
+    <div class="card"><h3>Внешний IP сервера</h3><div class="val mono" id="dIp" style="font-size:22px;margin:10px 0">…</div><span class="muted">Адрес, с которым сервер выходит в интернет</span></div>
+    <div class="card"><h3>iperf3 — скорость ПК ↔ сервер</h3><div class="muted" style="margin:8px 0">Запустите на сервере и выполните на ПК команду, которая появится ниже.</div><div class="row wrap"><button class="btn" id="dIs">Запустить iperf3</button><button class="btn ghost" id="dIx">Остановить</button></div><div id="dIc"></div></div></div>
+    <div class="card"><div class="row wrap"><h3>Тест скорости сервер → интернет</h3><span class="sp"></span><select class="input" id="dSrv" style="max-width:320px"><option value="">ближайший сервер</option></select><button class="btn primary" id="dSt">${ic('refresh')} Запустить</button></div><div id="dSr" style="margin-top:12px"></div></div>`;
+  api('diag.public_ip').then(d => $('#dIp').textContent = d.ip || '—', e => $('#dIp').textContent = e.message);
+  api('diag.speedtest_servers').then(l => $('#dSrv').insertAdjacentHTML('beforeend', l.map(s => `<option value="${esc(s.id)}">${esc(s.name || s.id)} ${esc(s.location || '')}</option>`).join('')), () => {});
+  $('#dSt').onclick = e => busy(e.currentTarget, async () => { $('#dSr').innerHTML = '<div class="muted">Идёт замер, около 30 секунд…</div>'; const r = await api('diag.speedtest', {server_id: $('#dSrv').value}); $('#dSr').innerHTML = `<div class="term small" style="height:auto">${esc(r.text)}</div>`; });
+  $('#dIs').onclick = e => busy(e.currentTarget, async () => { const r = await api('diag.iperf_start'); msg(r);
+    $('#dIc').innerHTML = `<div class="conn-card" style="margin-top:10px"><div class="row"><b>На ПК (PowerShell):</b><span class="sp"></span><button class="icon-btn sm" data-copy="iperf3 -c ${esc(r.ip)} -p ${r.port} -R">${ic('copy')}</button></div><code>iperf3 -c ${esc(r.ip)} -p ${r.port} -R</code><span class="muted">-R — скорость сервер → ПК; без -R — ПК → сервер</span></div>`;
+    $$('#dIc [data-copy]').forEach(b => b.onclick = () => copyText(b.dataset.copy)); });
+  $('#dIx').onclick = e => busy(e.currentTarget, async () => { msg(await api('diag.iperf_stop')); $('#dIc').innerHTML = ''; });
+}
+
+/* ═══ тема, запуск ═══ */
+function setTheme(t) { document.documentElement.dataset.theme = t; localStorage.setItem('kvn-theme', t); $('#themeBtn').innerHTML = ic(t === 'dark' ? 'moon' : 'sun'); $('#themeBtn').title = t === 'dark' ? 'Светлая тема' : 'Тёмная тема'; }
+setTheme(localStorage.getItem('kvn-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+$('#themeBtn').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+$('#srvBtn').onclick = e => { e.stopPropagation(); $('#srvMenu').classList.toggle('open'); };
+document.addEventListener('click', () => $('#srvMenu').classList.remove('open'));
+$('#burger').onclick = () => $('#aside').classList.toggle('open');
+$('#refresh').onclick = async () => { await loadServers().catch(() => {}); if (READY) { ping(); go(PAGE); } else connect(); };
+events();
+renderNav();
+loadServers().then(() => go(PAGE), e => { $('#page').innerHTML = errorCard(e, 'location.reload()'); });
+setInterval(() => { if (READY && !document.hidden) ping(); }, 30000);
+
+</script>
+</body>
+</html>

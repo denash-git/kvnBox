@@ -321,6 +321,33 @@ def cmd_menu(app: App, a: argparse.Namespace, out: TextIO) -> int:
 # ─── парсер ──────────────────────────────────────────────────────────────────
 
 
+def cmd_api(app: App, a: argparse.Namespace, out: TextIO) -> int:
+    """Одно действие API (ответ — JSON) или `serve` — канал для веб-меню лаунчера."""
+    from kvnbox.api.actions import run_action
+
+    if a.name == "serve":
+        from kvnbox.api.serve import Server
+
+        return Server(app, out).run(sys.stdin)
+    try:
+        args = json.loads(a.args)
+        if not isinstance(args, dict):
+            raise ValueError
+    except ValueError:
+        print(
+            json.dumps({"ok": False, "error": "--args: нужен JSON-объект"}, ensure_ascii=False),
+            file=out,
+        )
+        return EXIT_USAGE
+    try:
+        data = run_action(app, a.name, args)
+    except ServiceError as e:
+        print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False), file=out)
+        return EXIT_FAIL
+    print(json.dumps({"ok": True, "data": data}, ensure_ascii=False), file=out)
+    return EXIT_OK
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="kvnbox", description="kvnBox — панель прокси-сервера")
     p.add_argument("-V", "--version", action="version", version=f"kvnBox {__version__}")
@@ -350,6 +377,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp = cmd(sub, "status", cmd_status, "состояние панели и служб")
     sp.add_argument("--json", action="store_true")
     cmd(sub, "menu", cmd_menu, "интерактивное меню")
+    sp = cmd(sub, "api", cmd_api, "программный вход для веб-меню (JSON); serve — постоянный канал")
+    sp.add_argument("name", metavar="ДЕЙСТВИЕ", help="например users.list, или serve")
+    sp.add_argument("--args", default="{}", help="параметры действия в JSON")
 
     users = group("user", "пользователи")
     cmd(users, "list", cmd_user_list, "список пользователей")
