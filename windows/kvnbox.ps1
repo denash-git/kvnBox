@@ -77,6 +77,18 @@ function Invoke-Ssh {
     return (@($out) -join "`n")
 }
 
+function Invoke-SshProbe([string]$Alias, [string]$Command, [int]$Timeout = 10) {
+    # как Invoke-Ssh, но с текстом ошибки ssh: отличить отказ ключа от обрыва сети
+    $ErrorActionPreference = 'Continue'
+    $ssh = Get-Tool 'ssh'
+    $base = Get-SshBase
+    $all = @(& $ssh @base -o BatchMode=yes -o "ConnectTimeout=$Timeout" $Alias $Command 2>&1)
+    $code = $LASTEXITCODE
+    $err = @($all | Where-Object { $_ -is [Management.Automation.ErrorRecord] } | ForEach-Object { $_.ToString() }) -join "`n"
+    $out = @($all | Where-Object { $_ -isnot [Management.Automation.ErrorRecord] }) -join "`n"
+    return @{ Code = $code; Out = $out; Err = $err }
+}
+
 # ═══ серверы: список, ключи, ~\.ssh\config ═══════════════════════════════════
 
 function Get-Alias([string]$Server) {
@@ -825,10 +837,19 @@ function Start-WebMenu {
                     }
                     '/app/server_check' {
                         if (-not $srvObj) { $res = @{ ok = $false; error = 'Сервер не найден.' }; break }
-                        $t = Invoke-Ssh $srvObj.Alias 'command -v kvnbox >/dev/null && kvnbox --version 2>/dev/null | head -1 || echo KVNBOX_NONE' 10
-                        if ($null -eq $t) { $res = @{ ok = $false; error = 'Сервер не отвечает по ключу.' } }
-                        elseif ($t -match 'KVNBOX_NONE') { $res = @{ ok = $true; installed = $false } }
-                        else { $res = @{ ok = $true; installed = $true; version = ($t.Trim() -replace '^\D*', '') } }
+                        # до трёх попыток: на нестабильном канале новые SSH-подключения иногда обрываются
+                        $r = $null
+                        foreach ($try in 1..3) {
+                            $r = Invoke-SshProbe $srvObj.Alias 'command -v kvnbox >/dev/null && kvnbox --version 2>/dev/null | head -1 || echo KVNBOX_NONE' 10
+                            if ($r.Code -eq 0 -or $r.Err -match 'Permission denied') { break }
+                            Start-Sleep -Milliseconds 800
+                        }
+                        if ($r.Code -ne 0) {
+                            $kind = if ($r.Err -match 'Permission denied') { 'auth' } else { 'net' }
+                            $res = @{ ok = $true; reachable = $false; kind = $kind; detail = (($r.Err -split "`n" | Where-Object { $_.Trim() }) | Select-Object -Last 1) }
+                        }
+                        elseif ($r.Out -match 'KVNBOX_NONE') { $res = @{ ok = $true; reachable = $true; installed = $false } }
+                        else { $res = @{ ok = $true; reachable = $true; installed = $true; version = ($r.Out.Trim() -replace '^\D*', '') } }
                     }
                     '/app/server_install' {
                         $dom = ([string]$in.domain).Trim().ToLower()

@@ -253,6 +253,7 @@ aside{gap:24px}.brand{margin-bottom:2px}.nav-sep{padding-top:22px}
 .aptp{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--dim)}.aptp:empty{display:none}.aptp .run b{color:var(--blue)}.aptp .done b{color:var(--green)}
 .iprow+.iprow{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
 .stres .n.sm{font-size:20px}
+.pill.chk{cursor:pointer}
 @media (max-width:820px){.form2{grid-template-columns:1fr}}
 @media (max-width:1100px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:820px){.split{grid-template-columns:1fr}.g4,.g3,.g2{grid-template-columns:minmax(0,1fr)}}
@@ -591,13 +592,15 @@ async function home(fresh = false) {
   if ($('#hUpd')) $('#hUpd').onclick = e => busy(e.currentTarget, async () => { await lpost('/app/self_update');
     document.body.innerHTML = `<div class="empty" style="height:100vh;display:grid;place-content:center;gap:10px;text-align:center">${ic('check')}<b style="font-size:17px">Лаунчер обновлён</b><span class="muted">Новая версия откроется в новой вкладке, эту можно закрыть.</span></div>`; });
   $$('#page [data-h]').forEach(b => b.onclick = e => hostAction(e.currentTarget, b.dataset.h, b.dataset.a));
-  SERVERS.forEach(s => { if (s.Online && !CHECK[s.Alias]) lpost('/app/server_check', {alias: s.Alias}).then(r => { CHECK[s.Alias] = r; if (PAGE === 'home') home(); }, e => { CHECK[s.Alias] = {error: e.message}; if (PAGE === 'home') home(); }); });
+  $$('#page [data-recheck]').forEach(b => b.onclick = () => { delete CHECK[b.dataset.recheck]; home(); });
+  SERVERS.forEach(s => { if (s.Online && !CHECK[s.Alias]) (CHECK[s.Alias] = {pending: true}, lpost('/app/server_check', {alias: s.Alias}).then(r => { CHECK[s.Alias] = r; if (PAGE === 'home') home(); }, e => { CHECK[s.Alias] = {error: e.message}; if (PAGE === 'home') home(); })); });
 }
 function hostCard(s) {
   const c = CHECK[s.Alias];
   const st = !s.Online ? '<span class="pill bad"><span class="dot bad"></span>не отвечает</span>'
-    : !c ? '<span class="pill"><span class="spin dark" style="width:10px;height:10px"></span> проверка…</span>'
-    : c.error ? `<span class="pill bad" title="${esc(c.error)}">нет входа по ключу</span>`
+    : !c || c.pending ? '<span class="pill"><span class="spin dark" style="width:10px;height:10px"></span> проверка…</span>'
+    : c.reachable === false ? `<span class="pill bad chk" data-recheck="${esc(s.Alias)}" title="${esc((c.detail || '') + ' — нажмите, чтобы проверить снова')}">${c.kind === 'auth' ? 'нет входа по ключу' : 'нет ответа по SSH'} ↻</span>`
+    : c.error ? `<span class="pill bad chk" data-recheck="${esc(s.Alias)}" title="${esc(c.error)} — нажмите, чтобы проверить снова">ошибка проверки ↻</span>`
     : c.installed ? `<span class="pill ok"><span class="dot ok"></span>kvnBox ${esc(c.version || '')}</span>`
     : '<span class="pill" style="color:var(--yellow);border-color:rgba(234,179,8,.4)">kvnBox не установлен</span>';
   const b = (a, t, i, cls = '') => `<button class="btn ${cls}" data-h="${esc(s.Alias)}" data-a="${a}">${i ? ic(i) : ''} ${t}</button>`;
