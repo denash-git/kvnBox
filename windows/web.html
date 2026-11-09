@@ -637,10 +637,21 @@ async function addServer() {
   if (!v) return;
   openModal(`<div class="mh"><h2>Добавление сервера</h2></div><div class="mb"><div class="row"><span class="spin dark"></span><span class="muted">Подключение к ${esc(v[0])}, создание ключа…</span></div></div>`);
   $('#modal').dataset.locked = '1';
+  const body = {host: v[0], port: +v[1] || 22, password: v[2], name: v[3]};
   let r;
-  try { r = await lpost('/app/server_add', {host: v[0], port: +v[1] || 22, password: v[2], name: v[3]}); }
+  try { r = await lpost('/app/server_add', body); }
   catch (e) { delete $('#modal').dataset.locked; closeAll(); toast(e.message, 'bad'); return; }
   delete $('#modal').dataset.locked; closeAll();
+  if (r.hostkey_changed) {
+    // ключ сервера сменился: обычно после переустановки; иначе — подмена, подключаться нельзя
+    if (!await confirmBox('Ключ сервера изменился', `Этот компьютер раньше подключался к ${esc(v[0])}, но сейчас сервер предъявляет другой ключ.\n\nТак бывает после переустановки сервера или ОС — тогда это нормально.\nЕсли сервер не переустанавливали — не продолжайте: соединение может быть перехвачено.`, 'Сервер переустановлен — подключиться', true)) return;
+    openModal(`<div class="mh"><h2>Добавление сервера</h2></div><div class="mb"><div class="row"><span class="spin dark"></span><span class="muted">Подключение к ${esc(v[0])}…</span></div></div>`);
+    $('#modal').dataset.locked = '1';
+    try { r = await lpost('/app/server_add', {...body, forget_hostkey: true}); }
+    catch (e) { delete $('#modal').dataset.locked; closeAll(); toast(e.message, 'bad'); return; }
+    delete $('#modal').dataset.locked; closeAll();
+    if (r.hostkey_changed) { toast('Ключ сервера по-прежнему не совпадает — подключение отменено', 'bad'); return; }
+  }
   await loadServers().catch(() => {});
   const s = SERVERS.find(x => x.Alias === r.alias);
   toast(`${r.name}: добавлен, вход по ключу работает`);

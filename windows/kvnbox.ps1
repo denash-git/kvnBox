@@ -9,7 +9,7 @@
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 # На чистый сервер kvnBox ставится прямо из лаунчера.
 
-$KvnboxVersion = '3.0.4'
+$KvnboxVersion = '3.0.5'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
@@ -413,8 +413,22 @@ function Invoke-SshPassword([string]$Server, [int]$Port, [string]$Password, [str
     return @{ Code = $p.ExitCode; Out = $outTask.Result; Err = $errTask.Result }
 }
 
-function Add-ServerWeb([string]$Server, [int]$Port, [string]$Password, [string]$Name) {
-    # → @{ ok; error | alias, name, installed }
+function Remove-KnownHost([string]$Server, [int]$Port) {
+    # забыть сохранённый ключ сервера (сервер переустановлен — ключ сменился)
+    $file = if ($KnownHosts) { $KnownHosts } else { Join-Path $SshDir 'known_hosts' }
+    if (-not (Test-Path $file)) { return }
+    $names = @($Server)
+    if ($Port -ne 22) { $names += "[$Server]:$Port" }
+    foreach ($n in $names) {
+        $p = Start-Process -FilePath (Get-Tool 'ssh-keygen') -ArgumentList @('-R', "`"$n`"", '-f', "`"$file`"") -NoNewWindow -Wait -PassThru `
+            -RedirectStandardOutput (Join-Path $AppDir 'keygen.out') -RedirectStandardError (Join-Path $AppDir 'keygen.err')
+        [void]$p
+    }
+    Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $AppDir 'keygen.out'), (Join-Path $AppDir 'keygen.err')
+}
+
+function Add-ServerWeb([string]$Server, [int]$Port, [string]$Password, [string]$Name, [bool]$ForgetHostKey = $false) {
+    # → @{ ok; error | alias, name, installed | hostkey_changed }
     $Server = $Server.Trim()
     if (-not ($Server -match '^[A-Za-z0-9.:-]+$')) { return @{ ok = $false; error = 'Неверный адрес сервера.' } }
     if ($Port -lt 1 -or $Port -gt 65535) { return @{ ok = $false; error = 'Порт SSH: 1–65535.' } }
@@ -427,7 +441,12 @@ function Add-ServerWeb([string]$Server, [int]$Port, [string]$Password, [string]$
         "grep -qxF '$pub' ~/.ssh/authorized_keys || echo '$pub' >> ~/.ssh/authorized_keys; " +
         "command -v kvnbox >/dev/null && echo KVNBOX_INSTALLED; " +
         'echo KVNBOX_FQDN=$(hostname -f 2>/dev/null || hostname)'
+    if ($ForgetHostKey) { Remove-KnownHost $Server $Port }
     $r = Invoke-SshPassword $Server $Port $Password ($remote -replace '"', '\"')
+    if ($r.Code -ne 0 -and $r.Err -match 'Host key verification failed|IDENTIFICATION HAS CHANGED') {
+        # ключ сервера не совпал с сохранённым: решает пользователь (переустановка или подмена)
+        return @{ ok = $true; hostkey_changed = $true }
+    }
     if ($r.Code -ne 0) {
         $why = if ($r.Err -match 'Permission denied') { 'неверный пароль или вход root по паролю запрещён' }
         elseif ($r.Err -match 'timed out|нет ответа') { 'сервер не отвечает (проверьте IP и порт)' }
@@ -829,7 +848,7 @@ function Start-WebMenu {
                 $res = $null
                 try {
                 switch ($path) {
-                    '/app/server_add' { $res = Add-ServerWeb ([string]$in.host) ([int]$in.port) ([string]$in.password) ([string]$in.name) }
+                    '/app/server_add' { $res = Add-ServerWeb ([string]$in.host) ([int]$in.port) ([string]$in.password) ([string]$in.name) ([bool]$in.forget_hostkey) }
                     '/app/server_edit' { $res = Edit-ServerWeb ([string]$in.alias) ([string]$in.name) ([int]$in.port) }
                     '/app/server_delete' {
                         if ($sessions.ContainsKey([string]$in.alias)) { Close-ApiSession $sessions[[string]$in.alias] 'Сервер удалён.'; $sessions.Remove([string]$in.alias) }
