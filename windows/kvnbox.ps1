@@ -4,12 +4,12 @@
 #   irm https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1 | iex
 #
 # Приложение ставится в %LOCALAPPDATA%\kvnBox, ярлык «kvnBox» — на рабочий стол и в меню Пуск.
-# Запуск открывает страницу в браузере (127.0.0.1); это окно PowerShell — её связь с серверами
-# по SSH. Серверы: ключ SSH создаётся на ПК, добавляется на сервер (пароль root нужен один раз),
+# Запуск открывает страницу в браузере (127.0.0.1); PowerShell работает без окна (значок в трее) —
+# связь страницы с серверами по SSH. Серверы: ключ SSH создаётся на ПК, добавляется на сервер (пароль root нужен один раз),
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 # На чистый сервер kvnBox ставится прямо из лаунчера.
 
-$KvnboxVersion = '3.0.6'
+$KvnboxVersion = '3.0.7'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
@@ -192,7 +192,12 @@ function New-Shortcut([string]$Path, [string]$Title, [string]$ExtraArgs = '') {
     $wt = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\wt.exe'
     New-Item -ItemType Directory -Force -Path (Split-Path $Path) | Out-Null
     $lnk = (New-Object -ComObject WScript.Shell).CreateShortcut($Path)
-    if (Test-Path $wt) {
+    if (-not $ExtraArgs) {
+        # главный ярлык: окна нет — работает в фоне, значок в трее, страница в браузере
+        $lnk.TargetPath = $ps
+        $lnk.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$AppScript`""
+        $lnk.WindowStyle = 7
+    } elseif (Test-Path $wt) {
         $lnk.TargetPath = $wt
         $lnk.Arguments = "--title `"$Title`" `"$ps`" $psArgs"
     } else {
@@ -321,6 +326,31 @@ function Write-Line([string]$t = '') { [Console]::WriteLine("  $t") }
 function Write-Note([string]$t) { Write-Line "$($Col.Dim)$t$Rst" }
 function Write-Ok([string]$t) { Write-Line "$($Col.Green)✓ $t$Rst" }
 function Write-Fail([string]$t) { Write-Line "$($Col.Red)✗ $t$Rst" }
+
+function Show-Error([string]$Text) {
+    # без окна консоли сообщение видно только так
+    Write-Fail $Text
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        [void][Windows.Forms.MessageBox]::Show($Text, 'kvnBox', 'OK', 'Error')
+    } catch { }
+}
+
+$RunFile = Join-Path $AppDir 'running.json'
+
+function Open-RunningInstance {
+    # kvnBox уже запущен — открыть его страницу и выйти (второй экземпляр не нужен)
+    if (-not (Test-Path $RunFile)) { return $false }
+    try {
+        $st = ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($RunFile))
+        if (-not (Get-Process -Id ([int]$st.Pid) -ErrorAction SilentlyContinue)) { return $false }
+        $req = [Net.WebRequest]::Create(($st.Url -replace '/\?t=', '/app/ping?t='))
+        $req.Timeout = 2000
+        $resp = $req.GetResponse(); $resp.Close()
+        if (-not $env:KVNBOX_WEB_NOBROWSER) { Start-Process $st.Url }
+        return $true
+    } catch { return $false }
+}
 
 function Show-Header([string]$Title) {
     try { [Console]::Write("$Esc[2J$Esc[H") } catch { }
@@ -752,9 +782,7 @@ function Install-Iperf {
 function Start-WebMenu {
     if (-not (Test-Path $AppWeb)) { Install-WebPage $PSScriptRoot }
     if (-not (Test-Path $AppWeb)) {
-        Show-Header 'ошибка'
-        Write-Fail 'Страница kvnBox не найдена и не скачалась. Проверьте интернет и повторите.'
-        Start-Sleep -Seconds 8
+        Show-Error 'Страница kvnBox не найдена и не скачалась. Проверьте интернет и повторите.'
         return
     }
     $page = [IO.File]::ReadAllText($AppWeb, [Text.Encoding]::UTF8)
@@ -766,7 +794,7 @@ function Start-WebMenu {
         $l.Prefixes.Add("http://127.0.0.1:$port/")
         try { $l.Start(); $listener = $l; break } catch { $l.Close() }
     }
-    if (-not $listener) { Show-Header 'ошибка'; Write-Fail 'Не удалось запустить веб-сервер на ПК.'; Start-Sleep -Seconds 8; return }
+    if (-not $listener) { Show-Error 'Не удалось запустить веб-сервер на ПК.'; return }
     $url = "http://127.0.0.1:$port/?t=$token"
     $hostOk = "127.0.0.1:$port"
 
@@ -781,6 +809,30 @@ function Start-WebMenu {
     Write-Line "$($Col.Yellow)q$Rst — закрыть kvnBox"
     Write-Line
     if (-not $env:KVNBOX_WEB_NOBROWSER) { Start-Process $url }
+    try { Write-Utf8 $RunFile (ConvertTo-Json -InputObject @{ Pid = $PID; Url = $url } -Compress) } catch { }
+
+    # значок в трее: открыть страницу / закрыть kvnBox
+    $script:TrayQuit = $false
+    $script:TrayUrl = $url
+    $tray = $null
+    try {
+        Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+        $tray = New-Object Windows.Forms.NotifyIcon
+        $tray.Icon = if (Test-Path $AppIcon) { New-Object Drawing.Icon $AppIcon } else { [Drawing.SystemIcons]::Application }
+        $tray.Text = "kvnBox $KvnboxVersion"
+        $menu = New-Object Windows.Forms.ContextMenuStrip
+        [void]$menu.Items.Add('Открыть kvnBox', $null, { Start-Process $script:TrayUrl })
+        [void]$menu.Items.Add('Закрыть kvnBox', $null, { $script:TrayQuit = $true })
+        $tray.ContextMenuStrip = $menu
+        $tray.add_MouseClick({ param($s, $e) if ($e.Button -eq [Windows.Forms.MouseButtons]::Left) { Start-Process $script:TrayUrl } })
+        $tray.Visible = $true
+        $tray.ShowBalloonTip(4000, 'kvnBox запущен', 'Страница открыта в браузере. Значок kvnBox здесь: открыть или закрыть.', 'Info')
+    } catch {
+        $tray = $null
+        try { [IO.File]::AppendAllText((Join-Path $AppDir 'web.log'), "$([DateTime]::Now.ToString('s')) tray: $($_.Exception.Message)`n") } catch { }
+    }
+    $idleSince = [DateTime]::UtcNow   # нет открытых вкладок — с этого момента
+    $idleMinutes = [double](Get-EnvOr 'KVNBOX_IDLE_MINUTES' '10')   # KVNBOX_* — для проверки
 
     $sessions = @{}
     $streams = New-Object System.Collections.Generic.List[object]
@@ -802,7 +854,12 @@ function Start-WebMenu {
             foreach ($j in $jobs) { $tasks.Add($j.Out) }
             foreach ($j in $streamJobs) { $tasks.Add($j.Read) }
             [void][Threading.Tasks.Task]::WaitAny($tasks.ToArray(), 250)
+            if ($tray) { [Windows.Forms.Application]::DoEvents() }
+            if ($script:TrayQuit) { $quit = $true }
             if ($quit) { Start-Sleep -Milliseconds 300; break }
+            # все вкладки закрыты 10 минут и ничего не выполняется — выключиться
+            if ($streams.Count -gt 0 -or $jobs.Count -gt 0 -or $streamJobs.Count -gt 0) { $idleSince = [DateTime]::UtcNow }
+            elseif (([DateTime]::UtcNow - $idleSince).TotalMinutes -ge $idleMinutes) { break }
 
             # установка kvnBox: строки — в браузер, в конце — ответ на запрос
             foreach ($j in $streamJobs.ToArray()) {
@@ -880,7 +937,9 @@ function Start-WebMenu {
                 Send-WebResponse $ctx 403 'text/plain; charset=utf-8' 'Откройте адрес из окна лаунчера kvnBox.'
                 continue
             }
-            if ($path -eq '/' -and $req.HttpMethod -eq 'GET') {
+            if ($path -eq '/app/ping') {
+                Send-WebResponse $ctx 200 'text/plain' 'ok'
+            } elseif ($path -eq '/' -and $req.HttpMethod -eq 'GET') {
                 Send-WebResponse $ctx 200 'text/html; charset=utf-8' $page
             } elseif ($path -eq '/app/servers') {
                 $list = @(Get-Servers)
@@ -1033,10 +1092,12 @@ function Start-WebMenu {
         foreach ($j in $streamJobs.ToArray()) { try { if (-not $j.Proc.HasExited) { $j.Proc.Kill() } } catch { } }
         foreach ($st in $streams.ToArray()) { try { $st.Response.Close() } catch { } }
         try { $listener.Stop(); $listener.Close() } catch { }
+        if ($tray) { try { $tray.Visible = $false; $tray.Dispose() } catch { } }
+        Remove-Item -Force -ErrorAction SilentlyContinue $RunFile
     }
     if ($restart) {
         # обновлённый лаунчер — новым процессом, он откроет новую вкладку
-        Start-Process (Get-PowerShellExe) -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$AppScript`"")
+        Start-Process (Get-PowerShellExe) -WindowStyle Hidden -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$AppScript`"")
     }
 }
 
@@ -1053,7 +1114,14 @@ function Start-Kvnbox([string[]]$CliArgs) {
         $srcDir = if ($self) { Split-Path $self } else { '' }
         Install-App $text $srcDir
         Write-Ok 'Ярлык «kvnBox» — на рабочем столе и в меню Пуск.'
-        Start-Sleep -Milliseconds 800
+        if (-not (Open-RunningInstance)) {
+            # дальше kvnBox работает без окна: значок в трее, страница в браузере
+            Start-Process (Get-PowerShellExe) -WindowStyle Hidden -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$AppScript`"")
+            Write-Ok 'kvnBox запущен: страница откроется в браузере, значок — в трее у часов.'
+        } else {
+            Write-Ok 'kvnBox уже был запущен — открыта его страница (обновление применится после закрытия kvnBox).'
+        }
+        return
     }
     if ($CliArgs.Count -ge 2 -and $CliArgs[0] -eq '-Connect') {
         # ярлыки серверов прежних версий: меню сервера в терминале
@@ -1062,12 +1130,10 @@ function Start-Kvnbox([string[]]$CliArgs) {
     }
     [Console]::OutputEncoding = [Text.UTF8Encoding]::new()
     if (-not (Get-Tool 'ssh') -or -not (Get-Tool 'ssh-keygen')) {
-        Show-Header 'ошибка'
-        Write-Fail 'Не найден клиент OpenSSH (ssh.exe).'
-        Write-Line 'Установите: Параметры → Система → Дополнительные компоненты → «Клиент OpenSSH».'
-        Start-Sleep -Seconds 15
+        Show-Error "Не найден клиент OpenSSH (ssh.exe).`nУстановите: Параметры → Система → Дополнительные компоненты → «Клиент OpenSSH»."
         return
     }
+    if (Open-RunningInstance) { return }   # уже запущен — только открыть страницу
     Import-OldServers
     Start-WebMenu
 }

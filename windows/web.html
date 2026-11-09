@@ -571,7 +571,7 @@ const apiOn = (alias, action, args = {}) => fetch(`/app/call?t=${TOKEN}&s=${enco
   .then(r => r.json()).then(j => { if (!j.ok) throw new Error(j.error || 'Ошибка'); return j.data; });
 const CHECK = {}; // alias → {installed, version} | {error}
 async function quitApp() {
-  if (!await confirmBox('Закрыть kvnBox?', 'Окно PowerShell закроется, эта страница перестанет работать. Снова открыть — ярлыком «kvnBox».', 'Закрыть')) return;
+  if (!await confirmBox('Закрыть kvnBox?', 'kvnBox перестанет работать в фоне, значок в трее исчезнет, эта страница отключится. Снова открыть — ярлыком «kvnBox».', 'Закрыть')) return;
   await lpost('/app/quit').catch(() => {});
   document.body.innerHTML = `<div class="empty" style="height:100vh;display:grid;place-content:center;gap:10px;text-align:center">${ic('power')}<b style="font-size:17px">kvnBox закрыт</b><span class="muted">Вкладку можно закрыть. Открыть снова — ярлыком «kvnBox».</span></div>`;
 }
@@ -586,7 +586,7 @@ async function home(fresh = false) {
     : `<div class="card empty" style="padding:64px 20px">${ic('box')}<b style="font-size:17px;color:var(--text)">Серверов пока нет</b>
         <span>Добавьте сервер: нужны его IP, пользователь (обычно root) и пароль — один раз, дальше вход по ключу.<br>На чистый сервер kvnBox установится прямо отсюда.</span>
         <button class="btn primary" id="hAdd">${ic('plus')} Добавить сервер</button></div>`}
-    <div class="muted" style="font-size:12.5px">Ключи SSH и список серверов хранятся на этом компьютере. Окно PowerShell — backend страницы с серверами.</div>`;
+    <div class="muted" style="font-size:12.5px">Ключи SSH и список серверов хранятся на этом компьютере. kvnBox работает в фоне — значок в трее у часов; без открытых вкладок он закроется сам через 10 минут.</div>`;
   $('#hAdd').onclick = () => addServer();
 
   if ($('#hUpd')) $('#hUpd').onclick = e => busy(e.currentTarget, async () => { await lpost('/app/self_update');
