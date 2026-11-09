@@ -584,7 +584,7 @@ async function home(fresh = false) {
     ${SERVERS.length ? `<div class="row wrap"><h3 style="margin:0;font-size:16px">Серверы</h3><span class="sp" style="flex:1"></span><button class="btn primary" id="hAdd">${ic('plus')} Добавить сервер</button></div>
       <div class="grid g2 hosts">${SERVERS.map(hostCard).join('')}</div>`
     : `<div class="card empty" style="padding:64px 20px">${ic('box')}<b style="font-size:17px;color:var(--text)">Серверов пока нет</b>
-        <span>Добавьте сервер: нужны его IP и пароль root (один раз — дальше вход по ключу).<br>На чистый сервер kvnBox установится прямо отсюда.</span>
+        <span>Добавьте сервер: нужны его IP, пользователь (обычно root) и пароль — один раз, дальше вход по ключу.<br>На чистый сервер kvnBox установится прямо отсюда.</span>
         <button class="btn primary" id="hAdd">${ic('plus')} Добавить сервер</button></div>`}
     <div class="muted" style="font-size:12.5px">Ключи SSH и список серверов хранятся на этом компьютере. Окно PowerShell — backend страницы с серверами.</div>`;
   $('#hAdd').onclick = () => addServer();
@@ -631,27 +631,43 @@ async function addServer() {
   const v = await formBox('Добавить сервер', [
     {label: 'IP-адрес сервера', ph: '203.0.113.10'},
     {label: 'Порт SSH', type: 'number', value: '22'},
-    {label: 'Пароль root', type: 'password', hint: 'нужен один раз: на сервер добавится ключ этого ПК, пароль нигде не сохраняется'},
+    {label: 'Пользователь', value: 'root', hint: 'обычно root; другой пользователь — с правами sudo (или понадобится пароль root)'},
+    {label: 'Пароль', type: 'password', hint: 'нужен один раз: на сервер добавится ключ этого ПК, пароль нигде не сохраняется'},
     {label: 'Название', ph: 'по умолчанию — имя сервера (hostname)'},
   ], 'Подключить');
   if (!v) return;
-  openModal(`<div class="mh"><h2>Добавление сервера</h2></div><div class="mb"><div class="row"><span class="spin dark"></span><span class="muted">Подключение к ${esc(v[0])}, создание ключа…</span></div></div>`);
-  $('#modal').dataset.locked = '1';
-  const body = {host: v[0], port: +v[1] || 22, password: v[2], name: v[3]};
-  let r;
-  try { r = await lpost('/app/server_add', body); }
-  catch (e) { delete $('#modal').dataset.locked; closeAll(); toast(e.message, 'bad'); return; }
-  delete $('#modal').dataset.locked; closeAll();
-  if (r.hostkey_changed) {
-    // ключ сервера сменился: обычно после переустановки; иначе — подмена, подключаться нельзя
-    if (!await confirmBox('Ключ сервера изменился', `Этот компьютер раньше подключался к ${esc(v[0])}, но сейчас сервер предъявляет другой ключ.\n\nТак бывает после переустановки сервера или ОС — тогда это нормально.\nЕсли сервер не переустанавливали — не продолжайте: соединение может быть перехвачено.`, 'Сервер переустановлен — подключиться', true)) return;
-    openModal(`<div class="mh"><h2>Добавление сервера</h2></div><div class="mb"><div class="row"><span class="spin dark"></span><span class="muted">Подключение к ${esc(v[0])}…</span></div></div>`);
+  const body = {host: v[0], port: +v[1] || 22, user: (v[2] || 'root').trim() || 'root', password: v[3], name: v[4]};
+  const send = async () => {
+    openModal(`<div class="mh"><h2>Добавление сервера</h2></div><div class="mb"><div class="row"><span class="spin dark"></span><span class="muted">Подключение к ${esc(body.host)} под ${esc(body.user)}, создание ключа…</span></div></div>`);
     $('#modal').dataset.locked = '1';
-    try { r = await lpost('/app/server_add', {...body, forget_hostkey: true}); }
-    catch (e) { delete $('#modal').dataset.locked; closeAll(); toast(e.message, 'bad'); return; }
-    delete $('#modal').dataset.locked; closeAll();
-    if (r.hostkey_changed) { toast('Ключ сервера по-прежнему не совпадает — подключение отменено', 'bad'); return; }
+    try { return await lpost('/app/server_add', body); }
+    finally { delete $('#modal').dataset.locked; closeAll(); }
+  };
+  let r;
+  for (let step = 0; step < 5; step++) {
+    try { r = await send(); } catch (e) { toast(e.message, 'bad'); return; }
+    if (r.hostkey_changed) {
+      // ключ сервера сменился: обычно после переустановки; иначе — подмена, подключаться нельзя
+      if (body.forget_hostkey) { toast('Ключ сервера по-прежнему не совпадает — подключение отменено', 'bad'); return; }
+      if (!await confirmBox('Ключ сервера изменился', `Этот компьютер раньше подключался к ${esc(body.host)}, но сейчас сервер предъявляет другой ключ.\n\nТак бывает после переустановки сервера или ОС — тогда это нормально.\nЕсли сервер не переустанавливали — не продолжайте: соединение может быть перехвачено.`, 'Сервер переустановлен — подключиться', true)) return;
+      body.forget_hostkey = true; continue;
+    }
+    if (r.need_root_password) {
+      // у пользователя нет sudo — права root через su
+      if (body.root_password) { toast('Пароль root не подошёл', 'bad'); }
+      const p = await formBox('Нужен пароль root', [{label: 'Пароль root', type: 'password', hint: 'только для этого раза: через su на сервер добавится ключ этого ПК для root'}], 'Продолжить',
+        `Вход под ${esc(body.user)} есть, но у этого пользователя нет sudo. kvnBox работает с правами root.`);
+      if (!p || !p[0]) return;
+      body.root_password = p[0]; continue;
+    }
+    if (r.need_root_key) {
+      // сервер не пускает root даже по ключу
+      if (!await confirmBox('Разрешить вход root по ключу?', `Сервер ${esc(body.host)} запрещает вход root по SSH даже по ключу, а kvnBox управляет сервером от root.\n\nЛаунчер разрешит вход root только по ключу (PermitRootLogin prohibit-password): по паролю root по-прежнему войти будет нельзя.`, 'Разрешить и подключить')) return;
+      body.allow_root_key = true; continue;
+    }
+    break;
   }
+  if (!r || !r.alias) return;
   await loadServers().catch(() => {});
   const s = SERVERS.find(x => x.Alias === r.alias);
   toast(`${r.name}: добавлен, вход по ключу работает`);

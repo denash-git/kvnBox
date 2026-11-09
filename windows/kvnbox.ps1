@@ -9,7 +9,7 @@
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 # На чистый сервер kvnBox ставится прямо из лаунчера.
 
-$KvnboxVersion = '3.0.5'
+$KvnboxVersion = '3.0.6'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
@@ -386,15 +386,16 @@ function Get-AskPass {
     return $path
 }
 
-function Invoke-SshPassword([string]$Server, [int]$Port, [string]$Password, [string]$Command) {
-    # вход root по паролю (один раз, при добавлении сервера): @{ Code; Out; Err }
+function Invoke-SshPassword([string]$Server, [int]$Port, [string]$Password, [string]$Command, [string]$User = 'root', [string]$Stdin = '') {
+    # вход по паролю (один раз, при добавлении сервера): @{ Code; Out; Err }.
+    # $Stdin — данные для команды на сервере (пароли для sudo/su — не в командной строке)
     if (-not (Test-Path $SshConfig)) { Write-Utf8 $SshConfig '' }   # ssh -F не терпит отсутствия файла
     $psi = New-Object Diagnostics.ProcessStartInfo
     $psi.FileName = Get-Tool 'ssh'
     $extra = if ($KnownHosts) { "-o `"UserKnownHostsFile=$KnownHosts`" " } else { '' }
     $psi.Arguments = "-F `"$SshConfig`" $extra-p $Port -o StrictHostKeyChecking=accept-new " +
         "-o PreferredAuthentications=password,keyboard-interactive -o PubkeyAuthentication=no " +
-        "-o NumberOfPasswordPrompts=1 -o ConnectTimeout=15 $SshUser@$Server `"$Command`""
+        "-o NumberOfPasswordPrompts=1 -o ConnectTimeout=15 $User@$Server `"$Command`""
     $psi.UseShellExecute = $false
     $psi.CreateNoWindow = $true
     $psi.RedirectStandardInput = $true
@@ -407,9 +408,15 @@ function Invoke-SshPassword([string]$Server, [int]$Port, [string]$Password, [str
     $psi.EnvironmentVariables['DISPLAY'] = 'localhost:0'
     $psi.EnvironmentVariables['KVNBOX_PW'] = $Password
     $p = [Diagnostics.Process]::Start($psi)
-    $p.StandardInput.Close()
+    if ($Stdin) {
+        # байтами мимо StreamWriter (он ставит BOM перед первой строкой)
+        $bytes = [Text.UTF8Encoding]::new($false).GetBytes($Stdin)
+        try { $p.StandardInput.BaseStream.Write($bytes, 0, $bytes.Length); $p.StandardInput.BaseStream.Flush() } catch { }
+    }
+    # закрыть сам поток: StandardInput.Close() дописал бы BOM от StreamWriter
+    try { $p.StandardInput.BaseStream.Close() } catch { }
     $outTask = $p.StandardOutput.ReadToEndAsync(); $errTask = $p.StandardError.ReadToEndAsync()
-    if (-not $p.WaitForExit(40000)) { try { $p.Kill() } catch { }; return @{ Code = -1; Out = ''; Err = 'нет ответа' } }
+    if (-not $p.WaitForExit(60000)) { try { $p.Kill() } catch { }; return @{ Code = -1; Out = ''; Err = 'нет ответа' } }
     return @{ Code = $p.ExitCode; Out = $outTask.Result; Err = $errTask.Result }
 }
 
@@ -427,38 +434,83 @@ function Remove-KnownHost([string]$Server, [int]$Port) {
     Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $AppDir 'keygen.out'), (Join-Path $AppDir 'keygen.err')
 }
 
-function Add-ServerWeb([string]$Server, [int]$Port, [string]$Password, [string]$Name, [bool]$ForgetHostKey = $false) {
-    # → @{ ok; error | alias, name, installed | hostkey_changed }
+function ConvertTo-B64([string]$Text) {
+    return [Convert]::ToBase64String([Text.UTF8Encoding]::new($false).GetBytes($Text.Replace("`r`n", "`n")))
+}
+
+function Add-ServerWeb([string]$Server, [int]$Port, [string]$Password, [string]$Name, [bool]$ForgetHostKey = $false,
+    [string]$User = 'root', [string]$RootPassword = '', [bool]$AllowRootKey = $false) {
+    # Вход под $User по паролю → права root (сам root, sudo без пароля, sudo с тем же паролем,
+    # su с паролем root) → ключ ПК пользователю и root → дальше лаунчер работает под root по ключу.
+    # → @{ ok; error | alias, name, installed | hostkey_changed | need_root_password | need_root_key }
     $Server = $Server.Trim()
     if (-not ($Server -match '^[A-Za-z0-9.:-]+$')) { return @{ ok = $false; error = 'Неверный адрес сервера.' } }
     if ($Port -lt 1 -or $Port -gt 65535) { return @{ ok = $false; error = 'Порт SSH: 1–65535.' } }
-    if (-not $Password) { return @{ ok = $false; error = 'Введите пароль root.' } }
+    if (-not ($User -match '^[a-z_][a-z0-9_.-]{0,31}$')) { return @{ ok = $false; error = 'Неверное имя пользователя.' } }
+    if (-not $Password) { return @{ ok = $false; error = 'Введите пароль.' } }
     $alias = Get-Alias $Server
     $key = Join-Path $SshDir $alias
     try { New-ServerKey $key } catch { return @{ ok = $false; error = $_.Exception.Message } }
     $pub = ([IO.File]::ReadAllText("$key.pub")).Trim()
-    $remote = "umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys; " +
-        "grep -qxF '$pub' ~/.ssh/authorized_keys || echo '$pub' >> ~/.ssh/authorized_keys; " +
-        "command -v kvnbox >/dev/null && echo KVNBOX_INSTALLED; " +
-        'echo KVNBOX_FQDN=$(hostname -f 2>/dev/null || hostname)'
+    # от root: ключ ПК — root, kvnBox ли на сервере, правило входа root; по согласию — вход root только по ключу
+    $allow = if ($AllowRootKey) { '1' } else { '0' }
+    $rootScript = @"
+umask 077; mkdir -p /root/.ssh; touch /root/.ssh/authorized_keys
+grep -qxF '$pub' /root/.ssh/authorized_keys || echo '$pub' >> /root/.ssh/authorized_keys
+command -v kvnbox >/dev/null && echo KVNBOX_INSTALLED
+if [ $allow = 1 ]; then
+  mkdir -p /etc/ssh/sshd_config.d
+  printf '# kvnBox: root login by key only\nPermitRootLogin prohibit-password\n' > /etc/ssh/sshd_config.d/00-kvnbox-rootkey.conf
+  chmod 644 /etc/ssh/sshd_config.d/00-kvnbox-rootkey.conf
+  (systemctl reload ssh || systemctl reload sshd) >/dev/null 2>&1
+fi
+echo KVNBOX_PRL=`$(sshd -T 2>/dev/null | awk '/^permitrootlogin/{print `$2}')
+echo KVNBOX_ROOT_OK
+"@
+    # от пользователя: ключ ПК себе, затем права root любым доступным способом (пароли — из stdin)
+    $userScript = @"
+IFS= read -r PW; IFS= read -r RPW; PW=`${PW#`$'\xef\xbb\xbf'}
+umask 077; mkdir -p ~/.ssh; touch ~/.ssh/authorized_keys
+grep -qxF '$pub' ~/.ssh/authorized_keys || echo '$pub' >> ~/.ssh/authorized_keys
+echo KVNBOX_FQDN=`$(hostname -f 2>/dev/null || hostname)
+R=`$(mktemp); echo '$(ConvertTo-B64 $rootScript)' | base64 -d > "`$R"; chmod 644 "`$R"
+if [ "`$(id -u)" = 0 ]; then echo KVNBOX_MODE=root; bash "`$R"
+elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then echo KVNBOX_MODE=sudo; sudo -n bash "`$R"
+elif command -v sudo >/dev/null 2>&1 && printf '%s\n' "`$PW" | sudo -S -p '' true 2>/dev/null; then echo KVNBOX_MODE=sudo; printf '%s\n' "`$PW" | sudo -S -p '' bash "`$R"
+elif [ -n "`$RPW" ]; then echo KVNBOX_MODE=su; { sleep 1; printf '%s\n' "`$RPW"; } | script -qec "su -c 'bash `$R'" /dev/null
+else echo KVNBOX_MODE=none; command -v su >/dev/null && echo KVNBOX_HAS_SU; fi
+rm -f "`$R"
+"@
+    $cmd = 'f=$(mktemp) && echo ' + (ConvertTo-B64 $userScript) + ' | base64 -d > $f && bash $f; rc=$?; rm -f $f; exit $rc'
     if ($ForgetHostKey) { Remove-KnownHost $Server $Port }
-    $r = Invoke-SshPassword $Server $Port $Password ($remote -replace '"', '\"')
+    $r = Invoke-SshPassword $Server $Port $Password $cmd $User ("$Password`n$RootPassword`n")
     if ($r.Code -ne 0 -and $r.Err -match 'Host key verification failed|IDENTIFICATION HAS CHANGED') {
         # ключ сервера не совпал с сохранённым: решает пользователь (переустановка или подмена)
         return @{ ok = $true; hostkey_changed = $true }
     }
-    if ($r.Code -ne 0) {
-        $why = if ($r.Err -match 'Permission denied') { 'неверный пароль или вход root по паролю запрещён' }
+    if ($r.Out -notmatch 'KVNBOX_FQDN=') {
+        $why = if ($r.Err -match 'Permission denied') { "неверный пароль или вход пользователя $User по паролю запрещён" }
         elseif ($r.Err -match 'timed out|нет ответа') { 'сервер не отвечает (проверьте IP и порт)' }
         elseif ($r.Err -match 'refused') { 'порт SSH закрыт' }
         else { (($r.Err -split "`n" | Where-Object { $_.Trim() -and $_ -notmatch '^Warning' }) | Select-Object -Last 1) }
         return @{ ok = $false; error = "Не удалось подключиться: $why" }
     }
+    $mode = if ($r.Out -match 'KVNBOX_MODE=(\w+)') { $Matches[1] } else { '' }
+    if ($r.Out -notmatch 'KVNBOX_ROOT_OK') {
+        if ($mode -eq 'none' -and $r.Out -match 'KVNBOX_HAS_SU') { return @{ ok = $true; need_root_password = $true } }
+        if ($mode -eq 'su') { return @{ ok = $false; error = 'Пароль root не подошёл.' } }
+        return @{ ok = $false; error = "Вход под $User есть, но прав администратора нет: нужен root или пользователь с sudo." }
+    }
+    $prl = if ($r.Out -match 'KVNBOX_PRL=(\S+)') { $Matches[1] } else { '' }
+    if ($prl -in @('no', 'forced-commands-only') -and -not $AllowRootKey) {
+        # сервер не пускает root даже по ключу, а kvnBox работает от root: спросить
+        return @{ ok = $true; need_root_key = $true }
+    }
     Set-SshConfigHost $alias $Server $Port $key
     $okKey = $false
     foreach ($try in 1..3) { if ($null -ne (Invoke-Ssh $alias 'true' 12)) { $okKey = $true; break }; Start-Sleep -Seconds 2 }
     if (-not $okKey) {
-        return @{ ok = $false; error = 'Ключ добавлен на сервер, но вход по нему не прошёл.' }
+        return @{ ok = $false; error = 'Ключ добавлен на сервер, но вход root по нему не прошёл.' }
     }
     $fqdn = ''
     foreach ($line in ($r.Out -split "`n")) { if ($line -match '^KVNBOX_FQDN=(\S+)') { $fqdn = $Matches[1] } }
@@ -467,7 +519,7 @@ function Add-ServerWeb([string]$Server, [int]$Port, [string]$Password, [string]$
     $list = @(Get-Servers | Where-Object { $_.Alias -ne $alias })
     $list += [pscustomobject]@{ Name = $Name; Host = $Server; Port = $Port; Alias = $alias; Key = $key }
     Save-Servers $list
-    return @{ ok = $true; alias = $alias; name = $Name; installed = ($r.Out -match 'KVNBOX_INSTALLED') }
+    return @{ ok = $true; alias = $alias; name = $Name; installed = ($r.Out -match 'KVNBOX_INSTALLED'); via = $mode }
 }
 
 function Edit-ServerWeb([string]$Alias, [string]$Name, [int]$Port) {
@@ -848,7 +900,10 @@ function Start-WebMenu {
                 $res = $null
                 try {
                 switch ($path) {
-                    '/app/server_add' { $res = Add-ServerWeb ([string]$in.host) ([int]$in.port) ([string]$in.password) ([string]$in.name) ([bool]$in.forget_hostkey) }
+                    '/app/server_add' {
+                        $u = if ([string]$in.user) { ([string]$in.user).Trim() } else { 'root' }
+                        $res = Add-ServerWeb ([string]$in.host) ([int]$in.port) ([string]$in.password) ([string]$in.name) ([bool]$in.forget_hostkey) $u ([string]$in.root_password) ([bool]$in.allow_root_key)
+                    }
                     '/app/server_edit' { $res = Edit-ServerWeb ([string]$in.alias) ([string]$in.name) ([int]$in.port) }
                     '/app/server_delete' {
                         if ($sessions.ContainsKey([string]$in.alias)) { Close-ApiSession $sessions[[string]$in.alias] 'Сервер удалён.'; $sessions.Remove([string]$in.alias) }
