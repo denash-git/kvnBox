@@ -9,7 +9,7 @@
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 # На чистый сервер kvnBox ставится прямо из лаунчера.
 
-$KvnboxVersion = '3.0.9'
+$KvnboxVersion = '3.0.10'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
@@ -352,6 +352,25 @@ function Show-Error([string]$Text) {
 }
 
 $RunFile = Join-Path $AppDir 'running.json'
+$PrefsFile = Join-Path $AppDir 'prefs.json'
+
+function Get-Prefs {
+    # настройки страницы (тема, яркость, выбранный сервер): у страницы каждый раз новый порт,
+    # а хранилище браузера привязано к адресу — поэтому храним на ПК, в папке лаунчера
+    $h = @{}
+    try {
+        if (Test-Path $PrefsFile) {
+            $o = ConvertFrom-Json -InputObject ([IO.File]::ReadAllText($PrefsFile, [Text.Encoding]::UTF8))
+            foreach ($p in $o.PSObject.Properties) { $h[$p.Name] = [string]$p.Value }
+        }
+    } catch { }
+    return $h
+}
+
+function Get-PrefsScript {
+    $json = ConvertTo-Json -InputObject (Get-Prefs) -Compress
+    return '<script>window.KVN_PREFS=' + ($json -replace '<', '\u003c') + ';</script>'
+}
 
 function Open-RunningInstance {
     # kvnBox уже запущен — открыть его страницу и выйти (второй экземпляр не нужен)
@@ -955,7 +974,19 @@ function Start-WebMenu {
             if ($path -eq '/app/ping') {
                 Send-WebResponse $ctx 200 'text/plain' 'ok'
             } elseif ($path -eq '/' -and $req.HttpMethod -eq 'GET') {
-                Send-WebResponse $ctx 200 'text/html; charset=utf-8' $page
+                Send-WebResponse $ctx 200 'text/html; charset=utf-8' ($page.Replace('<head>', '<head>' + (Get-PrefsScript)))
+            } elseif ($path -eq '/app/prefs' -and $req.HttpMethod -eq 'POST') {
+                # {ключ: значение | null} — дописать в prefs.json
+                try {
+                    $in = ConvertFrom-Json -InputObject ((New-Object IO.StreamReader($req.InputStream, [Text.Encoding]::UTF8)).ReadToEnd())
+                    $h = Get-Prefs
+                    foreach ($p in $in.PSObject.Properties) {
+                        if ($p.Name -notmatch '^[\w-]{1,40}$') { continue }
+                        if ($null -eq $p.Value) { $h.Remove($p.Name) } else { $h[$p.Name] = ([string]$p.Value).Substring(0, [Math]::Min(200, ([string]$p.Value).Length)) }
+                    }
+                    Write-Utf8 $PrefsFile (ConvertTo-Json -InputObject $h -Compress)
+                    Send-WebResponse $ctx 200 'application/json' '{"ok":true}'
+                } catch { Send-WebResponse $ctx 400 'application/json' '{"ok":false}' }
             } elseif ($path -eq '/app/servers') {
                 $list = @(Get-Servers)
                 $on = Get-Online $list
