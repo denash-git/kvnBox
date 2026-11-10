@@ -601,7 +601,7 @@ async function home(fresh = false) {
     : `<div class="card empty" style="padding:64px 20px">${ic('box')}<b style="font-size:17px;color:var(--text)">Серверов пока нет</b>
         <span>Добавьте сервер: нужны его IP, пользователь (обычно root) и пароль — один раз, дальше вход по ключу.<br>На чистый сервер kvnBox установится прямо отсюда.</span>
         <button class="btn primary" id="hAdd">${ic('plus')} Добавить сервер</button></div>`}
-    <div class="muted" style="font-size:12.5px">Ключи SSH и список серверов хранятся на этом компьютере. kvnBox работает в фоне — значок в трее у часов; без открытых вкладок он закроется сам через 10 минут.</div>`;
+    <div class="muted" style="font-size:12.5px">Ключи SSH и список серверов хранятся на этом компьютере.<br>kvnBox работает в фоне — значок в трее у часов; без открытых вкладок он закроется сам через 10 минут.</div>`;
   $('#hAdd').onclick = () => addServer();
 
   if ($('#hUpd')) $('#hUpd').onclick = e => busy(e.currentTarget, async () => { await lpost('/app/self_update');
