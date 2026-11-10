@@ -9,7 +9,7 @@
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 # На чистый сервер kvnBox ставится прямо из лаунчера.
 
-$KvnboxVersion = '3.0.7'
+$KvnboxVersion = '3.0.8'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'
@@ -194,8 +194,9 @@ function New-Shortcut([string]$Path, [string]$Title, [string]$ExtraArgs = '') {
     $lnk = (New-Object -ComObject WScript.Shell).CreateShortcut($Path)
     if (-not $ExtraArgs) {
         # главный ярлык: окна нет — работает в фоне, значок в трее, страница в браузере
-        $lnk.TargetPath = $ps
-        $lnk.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$AppScript`""
+        $h = Get-HiddenLaunch
+        $lnk.TargetPath = $h.File
+        $lnk.Arguments = $h.Args
         $lnk.WindowStyle = 7
     } elseif (Test-Path $wt) {
         $lnk.TargetPath = $wt
@@ -208,6 +209,20 @@ function New-Shortcut([string]$Path, [string]$Title, [string]$ExtraArgs = '') {
     $lnk.IconLocation = if (Test-Path $AppIcon) { "$AppIcon,0" } else { "$env:SystemRoot\System32\shell32.dll,15" }
     $lnk.Description = $Title
     $lnk.Save()
+}
+
+function Get-HiddenLaunch {
+    # запуск без окна: conhost --headless (окно не создаётся, и Windows Terminal его не перехватывает)
+    $ps = Get-PowerShellExe
+    $psArgs = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$AppScript`" -Bg"
+    $conhost = Join-Path $env:SystemRoot 'System32\conhost.exe'
+    if (Test-Path $conhost) { return @{ File = $conhost; Args = "--headless `"$ps`" $psArgs" } }
+    return @{ File = $ps; Args = $psArgs }
+}
+
+function Start-Hidden {
+    $h = Get-HiddenLaunch
+    Start-Process $h.File -WindowStyle Hidden -ArgumentList $h.Args
 }
 
 function Get-SafeName([string]$Name) { return ($Name -replace '[\\/:*?"<>|]', '_') }
@@ -1097,7 +1112,7 @@ function Start-WebMenu {
     }
     if ($restart) {
         # обновлённый лаунчер — новым процессом, он откроет новую вкладку
-        Start-Process (Get-PowerShellExe) -WindowStyle Hidden -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$AppScript`"")
+        Start-Hidden
     }
 }
 
@@ -1116,7 +1131,7 @@ function Start-Kvnbox([string[]]$CliArgs) {
         Write-Ok 'Ярлык «kvnBox» — на рабочем столе и в меню Пуск.'
         if (-not (Open-RunningInstance)) {
             # дальше kvnBox работает без окна: значок в трее, страница в браузере
-            Start-Process (Get-PowerShellExe) -WindowStyle Hidden -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$AppScript`"")
+            Start-Hidden
             Write-Ok 'kvnBox запущен: страница откроется в браузере, значок — в трее у часов.'
         } else {
             Write-Ok 'kvnBox уже был запущен — открыта его страница (обновление применится после закрытия kvnBox).'
@@ -1127,6 +1142,17 @@ function Start-Kvnbox([string[]]$CliArgs) {
         # ярлыки серверов прежних версий: меню сервера в терминале
         $s = @(Get-Servers | Where-Object { $_.Alias -eq $CliArgs[1] })
         if ($s.Count) { Enter-Server $s[0]; return }
+    }
+    if ($CliArgs -notcontains '-Bg' -and $CliArgs -notcontains '-Console') {
+        # запущен с окном (ярлык или перезапуск прежней версии): ярлыки — на запуск без окна,
+        # сам kvnBox — заново в фоне; это окно закроется
+        try {
+            foreach ($l in @((Join-Path $DesktopDir 'kvnBox.lnk'), (Join-Path $StartMenuDir 'kvnBox.lnk'))) {
+                if (Test-Path -LiteralPath $l) { New-Shortcut $l 'kvnBox' }
+            }
+        } catch { }
+        if (-not (Open-RunningInstance)) { Start-Hidden }
+        return
     }
     [Console]::OutputEncoding = [Text.UTF8Encoding]::new()
     if (-not (Get-Tool 'ssh') -or -not (Get-Tool 'ssh-keygen')) {
