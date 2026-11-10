@@ -9,7 +9,7 @@
 # сервер прописывается в ~\.ssh\config (вход `ssh kvnbox-<IP>` работает и из терминала).
 # На чистый сервер kvnBox ставится прямо из лаунчера.
 
-$KvnboxVersion = '3.0.8'
+$KvnboxVersion = '3.0.9'
 
 $ErrorActionPreference = 'Stop'
 $RawUrl = 'https://raw.githubusercontent.com/denash-git/kvnBox/main/windows/kvnbox.ps1'

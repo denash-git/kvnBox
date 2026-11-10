@@ -176,6 +176,20 @@ label.f{display:grid;gap:6px;font-size:13px;color:var(--text2)}
   td,th{padding:10px 12px}
 }
 
+.themew{position:relative;display:inline-flex}
+.theme-pop{position:absolute;right:0;top:calc(100% + 8px);width:260px;background:var(--card);border:1px solid var(--line2);border-radius:var(--r2);box-shadow:var(--shadow);padding:12px;display:none;z-index:40}
+.theme-pop.open{display:block}
+.theme-pop .tl{font-size:12px;color:var(--dim);margin:0 2px 8px}
+.thm{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.thm button{border:1px solid var(--line);border-radius:var(--r2);background:transparent;padding:6px 4px 5px;cursor:pointer;color:var(--text2);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.thm button:hover{border-color:var(--line2);color:var(--text)}
+.thm button.on{border-color:var(--blue);color:var(--text);box-shadow:0 0 0 1px var(--blue) inset}
+.thm i{display:block;width:100%;height:26px;border-radius:5px;border:1px solid rgba(127,127,127,.3)}
+.thm-sl{display:flex;align-items:center;gap:8px;color:var(--dim)}
+.thm-sl input{flex:1;accent-color:var(--blue)}
+.thm-sl .rs{border:0;background:none;color:var(--dim);cursor:pointer;padding:2px;font-size:12px}.thm-sl .rs:hover{color:var(--text)}
+[data-theme=gray]{--text:#eef0f3;--text2:#c5cad2;--dim:#979ea9;--shadow:0 10px 30px rgba(0,0,0,.25)}
+[data-theme=gray] .term{background:#1d1f23}
 .nw{white-space:nowrap}.mono{font-family:"Cascadia Mono",Consolas,monospace}
 .row.wrap{flex-wrap:wrap}.hint{color:var(--dim);font-size:12px}
 .btn.red{background:var(--red);border-color:var(--red)}.btn.red:hover{background:#dc2626}
@@ -275,7 +289,7 @@ aside{gap:24px}.brand{margin-bottom:2px}.nav-sep{padding-top:22px}
       <div><h1 id="title"></h1><div class="sub" id="subtitle"></div></div>
       <div class="sp"></div>
       <button class="icon-btn" title="Обновить" id="refresh"><svg class="i"><use href="#i-refresh"/></svg></button>
-      <button class="icon-btn" id="themeBtn"></button>
+      <span class="themew"><button class="icon-btn" id="themeBtn" title="Оформление"></button><div class="theme-pop" id="themePop"></div></span>
     </div>
     <div class="page" id="page"></div>
   </main>
@@ -1313,9 +1327,39 @@ function diagIperf() {
 }
 
 /* ═══ тема, запуск ═══ */
-function setTheme(t) { document.documentElement.dataset.theme = t; localStorage.setItem('kvn-theme', t); $('#themeBtn').innerHTML = ic(t === 'dark' ? 'moon' : 'sun'); $('#themeBtn').title = t === 'dark' ? 'Светлая тема' : 'Тёмная тема'; }
-setTheme(localStorage.getItem('kvn-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
-$('#themeBtn').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+// фоны тем в HSL: ползунок сдвигает яркость фонов/карточек/линий (текст — из CSS темы)
+const THEMES = {
+  light: {name: 'Светлая', ic: 'sun', v: {bg: [220, 33, 96], bg2: [0, 0, 100], card: [0, 0, 100], card2: [220, 50, 98], line: [219, 33, 92], line2: [218, 28, 87]}},
+  gray: {name: 'Серая', ic: 'moon', v: {bg: [220, 7, 23], bg2: [220, 7, 20], card: [220, 7, 27], card2: [220, 7, 30], line: [220, 7, 35], line2: [220, 7, 41]}},
+  dark: {name: 'Тёмная', ic: 'moon', v: {bg: [225, 49, 8], bg2: [224, 46, 11], card: [223, 46, 14], card2: [223, 45, 17], line: [221, 40, 22], line2: [222, 37, 27]}},
+};
+const hsl = (c, d = 0) => `hsl(${c[0]} ${c[1]}% ${Math.max(0, Math.min(100, c[2] + d))}%)`;
+function themeState() {
+  let t = localStorage.getItem('kvn-theme');
+  if (!THEMES[t]) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  return {t, d: +localStorage.getItem('kvn-tone-' + t) || 0};
+}
+function applyTheme() {
+  const {t, d} = themeState(), h = document.documentElement;
+  h.dataset.theme = t;
+  for (const [k, c] of Object.entries(THEMES[t].v)) h.style.setProperty('--' + k, hsl(c, d));
+  $('#themeBtn').innerHTML = ic(THEMES[t].ic);
+  renderThemePop();
+}
+function renderThemePop() {
+  const {t, d} = themeState();
+  $('#themePop').innerHTML = `<div class="tl">Оформление</div>
+    <div class="thm">${Object.entries(THEMES).map(([k, x]) => `<button data-t="${k}" class="${k === t ? 'on' : ''}"><i style="background:linear-gradient(135deg,${hsl(x.v.bg)} 50%,${hsl(x.v.card)} 50%)"></i>${x.name}</button>`).join('')}</div>
+    <div class="tl">Яркость фона</div>
+    <div class="thm-sl"><span>−</span><input type="range" min="-10" max="10" step="1" value="${d}" id="toneSl"><span>+</span><button class="rs" id="toneRs" title="Как было">сброс</button></div>`;
+  $('#themePop').querySelectorAll('[data-t]').forEach(b => b.onclick = () => { localStorage.setItem('kvn-theme', b.dataset.t); applyTheme(); });
+  $('#toneSl').oninput = e => { localStorage.setItem('kvn-tone-' + t, e.target.value); const v = +e.target.value; for (const [k, c] of Object.entries(THEMES[t].v)) document.documentElement.style.setProperty('--' + k, hsl(c, v)); };
+  $('#toneRs').onclick = () => { localStorage.removeItem('kvn-tone-' + t); applyTheme(); };
+}
+applyTheme();
+$('#themeBtn').onclick = e => { e.stopPropagation(); $('#themePop').classList.toggle('open'); };
+$('#themePop').onclick = e => e.stopPropagation();
+document.addEventListener('click', () => $('#themePop').classList.remove('open'));
 $('#srvBtn').onclick = e => { e.stopPropagation(); $('#srvMenu').classList.toggle('open'); };
 document.addEventListener('click', () => $('#srvMenu').classList.remove('open'));
 $('#burger').onclick = () => $('#aside').classList.toggle('open');
